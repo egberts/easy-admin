@@ -17,7 +17,7 @@ Just the way you want them.
 * No more accidental security vulnerabilities,
 * No network holes,
 * No hacked box,
-* No more guessing nor remembering settings of many unintelligble keywords.
+* No more guessing nor remembering settings of many unintelligible keywords.
 * often better than (or at a minimum equal to) CISecurity
 
 Just read and answer the questions; then be up and running.
