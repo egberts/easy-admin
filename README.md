@@ -9,7 +9,7 @@ Now we have these bash scripts, that takes you even further in customization.
 You run them,
 it looks at what kind of OS and network interfaces you have,
 it asks you a few questions,
-writes the configuration files ... securely,
+writes the configuration files ... securely, perfectly so,
 and starts your services...
 
 Just the way you want them.
