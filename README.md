@@ -4,7 +4,7 @@ Scripts for easy system administration
 Imagine that you installed a package using one of those distro package tool, they didnt 
 configure it right or it was at "basic settings".
 
-Now we have these bash scripts.
+Now we have these bash scripts, that takes you even further in customization.
 
 You run them,
 it looks at what kind of OS and network interfaces you have,
