@@ -1,5 +1,5 @@
 # easy-admin
-Scripts to easy system administration for white-lab managers, heavy-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
+Scripts to easy system administration for white-lab managers, bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
 Imagine that you installed a package using one of those distro package tool, they didnt 
 configure it right or it was just in barely usable "basic settings".
