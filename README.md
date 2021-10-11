@@ -14,7 +14,7 @@ and starts your services...
 
 Just the way you want them.
 
-* No more accidential security vulnerabilities,
+* No more accidental security vulnerabilities,
 * No network holes,
 * No hacked box,
 * No more guessing nor remembering settings of many unintelligble keywords.
