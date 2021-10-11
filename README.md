@@ -13,9 +13,11 @@ it asks you a few questions,
 writes the configuration files ... securely,
 and starts your services...
 
-just the way you wanted them.
+Just the way you want them.
 
-No more accidential security vulnerabilities,
-No more guessing nor remembering settings of zillion things.
+* No more accidential security vulnerabilities,
+* No network holes,
+* No hacked box,
+* No more guessing nor remembering settings of zillion things.
 
-Just read questions, be done, up and running.
+Just read the questions, be done; up and running.
