@@ -18,5 +18,6 @@ Just the way you want them.
 * No network holes,
 * No hacked box,
 * No more guessing nor remembering settings of zillion things.
+* often better than (or at a minimum equal to) CISecurity
 
 Just read and answer the questions, be done; up and running.
