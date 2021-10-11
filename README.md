@@ -2,7 +2,7 @@
 Scripts to easy system administration for white-lab managers, heavy-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
 Imagine that you installed a package using one of those distro package tool, they didnt 
-configure it right or it was at "basic settings".
+configure it right or it was just in barely usable "basic settings".
 
 Now we have these bash scripts, that takes you even further in customization.
 
