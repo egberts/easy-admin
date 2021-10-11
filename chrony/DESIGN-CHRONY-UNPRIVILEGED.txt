@@ -1,0 +1,197 @@
+With the latest advent of hacking NTP protocols, the effort should be underway with regard to graceful lockdown of ntp (not NTP, the alternative) administration efforts and their capability set.
+
+There are two basic issues with ntp admin:
+
+1.  Hackers are easily obtaining basic protocol info in which to mount their NTP skew and source-replacement attacks.
+
+2.  Attack remediation through leakage must be done.
+
+We need to drop down ntp admin privileges from revealing too much of protocol
+and infrastructure of time servers and their raw data.
+
+What are the unprivileged operation of Chrony?
+
+Basic premises:
+  - Provide reduced privilege for observers of security enforcement to examine
+  - Provide users with essential time-syncing data to do their job but NOT to alter the infrastructure.
+  - no _chrony group file are writable... this is important
+  - no _chrony group directory are writable
+  - And to leverage AppArmor (and UNIX file perms) to help with that.
+
+Yet, we already have a '_chrony' for an unprivileged user.
+  - underutilized
+  - But the 'chsh _chrony' is still at /usr/bin/nologin
+    - And rightfully so.
+    - If we cannot login as '_chrony' user, what good is '_chrony' username?
+      - if we can 'su _chrony', then we can make file CHANGES!!!
+        - But passwords are not allowed at _chrony user. (CIS?)
+      - if we can 'sudo -u _chrony /bin/bash', then we can make file CHANGES!!!
+        - group-authentication is now shifted to /etc/sudoer*
+          - Easily grouped with 'qa' or 'auditor' group.
+            - Not the best thing, but the next best thing.
+
+And as for  '_chrony' group being unprivileged.
+  - 'adduser <user> _chrony' is how to join this Chrony 'read-only' group
+
+  - That is most useful for QA or OSCAP (CIS Security) effort (where it 
+    is nearly all read-operation for their verification and validation 
+    of overall hardened effort.
+
+  - Admin of sudoers.conf can then add '_chrony' to their Group alias.
+
+  - Some files will never be viewable by QA/OSCAP (i.e., DNS private keys)
+    - Chrony NTP keys is one such example, not viewable by QA/OSCAP
+      - Use g-rxw fileperm on that 'keys' file
+        - They'll see be seeing 'authdata', 'serverstats' and 'ntpdata' instead
+
+  - 'newgrp _chrony', what is it good for?  Only good to bypass the
+    group-passwd mechanism (provided by gpasswd(8)).  Shifts onus of
+    a group protection to all users' effort by guarding their own 
+    user password.
+
+Ideal general ntp roles
+                      OPERATOR CHRONY CHRONY  
+                 ROOT  CRON    ADMIN  USER    NOBODY
+operations - client-tool
+IP, cmdAllowDeny acl    -       YES    -       -
+IP, allow-deny   acl    -       YES    -       -
+IP, cyclelogs     -    YES      YES    -       -
+IP, reload        -    YES      YES    -       -
+IP, online        -    YES      YES    -       -
+IP, onoffline     -    YES      YES    -       -
+IP, dump          -    YES      YES    -       -
+IP, shutdown      -    acl      YES    -       -
+IP, reselect      -    acl      YES    -       -
+IP, add/delete    -    acl      YES    -       -
+IP, local         -    acl      YES    -       -
+IP, smoothtime    -    acl      YES    -       -
+IP, rekey         -    acl      YES    -       -
+IP, refresh       -    acl      YES    -       -
+IP, makestep      -    acl      YES    -       -
+IP, maxupdateskew -    acl      YES    -       -
+IP, waitsync      -    acl      YES    -       -
+IP, manual        -    acl      YES    -       - 
+IP, maxdelay      -     -       YES    -       -
+IP, retries       -     -       YES    -       -
+IP, timeout       -     -       YES    -       -
+IP, settime       -     -       YES    -       -
+IP, polltarget    -     -       YES    -       -
+IP, minstratum    -     -       YES    -       -
+IP, minpoll       -     -       YES    -       -
+IP, maxpoll       -     -       YES    -       -
+IP, maxdelay      -     -       YES    -       -
+IP, maxdelayratio -     -       YES    -       -
+IP, maxdelaydevratio    -       YES    -       -
+
+                      OPERATOR CHRONY CHRONY  
+                 ROOT  CRON    ADMIN  USER    NOBODY
+monitoring - client-tool
+IP, activity     YES   YES      YES   acl      - 
+IP, clients      YES   YES      YES   acl      - 
+IP, sourcename   YES   YES      YES   acl      - 
+IP, accheck      YES   acl      YES   acl      - 
+IP, sources      YES   acl      YES   acl      - 
+IP, tracking     YES   acl      YES   acl      - 
+IP, manual list  YES   acl      YES   acl      - 
+
+statistics - client-tool
+IP, sourcesstat   -    YES      YES   YES      -
+IP, selectdata    -    YES      YES   YES      -
+IP, reselectdata  -    YES      YES   YES      -
+IP, authdata      -    YES      YES   YES      -
+IP, smoothing     -    YES      YES   YES      -
+
+                      OPERATOR CHRONY CHRONY  
+                 ROOT  CRON    ADMIN  USER    NOBODY
+client-tool
+UNIX-sock, read  YES   YES      YES   group    -
+UNIX-sock, modify -     -       YES   acl      -
+
+daemon-side
+logs, read       YES   YES      YES   YES      -
+logs, move       YES   YES      YES    -       -
+logs, create      -    YES      YES    -       -
+logs, delete      -    YES       -     -       -
+logs, change      -     -        -     -       -
+logs, append      -     -        -     -       -
+sources, read    YES    -       YES   YES      -
+sources, move    YES    -       YES    -       -
+sources, create   -     -       YES    -       -
+sources, delete   -     -       YES    -       -
+sources, change   -     -       YES    -       -
+sources, append  YES    -       YES    -       -
+config, read     YES    -       YES   YES      -
+config, move     YES    -       YES    -       -
+config, create    -     -       YES    -       -
+config, delete    -     -       YES    -       -
+config, change    -     -       YES    -       -
+config, append    -     -       YES    -       -
+                      OPERATOR CHRONY CHRONY  
+                 ROOT  CRON    ADMIN  USER    NOBODY
+keys, read       YES    -       YES    -       -
+keys, move       YES    -       YES    -       -
+keys, create      -     -       YES    -       -
+keys, delete      -     -       YES    -       -
+Keys, change      -     -       YES    -       -
+keys, append     YES    -       YES    -       -
+
+Control, start   YES   YES      YES   YES      -
+Control, restart YES   YES      YES   YES      -
+Control, stop    YES*  YES*     YES    -       -
+
+
+AppArmor file permissions (translated based on roles listed above):
+
+                                        |  User-selectable |
+                                        |ACL    default    |
+Account GID      root   _chrony _chrony/_chrony <GID>
+Account UID      root   root    _chrony|<UID>   <UID>
+                        CHRONY  CHRONY/              Ideal
+AppArmor PERMS   ROOT   ADMIN   USER |NOBODY ANYBODY Filesystem permissions
+executables             
+chronyd          rwxca  r.x..  .....* .....* r.x..*  0700 root:_chrony*
+chronyc .  .  .  rwxca  r.x..  ..x..* .....* r.x..*  0710 root:_chrony*
+
+operation
+/run/chrony/     rwxc-  r.x.-  r.x..  .....  r.x..   0750 _chrony:root
+chrony.pid . . . rw.ca  r....  .....  .....  r....   0640 root:root
+chrony.sock      rw.c-  rw...  rw..-  ....-  r...-   0660 _chrony:_chrony
+/var/log/chrony/ rwxc-  rwxc-  r....  .....  r.x.-   0750 _chrony:_chrony
+/var/lib/chrony/ rwxc-  r.x..  .....  .....  r.x.-   0750 _chrony:_chrony
+drift  . . . . . rw.ca  r....  .....  .....  r....   0600 _chrony:_chrony
+
+
+config
+/etc/chrony/ . . rwxc-  r.x..  .....  .....  .....   0640 _chrony:root
+chrony/conf.d/ . rwxc-  rwxc-  .....  .....  .....   0640 _chrony:root
+chrony.conf  . . rw.ca  rw.ca  .....  .....  .....   0640 _chrony:root
+
+keys
+chrony.keys  . . rw.ca  rw-ca  .....  .....  .....   0600 _chrony:root
+
+others (controlled by dhclient)
+run/chrony-dhcp/ r-x..  r.x..  .....  .....  .....   0750 root:_chrony+
+
+Legend
+------
+  * Debian/user control the fileperms
+  + can use _chrony:root if dhcp account has _chrony supplemental GID
+      plus dhclient-exit-hooks.d/chrony script does chown/chmod commands
+  - append is not applicable toward a directory or UNIX socket
+
+
+Package changes needed (circa Debian 11 Update+Security):
+
+chronyd          0755 root:root        -> 0750 _chrony:root
+chrony/conf.d    0755 root:root        -> 0750 _chrony:root
+chrony/sources.d 0755 root:root        -> 0750 _chrony:root
+chrony.keys      0640 root:root        -> 0600 _chrony:root
+run/chrony       0750 _chrony:_chrony  -> 0750 _chrony:root
+
+Code patches needed (low priority, protected by its directory)
+drift            0644 _chrony:_chrony  -> 0600 _chrony:_chrony
+
+Re-design needed:
+ - Need design clarification as to what Chrony client can do further to discriminate types of end-users (noticed, I did not mention user/group ID/name).
+
+

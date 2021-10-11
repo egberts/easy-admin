@@ -1,0 +1,15 @@
+
+
+'bindcmdaddress    = only default UNIX socket; clears IP ACL
+'bindcmdaddress /' = disables UNIX socket; IP ACL unchanged
+'bindcmdaddress 127.0.0.1' = adds IP ACL; UNIX socket unchanged
+'bindcmdaddress ::' = adds IP ACL; UNIX socket unchanged
+'bindcmdaddress /var/run/chrony/chrony.sock' = UNIX socket defined; IP ACL unchanged
+
+'bindcmdaddress    = only default UNIX socket; clears IP ACL
+
+
+Bug #8 - Cannot block 127.0.0.1 while allowing '::'
+         Cannot block '::' while allowing '127.0.0.1'
+
+Bug #9 - Combo UNIX-socket-with-group-suppl and 127.0.0.1 is false security
