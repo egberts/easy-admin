@@ -1,8 +1,7 @@
 # easy-admin
-Scripts for easy system administration that is targeting white-lab managers, bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
+These scripts are for easy system administration. Scripts that helps white-lab managers. Also bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
-Imagine that you installed a package using one of those distro package tools, they didn't 
-configure it right, or it was just barely usable at "basic settings".
+You installed a package using one of those distro package tools. They didn't configure your box correctly or it was barely usable at "basic settings".
 
 Now we have these bash scripts, that takes you even further in customization.
 
@@ -12,12 +11,12 @@ it asks you a few questions, warns you of bad choices,
 securely writes the configuration files, perfectly so,
 and starts your services...
 
-Just the way you want them.
+Only the way you dictate them.
 
 * No more accidental security vulnerabilities,
 * No network holes,
 * No hacked box,
 * No more guessing nor remembering settings of many unintelligible keywords.
-* often better than (or at a minimum equal to) CISecurity
+* often better than (or at a least equal to) CISecurity
 
-Just read and answer the questions; then be up and running.
+Read and answer the questions; then be up and running.
