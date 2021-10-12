@@ -22,7 +22,6 @@
 #   /etc/chrony/conf.d
 #
 
-SUDO_BIN=
 SYS_CONF_DIR="/etc"
 CHRONY_CONF_DIRNAME="$SYS_CONF_DIR/chrony"
 
@@ -41,35 +40,28 @@ SRC_DIRPATH="/etc/chrony/sources.d"
 SRC_SUFFIX="sources"
 CONF_FILE="$FILEPATH/$FILENAME"
 
-DATE="$(date)"
-
 ####################################################################
 # Defensive coding between NTP clients
 ####################################################################
 
-# check if 'ntp' user/group name exist, if not, use Debian's _chrony
-# Debian forces this to _chrony (via ./configure --with-user=_chrony)
-# Other distros reuse 'ntp'
-# Debian actually only lets you choose 'chrony' OR 'ntp' package but
-# cannot let you do both even though there are viable use cases to
-# use both (one external/one internal on border gateways)
-#
-# This scripts shall assumes any distro
-#
-NTP_USER_FOUND="$(grep -e '^ntp:' /etc/passwd | wc -l )"
-if [ "$NTP_USER_FOUND" -eq 1 ]; then
-  CHRONY_USER="ntp"
-  echo "Warning: most distros include NTP user/group for Chrony, except for Debian"
-else
-  CHRONY_USER="_chrony"
-  CHRONY_USER_FOUND="$(grep -e '^${CHRONY_USER}:' /etc/passwd | wc -l )"
-  if [ "$CHRONY_USER_FOUND" -eq 0 ]; then
-    echo "User _chrony not found in /etc/passwd. Aborted."
-    exit 9
-  fi
-fi
+# USERNAMES_LIST="_named bind9 bind named"  # new ISC Bind9
+# USERNAMES_LIST="_ntp ntp chrony"  # new NTP
+USERNAMES_LIST="_chrony chrony ntp"  # new Chrony
 
-exit 1
+for this_username in $USERNAMES_LIST; do
+  found_in_passwd="$(grep -e ^"${this_username}": /etc/passwd )"
+  if [ -n "$found_in_passwd" ]; then
+    CHRONY_USER="$(echo "$found_in_passwd" | awk -F: '{print $1}')"
+    CHRONY_GROUP="$(id -g -n "$CHRONY_USER")"
+    break;
+  fi
+done
+
+if [ -z "$CHRONY_USER" ]; then
+  echo "List of usernames not found: $USERNAMES_LIST"
+  exit 9
+fi
+echo "Username '$CHRONY_USER' found."
 
 ##############################################################
 # Chrony infrastructure
@@ -86,7 +78,7 @@ fi
 # that will contain the 'peer', 'server', and 'pool'.
 # We are only interested in the 'peer' part.
 SOURCEDIR_A=("$(grep sourcedir "$CONF_FILE" | awk '{print $2}')")
-if [ -z "${SOURCEDIR_A[@]}" ]; then
+if [ -z "${SOURCEDIR_A[*]}" ]; then
   echo "This is an old Chrony setup."
   echo "The configuration keyword 'sourcedir' is missing in $CONF_DIR."
   echo "Aborted."
@@ -96,9 +88,9 @@ fi
 # check if /etc/chrony/conf.d exist, if not, create them
 if [ ! -d "$CHRONY_CONFD_DIRNAME" ]; then
   echo "Creating $CHRONY_CONFD_DIRNAME..."
-  sudo mkdir $CHRONY_CONFD_DIRNAME
-  sudo chown $CHRONY_USER:$CHRONY_USER $CHRONY_CONFD_DIRNAME
-  sudo chmod 0750 $CHRONY_CONFD_DIRNAME # drop this to 0750 if ntp group-privilege is given to end-users.
+  sudo mkdir "$CHRONY_CONFD_DIRNAME"
+  sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONFD_DIRNAME"
+  sudo chmod 0750 "$CHRONY_CONFD_DIRNAME" # drop this to 0750 if ntp group-privilege is given to end-users.
 fi
 
 # get all config files, including drop-in config files.
@@ -138,9 +130,12 @@ MORE_CONF_FILES="$CONF_FILES"
 
 # Collect all existing 'server', 'peer', and 'pool' from /etc/chrony/chrony.conf
 # Skip the commented-out lines
-NTP_ADDR_POOL_A=($(egrep -e '^(\s*(~#)*\s*pool\s+)' $MORE_CONF_FILES| awk '{print $2}'))
-NTP_ADDR_SERVER_A=($(egrep -e '^(\s*(~#)*\s*server\s+)' $MORE_CONF_FILES| awk '{print $2}'))
-NTP_ADDR_PEER_A=($(egrep -e '^(\s*(~#)*\s*peer\s+)' $MORE_CONF_FILES| awk '{print $2}'))
+# shellcheck disable=SC2207
+NTP_ADDR_POOL_A=($(grep -E '^(\s*(~#)*\s*pool\s+)' "$MORE_CONF_FILES"| awk '{print $2}'))
+# shellcheck disable=SC2207
+NTP_ADDR_SERVER_A=($(grep -E '^(\s*(~#)*\s*server\s+)' "$MORE_CONF_FILES"| awk '{print $2}'))
+# shellcheck disable=SC2207
+NTP_ADDR_PEER_A=($(grep -E '^(\s*(~#)*\s*peer\s+)' "$MORE_CONF_FILES"| awk '{print $2}'))
 
 echo "Pool: ${NTP_ADDR_POOL_A[*]}"
 echo "Server: ${NTP_ADDR_SERVER_A[*]}"
@@ -151,20 +146,20 @@ function relocate_keyword
   KEYWORD=$1     # no-space text string
   NTP_ADDR_A=$2  # array
   NEW_FILE="$SRC_DIRPATH/debian-stock-${KEYWORD}.${SRC_SUFFIX}"    # filespec
-  if [ ! -z "${NTP_ADDR_A[*]}" ]; then
+  if [ -n "${NTP_ADDR_A[*]}" ]; then
     # create a new source file
     cat << NEW_CHRONY_D_FILE | sudo tee "${NEW_FILE}" >/dev/null
 #
-# File: $(basename $NEW_FILE)
-# Path: $(dirname $NEW_FILE)
+# File: $(basename "$NEW_FILE")
+# Path: $(dirname "$NEW_FILE")
 # Title: Chrony $KEYWORD source configuration file
-# Creator: $(realpath $0)
+# Creator: $(realpath "$0")
 # Date: $(date)
 #
 NEW_CHRONY_D_FILE
 
     # Write a keyword entry for each address in the array
-    for this_addr in ${NTP_ADDR_A[@]}; do
+    for this_addr in ${NTP_ADDR_A[*]}; do
       echo "${KEYWORD}  ${this_addr}" | sudo tee -a "${NEW_FILE}" >/dev/null
     done
     echo "" | sudo tee -a "${NEW_FILE}" >/dev/null
@@ -207,12 +202,13 @@ if [ -d "${DEBIAN_RUN_CHRONY_DHCP}" ]; then
   CHRONY_DHCP_LIST="$(/usr/bin/ls -1 -- $DEBIAN_RUN_CHRONY_DHCP/)"
   CHRONY_DHCP_COUNT="$(echo "$CHRONY_DHCP_LIST" | wc -l)"
   if [ "$CHRONY_DHCP_COUNT" -ge 1 ]; then
-    for f in "${DEBIAN_RUN_CHRONY_DHCP}/*"; do
-      IP_ADDR=$(cat $f | awk '{print $2}')
+    for f in "${DEBIAN_RUN_CHRONY_DHCP}"/*; do
+      # shellcheck disable=SC2002
+      IP_ADDR=$(cat "$f" | awk '{print $2}')
       NTP_SERVERS+="$NTP_SERVERS $IP_ADDR"
-      if [ ! -z "${IP_ADDR}" ]; then
+      if [ -n "${IP_ADDR}" ]; then
         echo "DHCP client is actively updating Chrony NTP with:"
-        echo "  ${NTP_SERVER[@]}"
+        echo "  ${NTP_SERVERS[*]}"
       fi
     done
   fi
@@ -221,9 +217,9 @@ else
   echo "   ${DEBIAN_RUN_CHRONY_DHCP} file from that /etc/dhcp/dhclient-exit.d/chrony "
   echo "   DHCP client dispatcher-script file."
 fi
-echo "Configured NTP addr peer:   ${NTP_ADDR_PEER_A[@]}"
-echo "Configured NTP addr pool:   ${NTP_ADDR_POOL_A[@]}"
-echo "Configured NTP addr server: ${NTP_ADDR_SERVER_A[@]}"
+echo "Configured NTP addr peer:   ${NTP_ADDR_PEER_A[*]}"
+echo "Configured NTP addr pool:   ${NTP_ADDR_POOL_A[*]}"
+echo "Configured NTP addr server: ${NTP_ADDR_SERVER_A[*]}"
 echo "DHCP-supplied NTP address:  : $NTP_SERVERS"
 
 
@@ -259,8 +255,8 @@ FILEPATH="$CHRONY_CONFD_DIRNAME"
 NEW_FILE="$FILEPATH/$FILENAME"
 cat << DROPIN_NTP_CLIENT_ALLOWED_CONF | sudo tee "${NEW_FILE}" >/dev/null
 #
-# File: $(basename $NEW_FILE)
-# Path: $(dirname $NEW_FILE)
+# File: $(basename "$NEW_FILE")
+# Path: $(dirname "$NEW_FILE")
 # Title: Deny all remote 'chronyc' access to this host
 # Description:
 #   Restrict the access to Chrony CLI to 'cmddeny all' (or nobody).
@@ -268,7 +264,7 @@ cat << DROPIN_NTP_CLIENT_ALLOWED_CONF | sudo tee "${NEW_FILE}" >/dev/null
 #   NOTE: time-serving are controlled by 'deny'/'allow' directives.
 #   NOTE: command-CLI are controlled by 'cmddeny'/'cmdallow' directives.
 #
-# Creator: $(realpath $0)
+# Creator: $(realpath "$0")
 # Date: $(date)
 #
 cmddeny all
