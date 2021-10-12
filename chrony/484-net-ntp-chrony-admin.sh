@@ -54,55 +54,99 @@ fi
 echo "Username '$USERNAME' found."
 GROUPNAME="$USERNAME"
 
-# configure/autogen/autoreconf -----------------------------------
+# shellcheck disable=SC2034
+package_tarname="chrony"
+
+# configure/autogen/autoreconf -------------------------------------
+# most configurable variables used here are found in
+# configure/autogen/autoconf but are capitalized for readablity here
+#
 # maintainer default (Chrony)
-PREFIX=/usr
-if [ "$PREFIX" == "/usr" ]; then
-  DEFAULT_SYSCONFDIR="/etc"
-  if [ "$(lsb_release -i|awk -F: '{print $2}'|xargs)" == "Debian" ]; then
-    DEFAULT_LOCALSTATEDIR="/"  # or /usr/local/var
-  else
-    DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
-  fi
+#   prefix=/usr/local
+#   libexecdir=$prefix/libexec
+#   datarootdir=$prefix/share
+#   sysconfdir=$prefix/etc
+#   localstatedir=$prefix/var
+#   libdir=$exec_prefix/lib
+#   bindir=$exec_prefix/bin
+#   sbindir=$exec_prefix/sbin
+#   datadir=$datarootdir
+
+# Debian maintainer however applies this:
+#   libdir=/usr/lib
+#   SYSROOT=/
+#   libexecdir=/usr/lib
+
+# All we are really concern about are:
+#   prefix/prefix
+#   sysconfdir/sysconfdir
+#   localstatedir/localstatedir
+
+DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
+if [ "$DISTRO_MANUF" == "Debian" ]; then
+  DEFAULT_prefix=""  # '/'
+  DEFAULT_exec_prefix="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR=""  # '/'
+  EXTENDED_sysconfdir_DIRNAME="chrony"
+elif [ "$DISTRO_MANUF" == "Redhat" ]; then
+  DEFAULT_prefix=""  # '/'
+  DEFAULT_exec_prefix="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR="/var"
+  EXTENDED_sysconfdir_DIRNAME="chrony"  # change this often
 else
-  DEFAULT_SYSCONFDIR="$PREFIX/etc"
-  DEFAULT_LOCALSTATEDIR="$PREFIX"
+  DEFAULT_prefix="/usr"
+  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
+  EXTENDED_sysconfdir_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
 fi
-SYSCONFDIR=${SYSCONFDIR:-$DEFAULT_SYSCONFDIR}
-LOCALSTATEDIR=${LOCALSTATEDIR:-$DEFAULT_LOCALSTATEDIR}
-EXEC_PREFIX=${EXEC_PREFIX:-$PREFIX}
-DATAROOTDIR=${DATAROOTDIR:-$PREFIX/share}
-LIBDIR=${LIBDIR:-$EXEC_PREFIX/lib}
-LIBEXECDIR=${LIBEXECDIR:-$EXEC_PREFIX/libexec}
-DATADIR=${DATAROOTDIR:-$DATAROOTDIR}
+prefix="${prefix:-$DEFAULT_prefix}"
+sysconfdir="${sysconfdir:-$prefix/etc}"
+exec_prefix="${exec_prefix:-${DEFAULT_exec_prefix:-${prefix}}}"
+libdir="${libdir:-$exec_prefix/lib}"
+libexecdir=${libexecdir:-$exec_prefix/libexec}
+localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
+# datarootdir=${datarootdir:-$prefix/share}
+# sharedstatedir=${prefix:-${prefix}/com}
+# bindir="$exec_prefix/bin"
+### runstatedir="$(realpath -m "$localstatedir/run")"
+runstatedir="$localstatedir/run"
+# sbindir="$exec_prefix/sbin"
 
+# bind9 maintainer tweaks
+expanded_sysconfdir="${sysconfdir}/${EXTENDED_sysconfdir_DIRNAME}"
 
-RUNDIR="$(realpath -m "$LOCALSTATEDIR/run")"
+# Useful directories that autoconf/configure/autoreconf does not offer.
+VARDIR="$prefix/var"
+STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
+# LOG_DIR="$VARDIR/log"  # /var/log
 
-PKG_SYSCONFDIR="$SYSCONFDIR/pkg-name"
-PKG_RUNDIR="$RUNDIR/pkg-name"
+# DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
+# DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
+DEFAULT_CHRONY_SOCK_FILENAME="chrony.sock"
+
+CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
+# CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
+
+CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
+# CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
+# CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
+# CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
+# CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
+CHRONY_SOCK_FILESPEC="$CHRONY_RUN_DIR/$DEFAULT_CHRONY_SOCK_FILENAME"
 
 echo "final configure/autogen/autoreconf settings:"
-echo "  PREFIX:        $PREFIX"
-echo "  SYSCONFDIR:    $SYSCONFDIR"
-echo "  LOCALSTATEDIR: $LOCALSTATEDIR"
-echo "  RUNDIR: $RUNDIR"
-
-
-SYSCONFDIR="$(realpath -m "${BUILDROOT}/etc")"
-
-CHRONY_ETC_DIR="$SYSCONFDIR/chrony"  # goes into config files as-is, BUILDROOT or not
-CHRONY_RUN_DIR="$RUNDIR/chrony"
-
+echo "  prefix:        $prefix"
+echo "  sysconfdir:    $sysconfdir"
+echo "  LOCALSTATEDIR: $localstatedir"
+echo "  RUNDIR: $RUNDIR or $runstatedir"
+#
 ANNOTATE=${ANNOTATE:-y}
-DEFAULT_SOCK_FILENAME="chrony.sock"
 DEFAULT_CMD_PORT=323
 
-
-
-DROP_IN_CONF_DIR="$CHRONY_ETC_DIR/conf.d"
-
-CHRONY_SOCK_FILESPEC="$CHRONY_RUN_DIR/$DEFAULT_SOCK_FILENAME"
+CHRONYD_BIN="$(whereis -b chronyd | awk '{print $2}')"
+if [ -z "$CHRONYD_BIN" ]; then
+  echo "$CHRONYD_BIN is not found; aborted."
+  exit 1
+fi
 
 HAVE_IPV4=${HAVE_IPV4:-1}
 # Verify IPv6 presence
@@ -502,14 +546,15 @@ if [ "$NEED_CMD_ACL_NET_LOOPBACK" -ge 1 ] || { \
   OPT_BINDCMDADDRESS_NETDEV=
   if [ "$NEED_CMD_ACL_NET_REMOTE" -ge 1 ]; then
     read -rp "Listen to all interfaces? (Y/n): " -eiY
-    REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+    REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
     if [ "$REPLY" != 'y' ]; then
       # find interface of default route
       echo ""
-      read -rp "Which interface to bind to for NTP commands?: " -ei $ROUTE_INTF
+      read -rp "Which interface to bind to for NTP commands?: " -ei"$ROUTE_INTF"
       OPT_BINDCMDADDRESS_NETDEV="$REPLY"
     fi
   elif [ "$NEED_CMD_ACL_NET_LOOPBACK" -ge 1 ]; then
+    # shellcheck disable=SC2034
     OPT_BINDCMDADDRESS_NETDEV=lo
   fi
 fi
@@ -598,7 +643,7 @@ fi
 #################################################
 
 FILENAME="$DROP_IN_CONF_FILENAME"
-FILEPATH="$DROP_IN_CONF_DIR"
+FILEPATH="$CHRONY_CONFD_DIR"
 FILESPEC="$FILEPATH/$FILENAME"
 
 echo ""
@@ -679,9 +724,11 @@ if [ -n "$NEED_CMD_ACL_NET_REMOTE" ] || \
       [ "$HAVE_IPV6" -ge 1 ] && CMDDENY_LOOPBACK_LIST="$CMDDENY_LOOPBACK_LIST ::1"
       write_conf "bindcmdaddress 0.0.0.0"  # we think this means ANY
       write_note ""
+    # shellcheck disable=SC2034
       CMDALLOW_ALL=1
     else
       echo "...also remote port is closed as well.  No network support here."
+    # shellcheck disable=SC2034
       CMDDENY_ALL=1
     fi  # HAVE_CMD_ACL_NET_REMOTE
   fi  # HAVE_CMD_ACL_NET_LOOPBACK
@@ -715,18 +762,18 @@ fi
 echo ""
 echo "Verifying syntax of Chrony config files..."
 # Verify the configuration files to be correct, syntax-wise.
-chronyd -p -f "$FILESPEC" >/dev/null 2>&1
+$CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # do it again but verbosely
-  chronyd -p -f "$FILESPEC"
+  $CHRONYD_BIN -p -f "$FILESPEC"
   echo "ERROR: $FILESPEC failed syntax check."
   exit 13
 fi
 echo "$FILESPEC passes syntax-check"
 
 echo "Reloading config file in chronyd daemon..."
-chronyc reload sources
+chronyc reload sources >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   systemctl --quiet is-enabled chrony.service
