@@ -11,10 +11,11 @@
 #     - Moved 'pool' into a drop-in config file
 #     - Moved hwclk settings into a drop-inconfig file
 #
-# Reads:
-# Changes:
+# Reads: nothing
+# Changes: nothing
 # Adds:
 #    /etc/chrony/chrony.conf
+#    /var/lib/chrony/chrony.drift
 #
 #
 # Numerous Debian bugs against chrony 4.0 (all filed by me).
@@ -34,61 +35,142 @@
 SUDO_BIN=
 ANNOTATION=${ANNOTATION:-y}
 
+# shellcheck disable=SC2034
+package_tarname="chrony"
 
+BUILDROOT="/"
 
-SYSCONFDIR="/etc"
-VARDIR="/var"
+ARG1_CHRONY_CONF=${1}
 
+# configure/autogen/autoreconf -------------------------------------
+# most configurable variables used here are found in
+# configure/autogen/autoconf but are capitalized for readablity here
+#
+# maintainer default (Chrony)
+#   prefix=/usr/local
+#   libexecdir=$prefix/libexec
+#   datarootdir=$prefix/share
+#   sysconfdir=$prefix/etc
+#   localstatedir=$prefix/var
+#   libdir=$exec_prefix/lib
+#   bindir=$exec_prefix/bin
+#   sbindir=$exec_prefix/sbin
+#   datadir=$datarootdir
 
-VAR_LOG_DIR="/var/log"
-VAR_LIB_DIR="/var/lib"
-VAR_RUN_DIR="/run"
+# Debian maintainer however applies this:
+#   libdir=/usr/lib
+#   SYSROOT=/
+#   libexecdir=/usr/lib
 
-CHRONY_SYSCONFDIR="$SYSCONFDIR/chrony"
-CHRONY_VAR_LIB_DIR="$VAR_LIB_DIR/chrony"
-CHRONY_LOG_DIR="$VAR_LOG_DIR/chrony"
-CHRONY_RUN_DIR="$VAR_RUN_DIR/chrony"
+# All we are really concern about are:
+#   prefix/prefix
+#   sysconfdir/sysconfdir
+#   localstatedir/localstatedir
 
-CHRONY_CONFD_DIR="$CHRONY_SYSCONFDIR/conf.d"
-CHRONY_DRIFT_FILENAME="chrony.drift"
-CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$CHRONY_DRIFT_FILENAME"
+DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
+if [ "$DISTRO_MANUF" == "Debian" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR=""  # '/'
+  EXTENDED_SYSCONFDIR_DIRNAME="chrony"
+elif [ "$DISTRO_MANUF" == "Redhat" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR="/var"
+  EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
+else
+  DEFAULT_PREFIX="/usr"
+  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
+  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
+fi
+prefix="${prefix:-$DEFAULT_PREFIX}"
+sysconfdir="${sysconfdir:-$prefix/etc}"
+exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
+libdir="${libdir:-$exec_prefix/lib}"
+libexecdir=${libexecdir:-$exec_prefix/libexec}
+localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
+datarootdir=${datarootdir:-$prefix/share}
+# sharedstatedir=${prefix:-${prefix}/com}
+# bindir="$exec_prefix/bin"
+### runstatedir="$(realpath -m "$localstatedir/run")"
+runstatedir="$localstatedir/run"
+# sbindir="$exec_prefix/sbin"
 
+# bind9 maintainer tweaks
+expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
+
+# Useful directories that autoconf/configure/autoreconf does not offer.
+VARDIR="$prefix/var"
+STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
+# LOG_DIR="$VARDIR/log"  # /var/log
+
+# application specific
 DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
+DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
+CHRONY_DRIFT_FILENAME="$DEFAULT_CHRONY_DRIFT_FILENAME"
+
+# CHRONY_ETC_DIR="$expanded_sysconfdir/chrony"
+# CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
+CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
+CHRONY_DUMP_DIRPATH="$CHRONY_VAR_LIB_DIR"
+
+# CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
+CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
+# CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
+CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$CHRONY_DRIFT_FILENAME"
+CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
+
+# User supplied chrony.conf variants (offline testing)
+if [ -n "$ARG1_CHRONY_CONF" ]; then
+  REAL_CONF="$ARG1_CHRONY_CONF"
+  CONF_FILENAME="$(basename "$REAL_CONF")"
+  CONF_PATHNAME="$(dirname "$REAL_CONF")"
+else
+  CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
+  CONF_PATHNAME="$expanded_sysconfdir"
+fi
+CONF_FILESPEC="$(realpath -m "${BUILDROOT}$CONF_PATHNAME/$CONF_FILENAME")"
+
+# /run/chrony-dhcp/* is populated by /etc/dhcp/dhclient-exit-hooks.d/chrony
+# script and executed by 'dhclient' daemon.
+DHCP_CHRONY_PATHNAME="$runstatedir/chrony-dhcp/"
+
+# CHRONY_LOG_DIR="$VAR_LOG_DIR/chrony"
+# CHRONY_RUN_DIR="$VAR_RUN_DIR/chrony"
+
+# CHRONY_CONFD_DIR="$CHRONY_ETC_DIR/conf.d"  # deferred to other scripts
 
 # minimum default settings of /etc/chrony/chrony.conf
-FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
-FILEPATH="$CHRONY_SYSCONFDIR"
-FILESPEC="$FILEPATH/$FILENAME"
 
-if [ ! -e "$FILESPEC" ]; then
-  echo "File $FILESPEC does not exist; Aborted."
+if [ ! -e "$CONF_FILESPEC" ]; then
+  echo "File $CONF_FILESPEC does not exist; Aborted."
   exit 9
-elif [ ! -f "$FILESPEC" ]; then
-  echo "File $FILESPEC is not a file; Aborted."
+elif [ ! -f "$CONF_FILESPEC" ]; then
+  echo "File $CONF_FILESPEC is not a file; Aborted."
   exit 9
-elif [ ! -r "$FILESPEC" ]; then
-  echo "File $FILESPEC is not readable; Aborted."
+elif [ ! -r "$CONF_FILESPEC" ]; then
+  echo "File $CONF_FILESPEC is not readable; Aborted."
   exit 9
 else
-  read -rp "File $FILESPEC exists; over-write it? [N/y]: " -eiN
-  REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  read -rp "File $CONF_FILESPEC exists; over-write it? [N/y]: " -eiN
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ "$REPLY" != "y" ]; then
     echo "Aborted."
     exit 1
   fi
 fi
-if [ ! -w $FILESPEC ]; then
-  read -rp "File $FILESPEC is not writeable; use 'sudo' command? [N/y]: " -eiN
-  REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+if [ ! -w "$CONF_FILESPEC" ]; then
+  read -rp "File $CONF_FILESPEC is not writeable; use 'sudo' command? [N/y]: " -eiN
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ "$REPLY" != "y" ]; then
     echo "Aborted."
     exit 1
   fi
-  echo "Continuing on with over-writing $FILESPEC..."
+  echo "Continuing on with over-writing $CONF_FILESPEC..."
   SUDO_BIN=sudo
 fi
 
-# Syntax: create_file FILESPEC [file-permission [owner:group]]
+# Syntax: create_file CONF_FILESPEC [file-permission [owner:group]]
 function create_file
 {
   $SUDO_BIN touch "$1"
@@ -111,8 +193,8 @@ function create_file
   fi
   cat << CREATE_FILE_EOF | $SUDO_BIN tee "$1" >/dev/null
 #
-# File: $(basename $1)
-# Path: $(dirname $1)
+# File: $(basename "$1")
+# Path: $(dirname "$1")
 CREATE_FILE_EOF
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
@@ -123,9 +205,9 @@ CREATE_FILE_EOF
 
 function add_file_headers
 {
-  cat << CREATE_FILE_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << CREATE_FILE_EOF | $SUDO_BIN tee -a "$CONF_FILESPEC" >/dev/null
 # Title: $1
-# Creator: $(basename $0)
+# Creator: $(basename "$0")
 # Date: $(date)
 # Description:
 #
@@ -134,20 +216,20 @@ CREATE_FILE_EOF
 
 function write_conf
 {
-  $SUDO_BIN echo "$1" >> "$FILESPEC"
+  $SUDO_BIN echo "$1" >> "$CONF_FILESPEC"
 }
 
 function write_note
 {
   if [ "$ANNOTATION" = 'y' ]; then
-    $SUDO_BIN echo "$1" >> "$FILESPEC"
+    $SUDO_BIN echo "$1" >> "$CONF_FILESPEC"
   fi
 }
 
 function dump_chrony_conf_current_settings
 {
   echo "HAVE_RTC_DEVICE: $HAVE_RTC_DEVICE"
-  echo "CMD_ACL_NEEDED: $CMD_ACL_NEEDED"
+  # echo "CMD_ACL_NEEDED: $CMD_ACL_NEEDED"
   idx=0
   while [ $idx -lt ${#CHRONY_CONF_A[@]} ]; do
     echo "CHRONY_CONF_A[$idx]: ${CHRONY_CONF_A[$idx]}"
@@ -195,8 +277,8 @@ function annotate
   fi
 }
 
-echo "Writing $FILESPEC config file..."
-create_file "$FILESPEC" 0640 "${CHRONY_USERNAME}:${CHRONY_GROUPNAME}"
+echo "Writing $CONF_FILESPEC config file..."
+create_file "$CONF_FILESPEC" 0640 "${CHRONY_USERNAME}:${CHRONY_GROUPNAME}"
 add_file_headers "Configuration file for Chrony NTP daemon"
 
 # DHCP-CHRONY is provided by 'chrony' package
@@ -208,17 +290,17 @@ if [ -f "$DHCP_CHRONY_SCRIPT" ]; then
   write_note ""
   write_note "# pool pool.ntp.org goes into a separate sourcedir directory."
   write_note "# Use the time source(s) from DHCP"
-  write_conf "sourcedir /run/chrony-dhcp"
+  write_conf "sourcedir ${DHCP_CHRONY_PATHNAME}"
 fi
 
 write_note ""
 write_note "# Use NTP sources found in the /etc/chrony/sources.d subdirectory."
-write_conf "sourcedir /etc/chrony/sources.d"
+write_conf "sourcedir ${CHRONY_SOURCESD_DIR}"
 
 write_note ""
 write_note "# This driftfile directive specify the location of the file that "
 write_note "# contains ID/key-pair used for NTP authentication."
-write_conf "keyfile /etc/chrony/chrony.keys"
+write_conf "keyfile ${CHRONY_KEYS_FILESPEC}"
 
 write_note ""
 write_note "# This driftfile directive specify the file into which chronyd"
@@ -227,7 +309,7 @@ write_conf "driftfile ${CHRONY_DRIFT_FILESPEC}"
 
 write_note ""
 write_note "# Save NTS keys and cookies."
-write_conf "ntsdumpdir /var/lib/chrony"
+write_conf "ntsdumpdir ${CHRONY_DUMP_DIRPATH}"
 
 write_note ""
 write_note "# Log files location."
@@ -267,22 +349,22 @@ $SUDO_BIN chmod 0600 "$CHRONY_DRIFT_FILESPEC"
 $SUDO_BIN chown "$USERNAME":"$GROUPNAME" "$CHRONY_DRIFT_FILESPEC"
 
 
-CMD_NET_ACL_NEEDED=0
+# CMD_NET_ACL_NEEDED=0
 
 #
 
 # Verify the configuration files to be correct, syntax-wise.
 echo ""
-echo "Checking syntax of $FILESPEC config file..."
-chronyd -p -f $FILESPEC >/dev/null 2>&1
+echo "Checking syntax of $CONF_FILESPEC config file..."
+chronyd -p -f "$CONF_FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # Re-run but verbosely
-  chronyd -p -f $FILESPEC
-  echo "ERROR: $FILESPEC failed syntax check."
+  chronyd -p -f "$CONF_FILESPEC"
+  echo "ERROR: $CONF_FILESPEC failed syntax check."
   exit 13
 fi
-echo "$FILESPEC passes syntax-check"
+echo "$CONF_FILESPEC passes syntax-check"
 
 # Objective is to 'enable' chrony service
 # and only restart or try-restart the service
