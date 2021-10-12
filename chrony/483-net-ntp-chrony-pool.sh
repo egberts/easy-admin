@@ -34,6 +34,9 @@
 #   util-linux (whereis)
 #   coreutils (basename, cat, chmod, chown, date, touch)
 
+# shellcheck disable=SC2034
+package_tarname="chrony"
+
 BINDROOT=${BINDROOT:-/}
 SUDO_BIN=
 
@@ -42,36 +45,106 @@ IBURST_MAX_HOPS_CUTOFF=3  # try to stay within local/home LAN
 DEFAULT_NTP_SERVER="pool.ntp.org"
 
 
-PREFIX=${PREFIX:-/usr}  # or /usr/local
-if [ "$PREFIX" == "/usr" ]; then
-  SYSCONFDIR="/etc"
-  if [ "$(lsb_release -i|awk -F: '{print $2}'|xargs)" == "Debian" ]; then
-    LOCALSTATEDIR="/"  # or /usr/local/var
-  else
-    LOCALSTATEDIR="/var"  # or /usr/local/var
-  fi
+
+######################################
+BUILDROOT="/"
+
+ARG1_CHRONY_CONF=${1}
+
+# configure/autogen/autoreconf -------------------------------------
+# most configurable variables used here are found in
+# configure/autogen/autoconf but are capitalized for readablity here
+#
+# maintainer default (Chrony)
+#   prefix=/usr/local
+#   libexecdir=$prefix/libexec
+#   datarootdir=$prefix/share
+#   sysconfdir=$prefix/etc
+#   localstatedir=$prefix/var
+#   libdir=$exec_prefix/lib
+#   bindir=$exec_prefix/bin
+#   sbindir=$exec_prefix/sbin
+#   datadir=$datarootdir
+
+# Debian maintainer however applies this:
+#   libdir=/usr/lib
+#   SYSROOT=/
+#   libexecdir=/usr/lib
+
+# All we are really concern about are:
+#   prefix/prefix
+#   sysconfdir/sysconfdir
+#   localstatedir/localstatedir
+
+DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
+if [ "$DISTRO_MANUF" == "Debian" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR=""  # '/'
+  EXTENDED_SYSCONFDIR_DIRNAME="bind"
+elif [ "$DISTRO_MANUF" == "Redhat" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR="/var"
+  EXTENDED_SYSCONFDIR_DIRNAME="named"  # change this often
 else
-  SYSCONFDIR="$PREFIX/etc"
-  LOCALSTATEDIR="$PREFIX/var"
+  DEFAULT_PREFIX="/usr"
+  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
+  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
 fi
-RUNDIR="$LOCALSTATEDIR/run"
-# CHRONY_DHCP_DIRNAME="chrony-dhcp"
-# CHRONY_DHCP_DIR="$RUNDIR/$CHRONY_DHCP_DIRNAME"
+prefix="${prefix:-$DEFAULT_PREFIX}"
+sysconfdir="${sysconfdir:-$prefix/etc}"
+exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
+libdir="${libdir:-$exec_prefix/lib}"
+libexecdir=${libexecdir:-$exec_prefix/libexec}
+localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
+datarootdir=${datarootdir:-$prefix/share}
+sharedstatedir=${prefix:-${prefix}/com}
+bindir="$exec_prefix/bin"
+### runstatedir="$(realpath -m "$localstatedir/run")"
+runstatedir="$localstatedir/run"
+sbindir="$exec_prefix/sbin"
 
-# ISC_DHCP_CONF_DIR="$SYSCONFDIR/dhcp"
-# DHCLIENT_EXIT_HOOK_DIR="$ISC_DHCP_CONF_DIR/dhclient-exit-hooks.d"
-# DHCLIENT_EXIT_HOOK_CHRONY_FILENAME="chrony"
-# CHRONY_CONF_DIR="$SYSCONFDIR/chrony"
+# bind9 maintainer tweaks
+expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
 
-CHRONY_CONF_DIR="$SYSCONFDIR/chrony"
-CHRONY_RUN_DIR="$RUNDIR/chrony"
 
-# but... bug #995190
+# Useful directories that autoconf/configure/autoreconf does not offer.
+VARDIR="$prefix/var"
+STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
+LOG_DIR="$VARDIR/log"  # /var/log
+
 DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
-CHRONY_CONF_DROPIN_DIR="$CHRONY_CONF_DIR/sources.d"
-CHRONY_DHCP_RUN_DIR="$CHRONY_RUN_DIR/chrony-dhcp"
+DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
 
-CONF_FILESPEC="$BINDROOT$CHRONY_CONF_DIR/$DEFAULT_CHRONY_CONF_FILENAME"
+CHRONY_CONF_DIR="$expanded_sysconfdir"
+CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
+
+CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
+CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
+
+CHRONY_SOURCESD_DIR="$CHRONY_CONF_DIR/sources.d"
+CHRONY_CONFD_DIR="$CHRONY_CONF_DIR/conf.d"  # /etc/chrony/conf.d
+CHRONY_KEYS_FILESPEC="$CHRONY_CONF_DIR/chrony.keys"
+
+CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
+
+# User supplied chrony.conf variants (offline testing)
+if [ -n "$ARG1_CHRONY_CONF" ]; then
+  REAL_CONF="$ARG1_CHRONY_CONF"
+  CONF_FILENAME="$(basename "$REAL_CONF")"
+  CONF_PATHNAME="$(dirname "$REAL_CONF")"
+else
+  CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
+  CONF_PATHNAME="$expanded_sysconfdir"
+fi
+CONF_FILESPEC="$(realpath -m "${BUILDROOT}$CONF_PATHNAME/$CONF_FILENAME")"
+
+# /run/chrony-dhcp/* is populated by /etc/dhcp/dhclient-exit-hooks.d/chrony
+# script and executed by 'dhclient' daemon.
+DHCP_CHRONY_PATHNAME="$runstatedir/chrony-dhcp/"
+
+
 
 if [ ! -e "$CONF_FILESPEC" ]; then
   echo "$CONF_FILESPEC does not exist; aborted."
@@ -99,7 +172,7 @@ if [ -z "${#SOURCEDIR_RESULT[@]}" ]; then
   echo "Aborted."
   exit 9
 else
-  for $this_srcdir in ${SOURCEDIR_A[@]}; do
+  for this_srcdir in ${SOURCEDIR_A[*]}; do
     if [ ! -d "$this_srcdir" ]; then
       echo "$this_srcdir is not a directory; Aborted."
       exit 10
@@ -514,7 +587,7 @@ CHRONY_DHCP_NTP_LIST_COUNT=0
 echo ""
 echo "Checking if Chrony already got the NTP servers given out by a DHCP server"
 FILENAME="*.sources"
-FILEPATH="$LOCALSTATEDIR/run/chrony-dhcp"
+FILEPATH="$localstatedir/run/chrony-dhcp"
 FILESPEC="$FILEPATH/$FILENAME"
 # Wildcard subdirectory
 # shellcheck disable=SC2086 disable=SC2012
@@ -543,7 +616,7 @@ NTPD_DHCP_NTP_LIST=
 echo ""
 echo "Checking if NTPD already got the NTP servers given out by a DHCP server"
 FILENAME="ntp.conf.dhcp"
-FILEPATH="$LOCALSTATEDIR/run"
+FILEPATH="$localstatedir/run"
 FILESPEC="$FILEPATH/$FILENAME"
 if [ -e "$FILESPEC" ]; then
   NTP_LIST=$(grep -E '^(\s*(~#)*\s*server\s+)' "$FILESPEC"| awk '{print $2}' | sort -u | xargs)
@@ -632,7 +705,7 @@ NTP_SERVERS_LIST_COUNT=0
 NTP_SERVERS_LIST="$NTP_SERVERS_LIST $NTP_SERVERS_LIST_EXTERNAL"
 NTP_SERVERS_LIST="$NTP_SERVERS_LIST $NTP_SERVERS_LIST_INTERNAL"
 NTP_SERVERS_LIST="$NTP_SERVERS_LIST $DHCP_NTP_LIST"
-NTP_SERVERS_LIST="$(echo $NTP_SERVERS_LIST | xargs -n1 | sort -u | xargs)"
+NTP_SERVERS_LIST="$(echo "$NTP_SERVERS_LIST" | xargs -n1 | sort -u | xargs)"
 NTP_SERVERS_LIST_COUNT="$(echo "$NTP_SERVERS_LIST" | wc -w)"
 
 
@@ -691,7 +764,7 @@ echo "NTP server count: $NTP_SERVERS_LIST_COUNT"
 # Ask for ISO Country code for pool settings?  i.e., US.pool.ntp.org
 
 FILENAME="ntp_pools.sources"
-FILEPATH="$CHRONY_CONF_DROPIN_DIR"
+FILEPATH="$CHRONY_SOURCESD_DIR"
 FILESPEC="$(realpath "$BINDROOT$FILEPATH/$FILENAME")"
 
 create_file "$FILESPEC" 0640 _chrony:_chrony
@@ -743,7 +816,8 @@ for this_ntp in $NTP_SERVERS_LIST; do
   hops_away=1  # start at hop #1
   while [ "$hops_away" -lt 8 ]; do
     /bin/ping -W3 -c1 -t $hops_away "$this_ntp"
-    if [ $? -eq 0 ]; then
+    retsts=$?
+    if [ $retsts -eq 0 ]; then
       break
     fi
     ((hops_away+=1))
@@ -766,10 +840,8 @@ done
 
 echo ""
 echo "Look at your new configuration file at $FILESPEC:"
-cat $FILESPEC
+cat "$FILESPEC"
 echo ""
-echo "All done."
-
 
 
 # Are all your local LAN clients using these servers?
@@ -790,33 +862,45 @@ echo "All done."
 
 
 # Verify the configuration files to be correct, syntax-wise.
-chronyd -p -f $FILESPEC
+chronyd -p -f "$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
+  # rerun it but with verbosity
+  chronyd -p -f "$FILESPEC"
   echo "ERROR: $FILESPEC failed syntax check."
   exit 13
 fi
 echo "$FILESPEC passes syntax-check"
 
-echo "Reloading config file in chronyd daemon..."
-chronyc reload sources
+# Objective is to 'enable' chrony service
+# and only restart or try-restart the service
+# It is not intended to start anything
+# Just reload any active Chrony daemon
+# That's the operator's job.
+#
+# If it was stopped, it stays stopped
+# If it was started, it gets restarted/reloaded
+systemctl --quiet is-enabled chrony.service
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
-  systemctl --quiet is-enabled chrony.service
-  retsts=$?
-  if [ "$retsts" -ne 0 ]; then
-    systemctl enable chrony.service
-  fi
-  systemctl --quiet is-active chrony.service
-  retsts=$?
-  if [ "$retsts" -ne 0 ]; then
-    systemctl try-reload-or-restart chrony.service
-  else
-    systemctl start chrony.service
-  fi
+  echo "Enabling Chrony service..."
+  systemctl enable chrony.service
 fi
-echo "Done."
-exit 0
 
-echo "Done."
-exit 0
+echo ""
+systemctl --quiet is-active chrony.service
+retsts=$?
+if [ "$retsts" -ne 0 ]; then
+  echo "Trying to reload or restart Chrony service..."
+  systemctl try-reload-or-restart chrony.service
+  echo "WARNING: You may have to start it yourself."
+  echo "Chrony daemon status: $(systemctl is-active chrony.service)"
+  exit $?  # pass-along 'is-active' errcode
+else
+  echo "Restarting Chrony service..."
+  systemctl restart chrony.service
+fi
+echo "Chrony daemon status: $(systemctl is-active chrony.service): Done."
+exit $?  # pass-along 'is-active' errcode
+
+
