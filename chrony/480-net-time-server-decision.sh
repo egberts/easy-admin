@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # File: 480-net-time-server-selecting.sh
 # Title: Selecting the right time server
 # Description:
@@ -131,9 +131,8 @@
 # Determine what we have in this machine
 # Determine if we have any PTP-related devices
 
+# shellcheck disable=SC2012
 HAVE_PTP_DEVICE="$(ls -1 /dev/ptp* 2>/dev/null | wc -l )"
-HAVE_HMAC=y  # nearly all NTP server/client have HMAC of MD5.
-
 
 
 # TODO: Need to execute ethtool on every 'ip link list' to count each device's
@@ -153,7 +152,7 @@ if [ "$HAVE_PTP_DEVICE" -ne 1 ]; then
   echo "Ultra-high precision is useful for partical physic, "
   echo "high-speed financial trading, and hyper-implosion computing."
   read -rp "Need precision time syncing to sub-micro second range? (N/y): " -eiN
-  REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ "$REPLY" = 'y' ]; then
     NEED_PROTOCOL_PTP=y
   else
@@ -164,7 +163,7 @@ if [ "$HAVE_PTP_DEVICE" -ne 1 ]; then
     echo " * Enterprise networking"
     echo " * Telecom (G.8265.1, G.8275.1, and G.8275.2)"
     read -rp "Doing any esoteric time-syncing? (N/y):" -eiN
-    REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+    REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
     if [ "$REPLY" = 'y' ]; then
       echo "...selected esoteric timesyncing."
       NEED_PROTOCOL_PTP=y
@@ -182,7 +181,7 @@ if [[ "$HAVE_PTP_DEVICE" -ge 1 ]]; then
   HAVE_PROTOCOL_PTP=y
   echo "Detected a Precise Time Protocol (/dev/ptp0) device..."
   read -rp "Use that ultra-high-precision clock on this machine you have? (N/y): " -eiN
-  REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ "$REPLY" = 'y' ]; then
     echo "...using PTP protocol."
     NEED_PROTOCOL_PTP=y
@@ -195,7 +194,7 @@ else
   # No onboard "atomic" clock
   HAVE_PROTOCOL_PTP=n
   read -rp "Need a ultra-high-precision clock on this machine you have? (N/y): " -eiN
-  REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ "$REPLY" = 'y' ]; then
     NEED_LOCAL_PTP=y
     NEED_PROTOCOL_PTP=y
@@ -210,7 +209,7 @@ NEED_NETWORK_MODE=""
 # Consuming-network-mode
 echo ""
 read -rp "Receiving a time update is what this machine needs? (Y/n): " -eiY
-REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 if [ "$REPLY" = 'y' ]; then
   echo "...NTP client mode."
   NEED_NETWORK_MODE='client'
@@ -220,7 +219,7 @@ fi
 # Producing-network-mode
 echo ""
 read -rp "Relaying a time update to other machines needed as well? (N/y): " -eiN
-REPLY="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 if [ "$REPLY" = 'y' ]; then
   # Might be PTP, might be NTP
   echo "...NTP server mode."
@@ -228,13 +227,13 @@ if [ "$REPLY" = 'y' ]; then
   NEED_NETWORK_MODE='server'
   read -rp "Have any remote macOS to serve times to? (Y/n): " -eiY
   echo ""
-  HAVE_REMOTE_MACOS="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  HAVE_REMOTE_MACOS="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   read -rp "Have any remote Windows desktop/workstations to serve times to? (Y/n): " -eiY
   echo ""
-  HAVE_REMOTE_WINDOWS="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  HAVE_REMOTE_WINDOWS="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   # We don't ask about Linux/BSD, for they all support MD5 message digest
   read -rp "Have any Windows Active Directory Controllers on the net? (Y/n): " -eiY
-  HAVE_REMOTE_WINDOWS_ADC="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+  HAVE_REMOTE_WINDOWS_ADC="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   # Yeah, these Windows ADCs send out SNTPv4+ with their own
   # authenticators/encryptions selections inside the NTP payload
   # extension fields.  Totally not compatible with NTPv4.3.
@@ -244,12 +243,12 @@ if [ "$REPLY" = 'y' ]; then
     echo "Is that Windows ADC server on your network configured to be using:"
     echo " * WinTime32 Authentication"
     read -rp "Remote Windows ADC is using WinTime32 NTP authentication: (N/y): " -eiN
-    HAVE_NTP_EXTENSION_MS_ADC="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+    HAVE_NTP_EXTENSION_MS_ADC="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
     if [ "$HAVE_NTP_EXTENSION_MS_ADC" = 'y' ]; then
       echo "And for UNIX NTP servers on your network configured to be using "
       echo "NTP authentication (key ID, by any means)?"
       read -rp "UNIX NTP server(s) is using NTP authentication: (N/y): " -eiN
-      HAVE_NTP_EXTENSION_AUTH="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+      HAVE_NTP_EXTENSION_AUTH="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
     fi
   fi
 fi
@@ -268,7 +267,7 @@ echo "Got public network?  Hackers trying to do man-in-the-middle on NTP?"
 echo "Feel like nobody outside of the group deserves these precious NTP packets?"
 echo "It's just open-source live-streaming data, like your kitchen clock."
 read -rp "Need to secure your time servings over your network? (N/y): " -eiN
-NEED_HMAC="$(echo ${REPLY:0:1} | awk '{print tolower($1)}')"
+NEED_HMAC="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 
 
 # ANALYSIS SECTION
@@ -336,13 +335,13 @@ if [ "$NEED_PROTOCOL_PTP" = 'y' ]; then
     echo "You do not have PTP protocol support;"
     echo "Linux Kernel Config settings:"
     echo "  CONFIG_PTP_1588_CLOCK=y"
-    if [ ! -z "$NEED_NETWORK_MODE" ]; then
+    if [ -n "$NEED_NETWORK_MODE" ]; then
       echo "  CONFIG_NETWORK_PHY_TIMESTAMPING=y"
       echo "  CONFIG_NETWORK_CLASSIFY=y"
     fi
     echo ""
     echo "Some hardware manufacturers for PTP protocol:"
-    if [ ! -z "$NEED_NETWORK_MODE" ]; then
+    if [ -n "$NEED_NETWORK_MODE" ]; then
       echo "  Telecom:"
       echo "    Mobatime (https://www.mobatime.com)"
       echo "  Ethernet Network Interface Cards (NIC):"
@@ -352,7 +351,7 @@ if [ "$NEED_PROTOCOL_PTP" = 'y' ]; then
       echo "    LiveWire NIC 802.1avb  (https://www.audioscience.com)"
       # STMICRO, SSMC, STC
     fi
-    if [ ! -z "$NEED_LOCAL_PTP" ]; then
+    if [ -n "$NEED_LOCAL_PTP" ]; then
       echo "  GPS receivers:"
       echo "    MasterCLock GMR5000 (https://www.masterclock.com"
       echo "    Microsemi (https://www.microsemi.com"
