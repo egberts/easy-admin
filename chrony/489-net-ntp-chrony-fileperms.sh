@@ -23,67 +23,103 @@
 #   coreutils (ls, realpath, stat)
 
 # shellcheck disable=SC2034
-PKG_NAME="chrony"
+package_tarname="chrony"
 
 BUILDROOT="/"
 SUDO_BIN=
 
 ARG1_CHRONY_CONF=${1}
 
-
-# configure/autogen/autoreconf -----------------------------------
+# configure/autogen/autoreconf -------------------------------------
+# most configurable variables used here are found in
+# configure/autogen/autoconf but are capitalized for readablity here
+#
 # maintainer default (Chrony)
-PREFIX=/usr
-if [ "$PREFIX" == "/usr" ]; then
-  DEFAULT_SYSCONFDIR="/etc"
-  if [ "$(lsb_release -i|awk -F: '{print $2}'|xargs)" == "Debian" ]; then
-    DEFAULT_LOCALSTATEDIR="/"  # or /usr/local/var
-  else
-    DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
-  fi
+#   prefix=/usr/local
+#   libexecdir=$prefix/libexec
+#   datarootdir=$prefix/share
+#   sysconfdir=$prefix/etc
+#   localstatedir=$prefix/var
+#   libdir=$exec_prefix/lib
+#   bindir=$exec_prefix/bin
+#   sbindir=$exec_prefix/sbin
+#   datadir=$datarootdir
+
+# Debian maintainer however applies this:
+#   libdir=/usr/lib
+#   SYSROOT=/
+#   libexecdir=/usr/lib
+
+# Across multiple distros, all we mostly are really concern about are:
+#   prefix/prefix
+#   sysconfdir/sysconfdir
+#   localstatedir/localstatedir
+
+DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
+if [ "$DISTRO_MANUF" == "Debian" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR=""  # '/'
+  EXTENDED_SYSCONFDIR_DIRNAME="chrony"
+elif [ "$DISTRO_MANUF" == "Redhat" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR="/var"
+  EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
 else
-  DEFAULT_SYSCONFDIR="$PREFIX/etc"
-  DEFAULT_LOCALSTATEDIR="$PREFIX"
+  DEFAULT_PREFIX="/usr"
+  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
+  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
 fi
-SYSCONFDIR=${SYSCONFDIR:-$DEFAULT_SYSCONFDIR}
-LOCALSTATEDIR=${LOCALSTATEDIR:-$DEFAULT_LOCALSTATEDIR}
-EXEC_PREFIX=${EXEC_PREFIX:-$PREFIX}
-DATAROOTDIR=${DATAROOTDIR:-$PREFIX/share}
-LIBDIR=${LIBDIR:-$EXEC_PREFIX/lib}
-LIBEXECDIR=${LIBEXECDIR:-$EXEC_PREFIX/libexec}
+prefix="${prefix:-$DEFAULT_PREFIX}"
+sysconfdir="${sysconfdir:-$prefix/etc}"
+exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
+libdir="${libdir:-$exec_prefix/lib}"
+libexecdir=${libexecdir:-$exec_prefix/libexec}
+localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
+datarootdir=${datarootdir:-$prefix/share}
+sharedstatedir=${prefix:-${prefix}/com}
+bindir="$exec_prefix/bin"
+### runstatedir="$(realpath -m "$localstatedir/run")"
+runstatedir="$localstatedir/run"
+sbindir="$exec_prefix/sbin"
 
-RUNDIR="$(realpath -m "$LOCALSTATEDIR/run")"
-VARDIR="$(realpath -m "$LOCALSTATEDIR/var")"
+# bind9 maintainer tweaks
+expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
+CHRONY_CONF_DIR="$expanded_sysconfdir"
 
+# Useful directories that autoconf/configure/autoreconf does not offer.
+VARDIR="$prefix/var"
+STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
 LOG_DIR="$VARDIR/log"  # /var/log
 
 DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
 DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
 
-CHRONY_RUN_DIR="$RUNDIR/$PKG_NAME"  # /run/chrony
-CHRONY_CONF_DIR="$SYSCONFDIR/$PKG_NAME"  # /etc/chrony
-CHRONY_VAR_LIB_DIR="$VARDIR/lib/$PKG_NAME"
+CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
+CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
 
-CHRONY_CONFD_DIR="$CHRONY_CONF_DIR/conf.d"  # /etc/chrony/conf.d
-CHRONY_SOURCESD_DIR="$CHRONY_CONF_DIR/sources.d"  # /etc/chrony/sources.d
+CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
+CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
 CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
 CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
-CHRONY_KEYS_FILESPEC="$CHRONY_CONF_DIR/chrony.keys"
+CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
 
 # User supplied chrony.conf variants (offline testing)
 if [ -n "$ARG1_CHRONY_CONF" ]; then
-  REAL_CONF="$(realpath -m "$ARG1_CHRONY_CONF")"
+  REAL_CONF="$ARG1_CHRONY_CONF"
   CONF_FILENAME="$(basename "$REAL_CONF")"
   CONF_PATHNAME="$(dirname "$REAL_CONF")"
 else
   CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
-  CONF_PATHNAME="$CHRONY_CONF_DIR"
+  CONF_PATHNAME="$expanded_sysconfdir"
 fi
 CONF_FILESPEC="$(realpath -m "${BUILDROOT}$CONF_PATHNAME/$CONF_FILENAME")"
 
 # /run/chrony-dhcp/* is populated by /etc/dhcp/dhclient-exit-hooks.d/chrony
 # script and executed by 'dhclient' daemon.
-DHCP_CHRONY_PATHNAME="$RUNDIR/chrony-dhcp/"
+DHCP_CHRONY_PATHNAME="$runstatedir/chrony-dhcp/"
+
 
 TOTAL_FILES=0
 TOTAL_PERM_ERRORS=0
@@ -204,8 +240,7 @@ file_perm_check CHRONY_LOG_DIR "750" "_chrony" "_chrony"
 # [/var]/run/chrony/chrony.sock - No need to check
 # [/var]/run/chrony/chrony.pid - No need to check.
 
-TOTAL_ERRORS=$TOTAL_PERM_ERRORS
-((TOTAL_ERRORS+=TOTAL_FILE_ERRORS))
+TOTAL_ERRORS=TOTAL_FILE_ERRORS
 ((TOTAL_ERRORS+=TOTAL_FILE_MISSINGS))
 echo  ""
 echo "Uncounted (controlled by 'dhclient' (isc-dhcp-client.service)"
