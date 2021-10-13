@@ -1,0 +1,28 @@
+use Shorewall::Chains;
+
+if ( $level ) {
+    log_rule_limit( $level, 
+                    $chainref, 
+                    'SSHKnock',
+                    'ACCEPT',
+                    '',
+                    $tag,
+                    'add',
+                    '-p tcp --dport 22   -m recent --rcheck --name SSH ' );
+
+    log_rule_limit( $level,
+                    $chainref,
+                    'SSHKnock',
+                    'DROP',
+                    '',
+                    $tag,
+                    'add',
+                    '-p tcp ! --dport 22 ' );
+}
+
+add_rule( $chainref, '-p tcp --dport 22   -m recent --rcheck --seconds 60 --name SSH          -j ACCEPT' );
+add_rule( $chainref, '-p tcp --dport 10000 -m recent                       --name SSH --remove -j DROP' );
+add_rule( $chainref, '-p tcp --dport 20000 -m recent                       --name SSH --set    -j DROP' );
+add_rule( $chainref, '-p tcp --dport 30000 -m recent                       --name SSH --remove -j DROP' );
+
+1;

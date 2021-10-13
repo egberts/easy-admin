@@ -1,0 +1,9 @@
+
+Interface lo may experience OTHER interface's IP address
+so have to open those as well (it's already at ACCEPT-ALL for interface lo)
+
+
+Disable the following systemd services:
+
+    systemctl disable iptables.service
+    systemctl disable iptables6.service

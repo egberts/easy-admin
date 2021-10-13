@@ -1,0 +1,6 @@
+#
+# refresh
+#
+# Description: invoked after the firewall has been refreshed.
+# State: run-time
+# Action: done at shorewall 'refresh'

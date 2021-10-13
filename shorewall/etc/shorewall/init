@@ -1,0 +1,9 @@
+#!/bin/sh
+# init 
+# descrption: invoked early in “shorewall start” and “shorewall restart”
+# state: run-time
+# action: Done at shorewall 'load, refresh, reload, restart restore, start'
+
+
+/etc/shorewall/update_tor_ipsets.sh
+/etc/shorewall/timeframe-mac-unblocked.sh

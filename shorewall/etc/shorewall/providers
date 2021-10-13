@@ -1,0 +1,8 @@
+#NAME   NUMBER   MARK    DUPLICATE  INTERFACE  GATEWAY         OPTIONS               COPY
+
+# Squid172 1    12     -           $GREEN_IF      172.28.130.1 loose,notrack
+# Squid122 3    14     -           $VIRT_IF    192.168.122.1 loose,notrack
+# Tproxy   4   -       -           lo        -            tproxy
+
+# Sandbay.Leo future
+# ispv       1    20     -           $RED_IF      detect     -

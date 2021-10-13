@@ -1,0 +1,7 @@
+#
+# save
+# 
+# Description: This script is invoked during execution of the 
+#    shorewall save and shorewall-lite save commands.
+# State: run-time
+# Action: done at shorewall 'save'

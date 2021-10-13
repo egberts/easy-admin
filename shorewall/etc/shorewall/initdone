@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+# initdone -
+# Description: invoked after Shorewall has flushed all existing 
+#              rules but before any rules have been added to 
+#              the builtin chains.
+# State: compile-time
+# Action:  done at shorewall 'check, compile, export, refresh, restart, start'
+
+# ARGH, this 'initdone' must be written in Perl
+

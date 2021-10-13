@@ -1,5 +1,6 @@
 # easy-admin
-These scripts are for easy Debian system administration. 
+These scripts are for easy Debian (and some Redhat) system administration for a
+simple bare minimum server.
 
 Scripts that helps white-lab managers. Also bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
@@ -21,4 +22,16 @@ Only the way you dictate them.
 * No more guessing nor remembering settings of many unintelligible keywords.
 * often better than (or at a least equal to) CISecurity
 
-Read and answer the questions; then be up and running.
+Execute script, read and answer the questions; then be up and running.
+
+Some features are:
+
+* Minimum Debian packages
+* SCAP/OSCAP settings, default or better
+* custom hardened kernel building
+* easier systemctl usage
+* autoconfigurator for:
+** DHCP
+** Chrony NTP server/client
+** DNS, ISC Bind9: authoritative, bastion/split-horizon, resolver
+

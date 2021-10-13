@@ -1,0 +1,7 @@
+#
+# tcclear
+# 
+# Description: invoked to clear traffic shaping when CLEAR_TC=Yes 
+#    in shorewall.conf.
+# State: run-time
+# Action: done at shorewall 'load, reload, restart, restore, start'

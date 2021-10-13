@@ -1,0 +1,17 @@
+#
+# findgw
+#
+# Description: This script is invoked when Shorewall is attempting 
+# to discover the gateway through a dynamic interface. The script 
+# is most often used when the interface is managed by dhclient 
+# which has no standardized location/name for its lease database. 
+# Scripts for use with dhclient on several distributions are 
+# available at http://www.shorewall.net/pub/shorewall/contrib/findgw/
+#
+#  $1 - Ethernet interface
+#
+# Action: done at DHCLIENT time?
+if [ -f /var/lib/dhcp/dhclient.${1}.leases ]; then
+    grep 'option routers' /var/lib/dhcp/dhclient.${1}.leases | tail -n 1 | while read j1 j2 gateway; do echo $gateway | sed 's/;//'; return 0; done
+fi
+#LAST LINE - ADD YOUR ENTRIES ABOVE THIS ONE - DO NOT REMOVE

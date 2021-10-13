@@ -1,0 +1,40 @@
+#
+# isusable
+#
+# Description: invoked when Shorewall is trying to determine the 
+#    usability of the network interface associated with an 
+#    optional entry in /etc/shorewall/providers. $1 is the name 
+#    of the interface which will have been determined to be up 
+#    and configured before the script is invoked. The return 
+#    value from the script indicates whether or not the 
+#    interface is usable (0 = usable, other = unusable).
+# Example:
+
+# Ping a gateway through the passed interface:
+# case $1 in
+#     eth0)
+#         ping -c 4 -t 1 -I eth0 206.124.146.254 > /dev/null 2>&1
+#         return
+#         ;;
+#     eth1)
+#         ping -c 4 -t 1 -I eth1 192.168.12.254 > /dev/null 2>&1
+#         return
+#         ;;
+#     *)
+#         # No additional testing of other interfaces
+#         return 0
+#         ;;
+# esac
+# 
+# Caution
+# 
+# We recommend that this script only be used with ADMINISABSENTMINDED=Yes.
+# 
+# The firewall state when this script is invoked is indeterminate. 
+# So if you have ADMINISABSENTMINDED=No in shorewall.conf(8) and 
+# output on an interface is not allowed by stoppedrules(8) then 
+# the isuasable script must blow it's own holes in the firewall 
+# before probing.
+#
+# State: run-time
+# Action: done at shorewall 'refresh, restart, restore, start'

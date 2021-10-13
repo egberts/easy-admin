@@ -1,0 +1,8 @@
+#EXTERNAL       INTERFACE       INTERNAL        ALL             LOCAL
+#                                               INTERFACES
+
+# this 'nat' file makes uses of BOTH SNAT and DNAT, you probably want 'masq'
+# 192.168.1.7     $GREEN_IF            172.28.130.1
+# 192.168.1.7     $VIRT_IF          192.168.122.1
+# 192.168.1.7     $oldDMZ_IF            192.168.15.1
+

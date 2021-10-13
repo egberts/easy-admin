@@ -1,0 +1,8 @@
+#
+# compile
+# Description - Invoked by the rules compiler early in the 
+#               compilation process. Must be written in Perl.
+# State: compile-time
+# Action: Done at shorewall 'check, compile, export, load, refresh, 
+#                  reload, restart, restore,start'
+

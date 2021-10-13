@@ -1,0 +1,7 @@
+# Blackhole rules
+
+# TODO: Try '172.28.129,0/24' instead of 'all'
+DROP red:+tor	blue
+# DROP red:+timer	all
+#
+DROP dmz red:34.95.100.122 

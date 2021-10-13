@@ -1,0 +1,81 @@
+#
+# Shorewall version 4.0 - Sample Interfaces File for three-interface configuration.
+# Copyright (C) 2006-2014 by the Shorewall Team
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# See the file README.txt for further details.
+#------------------------------------------------------------------------------
+# For information about entries in this file, type "man shorewall-interfaces"
+###############################################################################
+###############################################################################
+#ZONE	INTERFACE	OPTIONS
+?FORMAT 2
+
+-       lo      -
+
+# internet has the following:
+#    dhcp - the interface gets its IP address via DHCP LAN segment 
+#    logmartians - Turn on kernel martian logging (logging of 
+#                      packets with impossible source addresses.
+#    routeback - indicates that Shorewall should include rules that 
+#                    allow traffic arriving on this interface to 
+#                    be routed back out that same interface.
+#    routefilter - Turn on kernel route filtering for this 
+#                      interface (anti-spoofing measure).
+#    nosmurfs - Filter packets for smurfs (packets with a 
+#                   broadcast address as the source).
+#    tcpflags - Packets arriving on this interface are checked 
+#                   for certain illegal combinations of TCP flags. 
+#    upnp - Incoming requests from this interface may be remapped 
+#                   via UPNP (upnpd).
+# 
+red	$RED_IF	dhcp,logmartians,routefilter,tcpflags,nosmurfs,upnp,maclist
+#red	$RED_IF	dhcp,logmartians,routefilter,tcpflags,nosmurfs
+
+# green has the following:
+#    dhcp - the interface is used by a DHCP server running on the firewall
+#    logmartians - Turn on kernel martian logging (logging of 
+#                      packets with impossible source addresses.
+#    routeback - indicates that Shorewall should include rules that 
+#                    allow traffic arriving on this interface to 
+#                    be routed back out that same interface.
+#    routefilter - Turn on kernel route filtering for this 
+#                      interface (anti-spoofing measure).
+#    nosmurfs - Filter packets for smurfs (packets with a 
+#                   broadcast address as the source).
+#    tcpflags - Packets arriving on this interface are checked 
+#                   for certain illegal combinations of TCP flags. 
+#    upnpclient - Only allow UPnP packets from detected gateway
+#
+green	$GREEN_IF	dhcp,logmartians=0,nets=172.28.130.1/22,routeback,routefilter=0,nosmurfs,tcpflags=0
+
+
+### dmz	$DMZ_IF	dhcp,logmartians=0,nets=172.32.1.1/22,routeback,routefilter=0,nosmurfs,tcpflags
+
+
+# vmnet has the following:
+#    bridge - Designates the interface as a bridge. 
+#                 Setting this option also sets routeback.
+#    dhcp - the interface has a static IP but is on a LAN segment 
+#               with lots of DHCP clients.
+#    logmartians - Turn on kernel martian logging (logging of 
+#                      packets with impossible source addresses.
+#    routeback - indicates that Shorewall should include rules that 
+#                    allow traffic arriving on this interface to 
+#                    be routed back out that same interface.
+#    routefilter - Turn on kernel route filtering for this 
+#                      interface (anti-spoofing measure).
+#    nosmurfs - Filter packets for smurfs (packets with a 
+#                   broadcast address as the source).
+#    tcpflags - Packets arriving on this interface are checked 
+#                   for certain illegal combinations of TCP flags. 
+#
+vmnet	virbr0	bridge,dhcp,routeback,nosmurfs,tcpflags
+rvpn	tun0	routeback,nets=172.30.0.0/16,nosmurfs,tcpflags
+dock    $DOCK_IF bridge,routeback=0  # disable ICC
+road    tun+    
+

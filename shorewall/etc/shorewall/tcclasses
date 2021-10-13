@@ -1,0 +1,448 @@
+#
+# Shorewall version 4 - Tcclasses File
+#
+# For information about entries in this file, type "man shorewall-tcclasses"
+#
+# See http://shorewall.net/traffic_shaping.htm for additional information.
+#
+###############################################################################
+# 
+# A note on the rate/bandwidth definitions used in this file:
+# 
+#   ● don't use a space between the integer value and the unit: 30kbit is valid
+#     while 30 kbit is NOT.
+# 
+#   ● you can use one of the following units:
+# 
+#     kpbs
+# 
+#         Kilobytes per second.
+# 
+#     mbps
+# 
+#         Megabytes per second.
+# 
+#     kbit
+# 
+#         Kilobits per second.
+# 
+#     mbit
+# 
+#         Megabits per second.
+# 
+#     bps or number
+# 
+#         Bytes per second.
+# 
+#   ● if you want the values to be calculated for you depending on the output
+#     bandwidth setting defined for an interface in tcdevices, you can use
+#     expressions like the following:
+# 
+#     full/3
+# 
+#         causes the bandwidth to be calculated as 1/3 of the full outgoing speed
+#         that is defined.
+# 
+#     full*9/10
+# 
+#         will set this bandwidth to 9/10 of the full bandwidth
+# 
+#     Note that in a sub-class (a class that has a specified parent class), full
+#     refers to the RATE or CEIL of the parent class rather than to the
+#     OUT-BANDWIDTH of the device.
+# 
+#     DO NOT add a unit to the rate if it is calculated !
+# 
+# The columns in the file are as follows.
+# 
+# INTERFACE - interface[[:parent]:class]
+# 
+#     Name of interface.
+# 
+#     You may specify the interface number rather than the interface name. If the
+#     classify option is given for the interface in shorewall-tcdevices(5), then
+#     you must also specify an interface class (an integer that must be unique
+#     within classes associated with this interface). If the classify option is
+#     not given, you may still specify a class or you may have Shorewall generate
+#     a class number from the MARK value. Interface numbers and class numbers are
+#     always assumed to be specified in hex and class number 1 is reserved as the
+#     root class of the queuing discipline.
+# 
+#     You may NOT specify wildcards here, e.g. if you have multiple ppp
+#     interfaces, you need to put them all in here!
+# 
+#     Please note that you can only use interface names in here that have a
+#     bandwidth defined in the shorewall-tcdevices(5) file.
+# 
+#     Normally, all classes defined here are sub-classes of a root class that is
+#     implicitly defined from the entry in shorewall-tcdevices(5). You can
+#     establish a class hierarchy by specifying a parent class -- the number of a
+#     class that you have previously defined. The sub-class may borrow unused
+#     bandwidth from its parent.
+# 
+# MARK - {-|value}
+# 
+#     The mark value which is an integer in the range 1-255. You set mark values
+#     in the shorewall-mangle(5) file, marking the traffic you want to fit in the
+#     classes defined in here. Must be specified as '-' if the classify option is
+#     given for the interface in shorewall-tcdevices(5) and you are running
+#     Shorewall 4.5.5 or earlier.
+# 
+#     You can use the same marks for different interfaces.
+# 
+# RATE - {-|rate[:dmax[:umax]]}
+# 
+#     The minimum bandwidth this class should get, when the traffic load rises.
+#     If the sum of the rates in this column exceeds the INTERFACE's
+#     OUT-BANDWIDTH, then the OUT-BANDWIDTH limit may not be honored. Similarly,
+#     if the sum of the rates of sub-classes of a class exceed the CEIL of the
+#     parent class, things don't work well.
+# 
+#     When using the HFSC queuing discipline, this column specify the real-time
+#     (RT) service curve. leaf classes may specify dmax, the maximum delay in
+#     milliseconds that the first queued packet for this class should experience.
+#     May be expressed as an integer, optionally followed by 'ms' with no
+#     intervening white-space (e.g., 10ms).
+# 
+#     HFSC leaf classes may also specify umax, the largest packet expected in
+#     this class. May be expressed as an integer. The unit of measure is bytes
+#     and the integer may be optionally followed by 'b' with no intervening
+#     white-space (e.g., 800b). umax may only be given if dmax is also given.
+# 
+#     Beginning with Shorewall 4.5.6, HFSC classes may omit this column (e.g, '-'
+#     in the column), provided that an lsrate is specified (see CEIL below).
+#     These rates are used to arbitrate between classes of the same priority.
+# 
+# CEIL - [lsrate:]rate
+# 
+#     The maximum bandwidth this class is allowed to use when the link is idle.
+#     Useful if you have traffic which can get full speed when more needed
+#     services (e.g. ssh) are not used.
+# 
+#     You can use the value full in here for setting the maximum bandwidth to the
+#     RATE of the parent class, or the OUT-BANDWIDTH of the device if there is no
+#     parent class.
+# 
+#     Beginning with Shorewall 4.5.6, you can also specify an lsrate (link
+#     sharing rate).
+# 
+# PRIORITY - priority
+# 
+#     For HTB:
+# 
+#         The priority in which classes will be serviced by the packet shaping
+#         scheduler and also the priority in which bandwidth in excess of the
+#         rate will be given to each class.
+# 
+#         Higher priority classes will experience less delay since they are
+#         serviced first. Priority values are serviced in ascending order (e.g. 0
+#         is higher priority than 1).
+# 
+#         Classes may be set to the same priority, in which case they will be
+#         serviced as equals.
+# 
+#     For both HTB and HFSC, the priority is used to calculate the priority of
+#     following Shorewall-generated classification filters that refer to the
+#     class:
+# 
+#       ● Packet MARK
+# 
+#       ● tcp-ack and the tos options (see below)
+# 
+#     The rules for classes with lower numeric priorities will appear before
+#     those with higher numeric priorities.
+# 
+#     Beginning with Shorewall 4.5.8, the PRIORITY may be omitted from an HFSC
+#     class if you do not use the MARK column or the tcp-ack or tos options. If
+#     you use any of those features and omit the PRIORITY, then you must specify
+#     a priority along with the MARK or option.
+# 
+# OPTIONS (Optional) - [option[,option]...]
+# 
+#     A comma-separated list of options including the following:
+# 
+#     default
+# 
+#         This is the default class for that interface where all traffic should
+#         go, that is not classified otherwise.
+# 
+#         Note
+# 
+#         You must define default for exactly one class per interface.
+# 
+#     tos=0xvalue[/0xmask][:priority] (mask defaults to 0xff)
+# 
+#         This lets you define a classifier for the given value/mask combination
+#         of the IP packet's TOS/Precedence/DiffSrv octet (aka the TOS byte).
+# 
+#         Beginning with Shorewall 4.5.8, the value/mask may be followed by a
+#         colon (":") and a priority. This priority determines the order in which
+#         filter rules are processed during packet classification. If not
+#         specified, the value (class priority << 8) | 10) is used.
+# 
+#     tos-tosname[:priority]
+# 
+#         Aliases for the following TOS octet value and mask encodings. TOS
+#         encodings of the "TOS byte" have been deprecated in favor of diffserve
+#         classes, but programs like ssh, rlogin, and ftp still use them.
+# 
+#         Beginning with Shorewall 4.5.8, the tos-name may be followed by a colon
+#         (":") and a priority. This priority determines the order in which
+#         filter rules are processed during packet classification. If not
+#         specified, the value (class priority << 8) | 10) is used.
+# 
+#                 tos-minimize-delay       0x10/0x10
+#                 tos-maximize-throughput  0x08/0x08
+#                 tos-maximize-reliability 0x04/0x04
+#                 tos-minimize-cost        0x02/0x02
+#                 tos-normal-service       0x00/0x1e
+# 
+#         Note
+# 
+#         Each of these options is only valid for ONE class per interface.
+# 
+#     tcp-ack[:priority]
+# 
+#         If defined, causes a tc filter to be created that puts all tcp ack
+#         packets on that interface that have a size of <=64 Bytes to go in this
+#         class. This is useful for speeding up downloads. Please note that the
+#         size of the ack packets is limited to 64 bytes because we want only
+#         packets WITHOUT payload to match.
+# 
+#         Beginning with Shorewall 4.5.8, the tcp-ack may be followed by a colon
+#         (":") and a priority. This priority determines the order in which
+#         filter rules are processed during packet classification. If not
+#         specified, the value (class priority << 8) | 20) is used.
+# 
+#         Note
+# 
+#         This option is only valid for ONE class per interface.
+# 
+#     occurs=number
+# 
+#         Typically used with an IPMARK entry in tcrules. Causes the rule to be
+#         replicated for a total of number rules. Each rule has a successively
+#         class number and mark value.
+# 
+#         When 'occurs' is used:
+# 
+#           ● The associated device may not have the 'classify' option.
+# 
+#           ● The class may not be the default class.
+# 
+#           ● The class may not have any 'tos=' options (including 'tcp-ack').
+# 
+#           ● The class should not specify a MARK value. If one is specified, it
+#             will be ignored with a warning message.
+# 
+#         The 'RATE' and 'CEIL' parameters apply to each instance of the class.
+#         So the total RATE represented by an entry with 'occurs' will be the
+#         listed RATE multiplied by number. For additional information, see
+#         shorewall-tcrules (5).
+# 
+#     flow=keys
+# 
+#         Shorewall attaches an SFQ queuing discipline to each leaf HTB class.
+#         SFQ ensures that each flow gets equal access to the interface. The
+#         default definition of a flow corresponds roughly to a Netfilter
+#         connection. So if one internal system is running BitTorrent, for
+#         example, it can have lots of 'flows' and can thus take up a larger
+#         share of the bandwidth than a system having only a single active
+#         connection. The flow classifier (module cls_flow) works around this by
+#         letting you define what a 'flow' is. The classifier must be used
+#         carefully or it can block off all traffic on an interface! The flow
+#         option can be specified for an HTB leaf class (one that has no
+#         sub-classes). We recommend that you use the following:
+# 
+#         Shaping internet-bound traffic: flow=nfct-src
+#         Shaping traffic bound for your local net: flow=dst
+# 
+#         These will cause a 'flow' to consists of the traffic to/from each
+#         internal system.
+# 
+#         When more than one key is give, they must be enclosed in parenthesis
+#         and separated by commas.
+# 
+#         To see a list of the possible flow keys, run this command:
+# 
+#             tc filter add flow help
+# 
+#         Those that begin with "nfct-" are Netfilter connection tracking fields.
+#         As shown above, we recommend flow=nfct-src; that means that we want to
+#         use the source IP address before NAT as the key.
+# 
+#     pfifo
+# 
+#         When specified for a leaf class, the pfifo queuing discipline is
+#         applied to the class rather than the sfq queuing discipline.
+# 
+#     limit=number
+# 
+#         Added in Shorewall 4.4.3. When specified for a leaf class, determines
+#         the maximum number of packets that may be queued within the class. The 
+#         number must be > 2 and <=128. If not specified, the value 127 is
+#         assumed.
+# 
+#     red=(redoption=value, ...)
+# 
+#         Added in Shorewall 4.5.6. When specified on a leaf class, causes the
+#         class to use the RED (Random Early Detection) queuing discipline rather
+#         than SFQ. See tc-red (8) for additional information.
+# 
+#         Allowable redoptions are:
+# 
+#         min min
+# 
+#             Average queue size at which marking becomes a possibility.
+# 
+#         max max
+# 
+#             At this average queue size, the marking probability is maximal.
+#             Must be at least twice min to prevent synchronous retransmits,
+#             higher for low min.
+# 
+#         probability probability
+# 
+#             Maximum probability for marking, specified as a floating point
+#             number from 0.0 to 1.0. Suggested values are 0.01 or 0.02 (1 or 2%,
+#             respectively).
+# 
+#         limit limit
+# 
+#             Hard limit on the real (not average) queue size in bytes. Further
+#             packets are dropped. Should be set higher than max+burst. It is
+#             advised to set this a few times higher than max. Shorewall requires
+#             that limit be at least twice min.
+# 
+#         burst burst
+# 
+#             Used for determining how fast the average queue size is influenced
+#             by the real queue size. Larger values make the calculation more
+#             sluggish, allowing longer bursts of traffic before marking starts.
+#             Real life experiments support the following guide‐line: (min+min+
+#             max)/(3*avpkt).
+# 
+#         avpkt avpkt
+# 
+#             Optional. Specified in bytes. Used with burst to determine the time
+#             constant for average queue size calculations. 1000 is a good value
+#             and is the Shorewall default.
+# 
+#         bandwidth bandwidth
+# 
+#             Optional. This rate is used for calculating the average queue size
+#             after some idle time. Should be set to the bandwidth of your
+#             interface. Does not mean that RED will shape for you!
+# 
+#         ecn
+# 
+#             RED can either 'mark' or 'drop'. Explicit Congestion Notification
+#             allows RED to notify remote hosts that their rate exceeds the
+#             amount of bandwidth available. Non-ECN capable hosts can only be
+#             notified by dropping a packet. If this parameter is specified,
+#             packets which indicate that their hosts honor ECN will only be
+#             marked and not dropped, unless the queue size hits limit bytes.
+#             Recommended.
+# 
+#     fq_codel[=(codeloption=value, ...)]
+# 
+#         Added in Shorewall 4.5.12. When specified for a leaf class, causes the
+#         class to use the FQ_CODEL (Fair-queuing Controlled Delay) queuing
+#         discipline rather than SFQ. See tc-fq_codel (8) for additional
+#         information.
+# 
+#         Allowable codeloptions are:
+# 
+#         limit
+# 
+#             hard limit on the real queue size. When this limit is reached,
+#             incoming packets are dropped. If the value is lowered, packets are
+#             dropped so that the new limit is met. Default is 1000 packets.
+# 
+#         flows
+# 
+#             is the number of flows into which the incoming packets are
+#             classified. Due to the stochastic nature of hashing, multiple flows
+#             may end up being hashed into the same slot. Newer flows have
+#             priority over older ones. This parameter can be set only at load
+#             time since memory has to be allocated for the hash table. Default
+#             value is 1024.
+# 
+#         target
+# 
+#             is the acceptable minimum standing/persistent queue delay. This
+#             minimum delay is identified by tracking the local minimum queue
+#             delay that packets experience. Default and recommended value is
+#             5ms.
+# 
+#         interval
+# 
+#             is used to ensure that the measured minimum delay does not become
+#             too stale. The minimum delay must be experienced in the last epoch
+#             of length interval. It should be set on the order of the worst-case
+#             RTT through the bottleneck to give endpoints sufficient time to
+#             react. Default value is 100ms.
+# 
+#         quantum
+# 
+#             is the number of bytes used as 'deficit' in the fair queuing
+#             algorithm. Default is set to 1514 bytes which corresponds to the
+#             Ethernet MTU plus the hardware header length of 14 bytes.
+# 
+#         ecn | noecn
+# 
+#             can be used to mark packets instead of dropping them. If ecn has
+#             been enabled, noecn can be used to turn it off and vice-versa. By
+#             default, ecn is enabled.
+# 
+# Examples
+# 
+# Example 1:
+# 
+#     Suppose you are using PPP over Ethernet (DSL) and ppp0 is the interface for
+#     this. You have 4 classes here, the first you can use for voice over IP
+#     traffic, the second interactive traffic (e.g. ssh/telnet but not scp), the
+#     third will be for all unclassified traffic, and the forth is for low
+#     priority traffic (e.g. peer-to-peer).
+# 
+#     The voice traffic in the first class will be guaranteed a minimum of
+#     100kbps and always be serviced first (because of the low priority number,
+#     giving less delay) and will be granted excess bandwidth (up to 180kbps, the
+#     class ceiling) first, before any other traffic. A single VoIP stream,
+#     depending upon codecs, after encapsulation, can take up to 80kbps on a
+#     PPPoE/DSL link, so we pad a little bit just in case. (TOS byte values 0xb8
+#     and 0x68 are DiffServ classes EF and AFF3-1 respectively and are often used
+#     by VOIP devices).
+# 
+#     Interactive traffic (tos-minimum-delay) and TCP acks (and ICMP echo traffic
+#     if you use the example in tcrules) and any packet with a mark of 2 will be
+#     guaranteed 1/4 of the link bandwidth, and may extend up to full speed of
+#     the link.
+# 
+#     Unclassified traffic and packets marked as 3 will be guaranteed 1/4th of
+#     the link bandwidth, and may extend to the full speed of the link.
+# 
+#     Packets marked with 4 will be treated as low priority packets. (The tcrules
+#     example marks p2p traffic as such.) If the link is congested, they're only
+#     guaranteed 1/8th of the speed, and even if the link is empty, can only
+#     expand to 80% of link bandwidth just as a precaution in case there are
+#     upstream queues we didn't account for. This is the last class to get
+#     additional bandwidth and the last to get serviced by the scheduler because
+#     of the low priority.
+# 
+#INTERFACE  MARK  RATE    CEIL      PRIORITY    OPTIONS
+#ppp0        1     100kbit 180kbit   1           tos=0x68/0xfc,tos=0xb8/0xfc
+#ppp0        2     full/4  full      2           tcp-ack,tos-minimize-delay
+#ppp0        3     full/4  full      3           default
+#ppp0        4     full/8  full*8/10 4
+# 
+###############################################################################
+#INTERFACE:CLASS	MARK	RATE:		CEIL	PRIORITY	OPTIONS
+#				DMAX:UMAX
+
+
+#  Sandbay.Leo future
+# eth1        1     100kbit 180kbit   1           tos=0x68/0xfc,tos=0xb8/0xfc
+# eth1        2     full/4  full      2           tcp-ack,tos-minimize-delay
+# eth1        3     full/4  full      3           default
+# eth1        4     full/8  full*8/10 4 

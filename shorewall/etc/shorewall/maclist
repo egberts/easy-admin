@@ -1,0 +1,122 @@
+#
+# Shorewall version 4 - Maclist file
+#
+# For information about entries in this file, type "man shorewall-maclist"
+#
+# For additional information, see http://shorewall.net/MAC_Validation.html
+#
+###############################################################################
+# 
+# This file is used to define the MAC addresses and optionally their associated
+# IP addresses to be allowed to use the specified interface. The feature is
+# enabled by using the maclist option in the shorewall-interfaces(5) or
+# shorewall-hosts(5) configuration file.
+# 
+# The columns in the file are as follows (where the column name is followed by a
+# different name in parentheses, the different name is used in the alternate
+# specification syntax).
+# 
+# DISPOSITION - {ACCEPT|DROP|REJECT}[:log-level]
+# 
+#     ACCEPT or DROP (if MACLIST_TABLE=filter in shorewall.conf(5), then REJECT
+#     is also allowed). If specified, the log-level causes packets matching the
+#     rule to be logged at that level.
+# 
+# INTERFACE - interface
+# 
+#     Network interface to a host.
+# 
+# MAC - address
+# 
+#     MAC address of the host -- you do not need to use the Shorewall format for
+#     MAC addresses here. If IP ADDRESSES is supplied then MAC can be supplied as
+#     a dash (-)
+# 
+# IP ADDRESSES (addresses) - [address[,address]...]
+# 
+#     Optional - if specified, both the MAC and IP address must match. This
+#     column can contain a comma-separated list of host and/or subnet addresses.
+#     If your kernel and iptables have iprange match support then IP address
+#     ranges are also allowed. Similarly, if your kernel and iptables include
+#     ipset support than set names (prefixed by "+") are also allowed.
+# 
+###############################################################################
+#DISPOSITION	INTERFACE		MAC			IP ADDRESSES (Optional)
+
+# 10:4a:7d was smurfing (using different source IP 192.168.x.x)
+#DROP		$GREEN_IF			10:4a:7d:39:ea:d6
+#DROP		$GREEN_IF			58:67:1a:db:69:c0
+#DROP		$GREEN_IF			fc:e9:98:35:8e:a9
+
+ACCEPT		$RED_IF			3c:61:04:07:33:c2
+ACCEPT		$RED_IF			20:c0:47:62:43:37
+
+# Unknown Verizon router
+# DROP		$GREEN_IF		fa:bf:ff:6b:e8:e7
+
+# ACCEPT	$GREEN_IF	00:08:72:03:5d:09	# VP410 - Willoughby
+# ACCEPT	$GREEN_IF	00:08:72:03:5e:a1	# VP410 - CSUS
+# ACCEPT	$GREEN_IF	00:0e:0c:00:c2:19	# Dell - sandbay.leo
+# ACCEPT	$GREEN_IF	00:1c:23:a9:a5:2b	# paratus.leo Dell D830
+# ACCEPT	$GREEN_IF	00:1d:d9:0a:55:f1	# paratus-wifi.leo Dell D830
+# ACCEPT	$GREEN_IF	00:1a:a0:b2:e3:9e	# arcua.leo
+
+# ACCEPT	$GREEN_IF	00:23:df:bf:61:07	# Connor-iPod
+# ACCEPT	$GREEN_IF	00:23:ee:98:4c:6c	# unknown (21203/tcp)
+# ACCEPT	$GREEN_IF	00:a0:cc:42:0a:1d	# Gateway.arca
+# ACCEPT	$GREEN_IF	00:40:f4:39:ed:e0	# sandbay Dell-Gateway
+# ACCEPT  $GREEN_IF       00:50:56:c0:00:01       # ITE00381524
+# ACCEPT  $GREEN_IF       00:50:56:c0:00:08       # ITE00381524
+# ACCEPT  $GREEN_IF       00:a0:cc:42:0a:1d       # Gateway.arca
+# ACCEPT  $GREEN_IF       08:3e:8e:25:4a:16       # proteus Kyle    laptop
+# ACCEPT  $GREEN_IF       0c:3e:9f:6e:d2:a8       # Danica-iPhone
+# ACCEPT  $GREEN_IF       0a:00:27:00:00:00       # ITE00381524
+# ACCEPT  $GREEN_IF       10:4a:7d:39:ea:d6       # ITE00381524
+# ACCEPT  $GREEN_IF       1a:b1:db:2d:db:eb       # Olivia Dell PC laptop
+# ACCEPT  $GREEN_IF       2c:10:c1:9c:b1:c2       # Wii-Black
+# ACCEPT	$GREEN_IF	34:af:2c:48:56:ad	172.28.129.0/24 # Kyle-3ds
+# ACCEPT	$GREEN_IF	38:b1:db:2d:db:eb	172.28.129.0/24 # Olivia-laptop-dell
+# ACCEPT  $GREEN_IF       3c:61:04:07:33:c2 # - Verizon - ODP - Broadband Connection
+# ACCEPT	$GREEN_IF	40:6c:8f:27:36:6d	# macbook-en0-802.3 COE-Lisalee-Egbert
+# ACCEPT	$GREEN_IF	40:d2:8a:b1:30:ed	172.28.129.0/24 # Kyles-3dsXL
+# ACCEPT  $GREEN_IF       48:0f:cf:69:3d:43       # Dale-laptop-HP
+# ACCEPT	$GREEN_IF	54:26:96:d3:65:07	# Danica-MacbookPro
+# ACCEPT	$GREEN_IF	58:67:1a:db:69:c0	172.28.129.0/24 # nook-kyle-802.11
+# ACCEPT  $GREEN_IF       5c:8d:4e:c2:e6:0c       # Ds-iPhone (NEW TODO)
+# ACCEPT	$GREEN_IF	5c:f9:dd:12:34:56	# Connor-laptop-PC-802.11
+# ACCEPT	$GREEN_IF	64:20:0c:87:53:5a	172.28.129.0/24 # ipad-Kyle
+# ACCEPT  $GREEN_IF       64:67:06:ad:78:a7       # iPad-Lisalee
+# ACCEPT	$GREEN_IF	64:9a:be:a3:4a:1a	# Lisalee-iPhone
+# ACCEPT  $GREEN_IF       64:c6:67:03:b3:1a       # Michelle Nook
+# ACCEPT	$GREEN_IF	70:56:81:90:f3:09	# macbook-en1-802.11 COE-Lisalee-Egbert
+# ACCEPT	$GREEN_IF	70:f1:a1:fe:5d:0d	172.28.129.0/24 # Dale-laptop-dell-vostro-802.11
+# ACCEPT  $GREEN_IF       7c:ed:8d:9e:36:58       # XBox-360
+# ACCEPT	$GREEN_IF	80:e6:50:64:fe:d4	# Lisalee-iPad
+# ACCEPT	$GREEN_IF	84:2b:2b:a0:b6:25	# Gateway.leo-eth0-green-resnet
+# ACCEPT  $GREEN_IF       84:a6:c8:ec:1e:2c       # ????
+# ACCEPT  $GREEN_IF       88:03:55:70:fe:d0       # LG-1 (living room)
+# ACCEPT  $GREEN_IF       90:b6:86:b4:66:cf       # Connor Android
+# ACCEPT	$GREEN_IF	9c:04:eb:50:41:3b	172.28.129.0/24 # KylesiPad
+# ACCEPT	$GREEN_IF	a4:67:06:ad:78:a7	172.28.129.0/24 # DalesiPad
+# ACCEPT	$GREEN_IF	a8:8e:24:ea:d4:4d	172.28.129.0/24 # Dale-iPhone5c
+# ACCEPT  $GREEN_IF       a8:8e:24:f0:54:20       # Kyle-iPhone5c
+# ACCEPT	$GREEN_IF	ac:bc:32:b9:ff:df	# Connor-MacbookPro
+# ACCEPT  $GREEN_IF       b4:ce:f6:39:93:e0       # winphone steve
+# ACCEPT	$GREEN_IF	c8:e0:eb:17:a8:43	# Ss-Macbook-Pro
+# ACCEPT	$GREEN_IF	cc:fb:65:0b:81:92	172.28.129.0/24 # Dale-3dsxl
+# ACCEPT	$GREEN_IF	d2:00:18:68:bc:40	# macbook-en2 COE-Lisalee-Egbert
+# ACCEPT	$GREEN_IF	e0:3f:49:28:da:e8	# Avian LAN 802.3
+# ACCEPT  $GREEN_IF       e0:3f:49:28:da:ec       # 802.11N avian.leo
+# ACCEPT  $GREEN_IF       e4:25:e7:31:5d:07       # Grammie iPhone
+# ACCEPT	$GREEN_IF	f0:4d:a2:87:44:48	172.28.129.0/24 # Dale-laptop-dell-vostro-802.3
+# ACCEPT	$GREEN_IF	f8:e4:fb:8a:2f:db	# - ActionTec - Bridge (192.168.1.0/24)
+# ACCEPT	$GREEN_IF	f8:e4:fb:8a:2f:dc	# - ActionTec - Hardware Ethernet Switch
+# ACCEPT	$GREEN_IF	f8:e4:fb:8a:2f:dd	# - ActionTec - Ethernet/Coax (ODP)
+# ACCEPT	$GREEN_IF	f8:e4:fb:8a:2f:de	# - ActionTec -802.1 Wireless
+# ACCEPT	$GREEN_IF	fc:e9:98:35:8e:a9	# iphone-michlle2
+# 
+# #  Too catty
+ 
+# DROP	$GREEN_IF	00:24:36:e1:c4:45 # ???
+# DROP	$GREEN_IF	10:4a:7d:39:ea:d6	# ????
+##  DROP	$GREEN_IF	84:a6:c8:ec:1e:2c	# ????

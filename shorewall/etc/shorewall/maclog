@@ -1,0 +1,12 @@
+#
+# maclog
+#
+# Description: invoked while mac filtering rules are being created. 
+#    It is invoked once for each interface having 'maclist' 
+#    specified and it is invoked just before the logging rule is 
+#    added to the current chain (the name of that chain will be 
+#    in $CHAIN).
+# State: compile-time
+# Action: done at shorewall 'check, compile, export, refresh, restart, start'
+
+logger -p warn -t shorewall "maclog evoked for chain $CHAIN"

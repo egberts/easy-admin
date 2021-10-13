@@ -1,0 +1,6 @@
+#
+# stop
+#
+# Description: invoked as a first step when the firewall is being stopped.
+# State: run-time
+# Action: done at shorewall 'stop, clear'

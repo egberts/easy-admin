@@ -1,0 +1,6 @@
+#
+# start
+#
+# Description: invoked after the firewall has been started or restarted.
+# State: run-time
+# Action: done at shorewall 'load, reload, restart, start'

@@ -1,0 +1,35 @@
+#
+# Shorewall version 4.0 - Sample Zones File for three-interface configuration.
+# Copyright (C) 2006-2014 by the Shorewall Team
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# See the file README.txt for further details.
+#------------------------------------------------------------------------------
+# For information about entries in this file, type "man shorewall-zones"
+# r - red 
+# g - green
+#   w - white
+#   d - dmz
+#   u - blue
+# v - virtnet
+###############################################################################
+#ZONE	TYPE	OPTIONS			IN			OUT
+#					OPTIONS			OPTIONS
+red	ipv4
+fw	firewall
+cable   ipv4
+green	ipv4
+vmnet   ipv4
+dock    ipv4
+
+dmz:green	ipv4
+grn:green	ipv4
+blue:green	ipv4
+white:green	ipv4
+
+rvpn  ipv4
+road  ipv4   # RoadWarrior

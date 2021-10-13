@@ -1,0 +1,12 @@
+# this file is deprecated
+# Use rules file and PPTP, IPSEC, OPENVPN macros
+
+#TYPE                   ZONE    GATEWAY         GATEWAY
+#                                               ZONE
+#6to4                    red     216.218.226.238
+#6to4                    red     192.88.99.1
+
+#TYPE           ZONE    GATEWAY         GATEWAY ZONES
+
+openvpnserver:1194   green     0.0.0.0/0  
+

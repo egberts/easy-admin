@@ -1,0 +1,134 @@
+
+                             NOTES FOR DEBIAN USERS
+                             ======================
+
+
+1. AUTOMATIC STARTUP
+--------------------
+
+In order to avoid the startup of the firewall on an unconfigured machine,
+automatic startup, on boot, is disabled by default. To enable it just edit the
+file /etc/default/shorewall and set the "startup" variable to 1.
+
+
+2. CONFIGURATION
+----------------
+
+After the installation of the package the configuration directory
+/etc/shorewall/ will remain empty, except for:
+   
+   1. shorewall.conf
+   2. Makefile
+
+This is intentional because:
+
+   1. there does not exist a sane default configuration 
+   2. to avoid dpkg to prompt for upgrade of configuration file on every
+      package update
+
+The default upstream configuration files are installed, just as an example, in
+/usr/share/shorewall/configfiles/.
+
+In order to configure a simple firewall you should, at least, set up the
+following files:
+
+   1. /etc/shorewall/interfaces
+   2. /etc/shorewall/policy
+   3. /etc/shorewall/rules
+   4. /etc/shorewall/zones
+
+Default Debian configuration is slightly different from upstream configuration.
+The differences are:
+
+   1. IP forwarding is neither enabled nor disabled. It is set to "keep", that
+      means that if it is enabled it will remain enabled, and if it is disabled
+      it will remain disabled. If you are going to configure your host to act
+      as a router take care of this fact. To enable IP forwarding you have to
+      set to "on" the IP_FORWARDING variable in /etc/shorewall/shorewall.conf
+   2. Anti-spoofing kernel protections are enabled, by default, on all
+      interfaces. Upstream configuration disables it. To disable it set the
+      variable ROUTE_FILTER to "no" in /etc/shorewall/shorewall.conf
+   3. IPv6 support is enabled by default. It is disabled in upstream
+      configuration. To disable it set DISABLE_IPV6 to "yes" in
+      /etc/shorewall/shorewall.conf. IPv6 is enabled by default on Debian
+      because the protocol is not supported by default kernels.
+
+
+Other files such as modules, action.* and actions.std, that usually don't need
+customization, are installed within /usr/share/shorewall. Customization can be
+done in /etc/shorewall as shorewall looks for files in /etc/shorewall and
+then in /usr/share/shorewall. If a configuration file is found in
+/etc/shorewall the one in /usr/share/shorewall is ignored.
+
+More information about shorewall configuration can be found in the
+shorewall-doc package and on the shorewall website (http://www.shorewall.net).
+
+
+3. AVODING FLOOD (WITH LOGGED TRAFFIC) ON THE CONSOLE
+-----------------------------------------------------
+
+Shorewall logs packets using level "info". With the default klogd
+configuration these messages are also written on the console, and
+when the frequency of logging is high the console becomes unusable. It
+is highly recommended to configure klogd in order to prevent that
+messages of level "info" are logged on the console. You have two
+alternatives:
+
+   1. set KLOGD="-c 5" in /etc/init.d/klogd 
+   2. add dmesg -n5 in your /etc/shorewall/start
+
+
+4. IPV6
+-------
+
+The Shorewall default configuration does not block IPV6 traffic; the Debian
+package, instead, has this feature enabled (see DISABLE_IPV6 in
+/etc/shorewall.conf). Please note that when IPV6 is disabled the traffic is
+dropped and no logs are generated. As the drop policy just discards the traffic
+if you try to use IPV6 you could run into timeouts.
+
+
+5. PPP USERS 
+------------
+
+This section replaces old documentation found in
+/usr/share/doc/shorewall/README.ppp
+
+If you are running shorewall on a machine with a ppp connection and your
+firewall needs to calculate the interface's ip address, the startup can fail.
+It can fail because at the time the firewall is started the ppp interface is
+not ready yet. For other information about the problem see bugs #175382 and
+#234189.
+
+An example of this problem could be:
+
+/etc/shorewall/params:
+
+   EXT_IP=`find_interface_address ppp0`
+
+/etc/shorewall/rules:
+
+   DNAT    loc     dmz:10.0.0.1  tcp     http    -       $EXT_IP
+
+If $EXT_IP is not configured the startup fails.
+
+If your ppp connection is configured with /etc/init.d/ppp you must set it up
+using /etc/network/interfaces using the PPP method because just the networking
+script is run before shorewall. Moreover the interface name must be listed,
+using the "wait_interface" keyword, in /etc/default/shorewall in order to get
+the init script to wait until its ready.
+
+Examples of /etc/default/shorewall:
+
+   wait_interface="ppp0"
+
+or 
+
+   wait_interface="ppp0 ppp1"
+
+or, if you have defined $PPP in /etc/shorewall/params
+   
+   wait_interface=$PPP
+
+
+ -- Lorenzo Martignoni <martignlo@debian.org>, Thu, 19 Oct 2006 04:21:16 +0200

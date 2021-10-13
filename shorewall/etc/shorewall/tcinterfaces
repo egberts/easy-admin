@@ -1,0 +1,112 @@
+#
+# Shorewall version 4 - Tcinterfaces File
+#
+# For information about entries in this file, type "man shorewall-tcinterfaces"
+#
+# See http://shorewall.net/simple_traffic_shaping.htm for additional
+# information.
+#
+###############################################################################
+# 
+# This file lists the interfaces that are subject to simple traffic shaping.
+# Simple traffic shaping is enabled by setting TC_ENABLED=Simple in
+# shorewall.conf(5).
+# 
+# A note on the bandwidth definition used in this file:
+# 
+#   ● don't use a space between the integer value and the unit: 30kbit is valid
+#     while 30 kbit is not.
+# 
+#   ● you can use one of the following units:
+# 
+#     kbps
+# 
+#         Kilobytes per second.
+# 
+#     mbps
+# 
+#         Megabytes per second.
+# 
+#     kbit
+# 
+#         Kilobits per second.
+# 
+#     mbit
+# 
+#         Megabits per second.
+# 
+#     bps or number
+# 
+#         Bytes per second.
+# 
+#     k or kb
+# 
+#         Kilo bytes.
+# 
+#     m or mb
+# 
+#         Megabytes.
+# 
+#   ● Only whole integers are allowed.
+# 
+# The columns in the file are as follows (where the column name is followed by a
+# different name in parentheses, the different name is used in the alternate
+# specification syntax).
+# 
+# INTERFACE
+# 
+#     The logical name of an interface. If you run both IPv4 and IPv6 Shorewall
+#     firewalls, a given interface should only be listed in one of the two
+#     configurations.
+# 
+# TYPE - [external|internal]
+# 
+#     Optional. If given specifies whether the interface is external (facing
+#     toward the Internet) or internal (facing toward a local network) and
+#     enables SFQ flow classification.
+# 
+# IN-BANDWIDTH (in_bandwidth) - {-|bandwidth[:burst]|~bandwidth[:interval:
+#     decay_interval]}
+# 
+#     The incoming bandwidth of that interface. Please note that you are not able
+#     to do traffic shaping on incoming traffic, as the traffic is already
+#     received before you could do so. But this allows you to define the maximum
+#     traffic allowed for this interface in total, if the rate is exceeded, the
+#     packets are dropped. You want this mainly if you have a DSL or Cable
+#     connection to avoid queuing at your providers side.
+# 
+#     If you don't want any traffic to be dropped, set this to a value to zero in
+#     which case Shorewall will not create an ingress qdisc.Must be set to zero
+#     if the REDIRECTED INTERFACES column is non-empty.
+# 
+#     The optional burst option was added in Shorewall 4.4.18. The default burst
+#     is 10kb. A larger burst can help make the bandwidth more accurate; often
+#     for fast lines, the enforced rate is well below the specified bandwidth.
+# 
+#     What is described above creates a rate/burst policing filter. Beginning
+#     with Shorewall 4.4.25, a rate-estimated policing filter may be configured
+#     instead. Rate-estimated filters should be used with Ethernet adapters that
+#     have Generic Receive Offload enabled by default. See Shorewall FAQ 97a.
+# 
+#     To create a rate-estimated filter, precede the bandwidth with a tilde
+#     ("~"). The optional interval and decay_interval determine how often the
+#     rate is estimated and how many samples are retained for estimating. Please
+#     see http://ace-host.stuart.id.au/russell/files/tc/doc/estimators.txt for
+#     details.
+# 
+# OUT-BANDWIDTH (out_bandwidth) - [rate[:[burst][:[latency][:[peek][:[minburst
+#     ]]]]]]
+# 
+#     Added in Shorewall 4.4.13. The terms are defined in tc-tbf(8).
+# 
+#     Shorewall provides defaults as follows:
+# 
+#     burst - 10kb
+#     latency - 200ms
+# 
+#     The remaining options are defaulted by tc(8).
+# 
+###############################################################################
+#INTERFACE	TYPE		IN-BANDWIDTH		OUT-BANDWIDTH
+
+eth1  external  1000mbit  268mbit:10kb:200ms
