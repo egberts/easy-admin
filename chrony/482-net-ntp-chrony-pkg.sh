@@ -1,44 +1,47 @@
 #!/bin/bash
 # File: 485-net-ntp-chrony.sh
-# Title: Setup the Chrony timeserver
+# Title: Basic Setup of the Chrony timeserver
 # Description:
 #   - Chrony config file must exist first
 #   - Sets up the time server
 #     - Installs Chrony package
-#     -
-#   - Compiles all 'peer/server/pool' entries in sources.d/
-#   - Relocates debian pool from main chrony.conf into sources.d/
 #
 # Shell UID requirement:  Any username
 #
 # Reads:
 #   /etc/chrony/chrony.conf
 #   /etc/chrony/conf.d/*
-#   /etc/chrony/sources.d is only consulted by 'chronyc reload sources'
+#   /etc/chrony/sources.d/* is only consulted by 'chronyc reload sources'
 #   /run/chrony-dhcp/*
 # Changes:
-#   /etc/chrony/chrony.conf
-# Adds:
 #   /etc/chrony/conf.d
+#   /etc/chrony/chrony.conf
+#   /etc/chrony/sources.d
+# Adds:
+#   /etc/chrony/conf.d/*
 #
 
-SYS_CONF_DIR="/etc"
-CHRONY_CONF_DIRNAME="$SYS_CONF_DIR/chrony"
+sysconfdir="/etc"
+localstatedir="/"
 
-FILENAME="chrony.conf"
-FILEPATH="$CHRONY_CONF_DIRNAME"
+DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
+DEFAULT_DROPIN_CONF_FILENAME="zzz-remote-chronyc-all-denied.conf"
 
-CHRONY_CONFD_DIRNAME="$CHRONY_CONF_DIRNAME/conf.d"
 
-# A file in $DEBIAN_RUN_CHRONY_DHCP is written by
+CHRONY_CONF_DIRPATH="$sysconfdir/chrony"
+CHRONY_CONFD_DIRPATH="$CHRONY_CONF_DIRPATH/conf.d"
+CHRONY_SOURCESD_DIRPATH="$CHRONY_CONF_DIRPATH/sources.d"
+
+CHRONY_CONF_FILESPEC="$CHRONY_CONF_DIRPATH/$DEFAULT_CHRONY_CONF_FILENAME"
+DROPIN_CONF_FILESPEC="$CHRONY_CONFD_DIRPATH/$DEFAULT_DROPIN_CONF_FILENAME"
+
+# A file in $CHRONY_DHCP_DIRPATH is written by
 # the dhclient-exit-hooks.d/chrony script and read by
 # the chrony.conf, its 'sourcedir' config item or
 # its Debian's dynamic '/run/chrony-dhcp'
-DEBIAN_RUN_CHRONY_DHCP="/run/chrony-dhcp"
+CHRONY_DHCP_DIRPATH="$(realpath -m "$localstatedir/run/chrony-dhcp")"
 
-SRC_DIRPATH="/etc/chrony/sources.d"
 SRC_SUFFIX="sources"
-CONF_FILE="$FILEPATH/$FILENAME"
 
 ####################################################################
 # Defensive coding between NTP clients
@@ -63,56 +66,32 @@ if [ -z "$CHRONY_USER" ]; then
 fi
 echo "Username '$CHRONY_USER' found."
 
+
 ##############################################################
 # Chrony infrastructure
 ##############################################################
 #
-#
 # Find the Chrony config file.
-if [ ! -f "$CONF_FILE" ]; then
-  echo "Ummm, Chrony is missing the $CONF_FILE file."
-  exit 9
-fi
-
-# Find the correct location to drop the chrony.source file
-# that will contain the 'peer', 'server', and 'pool'.
-# We are only interested in the 'peer' part.
-SOURCEDIR_A=("$(grep sourcedir "$CONF_FILE" | awk '{print $2}')")
-if [ -z "${SOURCEDIR_A[*]}" ]; then
-  echo "This is an old Chrony setup."
-  echo "The configuration keyword 'sourcedir' is missing in $CONF_DIR."
-  echo "Aborted."
+if [ ! -f "$CHRONY_CONF_FILESPEC" ]; then
+  echo "Ummm, Chrony is missing the $CHRONY_CONF_FILESPEC file."
   exit 9
 fi
 
 # check if /etc/chrony/conf.d exist, if not, create them
-if [ ! -d "$CHRONY_CONFD_DIRNAME" ]; then
-  echo "Creating $CHRONY_CONFD_DIRNAME..."
-  sudo mkdir "$CHRONY_CONFD_DIRNAME"
-  sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONFD_DIRNAME"
-  sudo chmod 0750 "$CHRONY_CONFD_DIRNAME" # drop this to 0750 if ntp group-privilege is given to end-users.
+if [ ! -d "$CHRONY_CONFD_DIRPATH" ]; then
+  echo "Creating $CHRONY_CONFD_DIRPATH..."
+  echo sudo mkdir "$CHRONY_CONFD_DIRPATH"
+  sudo mkdir "$CHRONY_CONFD_DIRPATH"
 fi
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONFD_DIRPATH"
+sudo chmod 0750 "$CHRONY_CONFD_DIRPATH" # drop this to 0750 if ntp group-privilege is given to end-users.
 
-# get all config files, including drop-in config files.
-FOUNDED_CHRONY_CONFD_DIRNAME_INCLUDES="$(grep -e '^confdir\s' "$CONF_FILE" | awk '{print $2}')"
-FOUNDED_SOURCEDIR_INCLUDES="$(grep -e '^sourcedir\s' "$CONF_FILE" | awk '{print $2}')"
-MORE_CONF_FILES="$CONF_FILE"
-MORE_CONF_FILES="$MORE_CONF_FILES $FOUNDED_CHRONY_CONFD_DIRNAME_INCLUDES"
-MORE_CONF_FILES="$MORE_CONF_FILES $FOUNDED_SOURCEDIR_INCLUDES"
-
-# check that all include directories exist, as well
-# as adding its wildcard '/*' suffix
-CONF_FILES=
-for THIS_DIR in $FOUNDED_CHRONY_CONFD_DIRNAME_INCLUDES $FOUNDED_SOURCEDIR_INCLUDES; do
-  if [ ! -d "$THIS_DIR" ]; then
-    echo "Include directory '$THIS_DIR' is missing"
-    echo "Either create that '$THIS_DIR' directory or remove its corresponding "
-    echo "'sourcedir $THIS_DIR'/'confdir $THIS_DIR' "
-    echo "from the $CONF_FILE file".
-    exit 9
-  fi
-  CONF_FILES="$CONF_FILES $THIS_DIR/* "
-done
+if [ ! -d "$CHRONY_SOURCESD_DIRPATH" ]; then
+  echo "Creating $CHRONY_SOURCESD_DIRPATH..."
+  sudo mkdir "$CHRONY_SOURCESD_DIRPATH"
+fi
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_SOURCESD_DIRPATH"
+sudo chmod 0750 "$CHRONY_SOURCESD_DIRPATH"
 
 function stop_disable_sysd()
 {
@@ -126,68 +105,6 @@ function stop_disable_sysd()
   fi
 }
 
-MORE_CONF_FILES="$CONF_FILES"
-
-# Collect all existing 'server', 'peer', and 'pool' from /etc/chrony/chrony.conf
-# Skip the commented-out lines
-# shellcheck disable=SC2207
-NTP_ADDR_POOL_A=($(grep -E '^(\s*(~#)*\s*pool\s+)' "$MORE_CONF_FILES"| awk '{print $2}'))
-# shellcheck disable=SC2207
-NTP_ADDR_SERVER_A=($(grep -E '^(\s*(~#)*\s*server\s+)' "$MORE_CONF_FILES"| awk '{print $2}'))
-# shellcheck disable=SC2207
-NTP_ADDR_PEER_A=($(grep -E '^(\s*(~#)*\s*peer\s+)' "$MORE_CONF_FILES"| awk '{print $2}'))
-
-echo "Pool: ${NTP_ADDR_POOL_A[*]}"
-echo "Server: ${NTP_ADDR_SERVER_A[*]}"
-echo "Peer: ${NTP_ADDR_PEER_A[*]}"
-
-function relocate_keyword
-{
-  KEYWORD=$1     # no-space text string
-  NTP_ADDR_A=$2  # array
-  NEW_FILE="$SRC_DIRPATH/debian-stock-${KEYWORD}.${SRC_SUFFIX}"    # filespec
-  if [ -n "${NTP_ADDR_A[*]}" ]; then
-    # create a new source file
-    cat << NEW_CHRONY_D_FILE | sudo tee "${NEW_FILE}" >/dev/null
-#
-# File: $(basename "$NEW_FILE")
-# Path: $(dirname "$NEW_FILE")
-# Title: Chrony $KEYWORD source configuration file
-# Creator: $(realpath "$0")
-# Date: $(date)
-#
-NEW_CHRONY_D_FILE
-
-    # Write a keyword entry for each address in the array
-    for this_addr in ${NTP_ADDR_A[*]}; do
-      echo "${KEYWORD}  ${this_addr}" | sudo tee -a "${NEW_FILE}" >/dev/null
-    done
-    echo "" | sudo tee -a "${NEW_FILE}" >/dev/null
-  else
-    if [ -f "$NEW_FILE" ]; then
-      echo "This ${NEW_FILE} is lingering around, might have to delete them"
-      echo "Could have already been de-Debianized."
-    fi
-  fi
-
-  # Remove that entry from the main /etc/chrony/chrony.conf config file.
- sudo sed -r -i.backup \
-     "s/^(\s*(~#)*\s*${KEYWORD}\s+.*)$/# stock Debian NTP ${KEYWORD} keyword removed/" "${CONF_FILE}"
-
-}
-
-# if Debian, Comment out all pools from stock Debian config
-if [ -d "$SRC_DIRPATH" ]; then
-
-  # and relocate those settings into a /etc/chrony/sources.d/ subdir
-  relocate_keyword 'pool' "${NTP_ADDR_POOL_A[*]}"
-  relocate_keyword 'peer' "${NTP_ADDR_PEER_A[*]}"
-  relocate_keyword 'server' "${NTP_ADDR_SERVER_A[*]}"
-else
-  echo "This is not the latest Debian chrony, for there are no 'chrony.d' subdir."
-  echo "Aborted."
-fi
-
 # DISABLE crappy systemd-timesyncd
 stop_disable_sysd ntp
 stop_disable_sysd time-daemon
@@ -198,11 +115,11 @@ stop_disable_sysd systemd-timesyncd.service
 ################################################################
 
 # go check that various DHCP clients have been updating /run/chrony-dhcp file.
-if [ -d "${DEBIAN_RUN_CHRONY_DHCP}" ]; then
-  CHRONY_DHCP_LIST="$(/usr/bin/ls -1 -- $DEBIAN_RUN_CHRONY_DHCP/)"
+if [ -d "${CHRONY_DHCP_DIRPATH}" ]; then
+  CHRONY_DHCP_LIST="$(/usr/bin/ls -A -- "$CHRONY_DHCP_DIRPATH/" |xargs -n1 | sort -u | xargs)"
   CHRONY_DHCP_COUNT="$(echo "$CHRONY_DHCP_LIST" | wc -l)"
   if [ "$CHRONY_DHCP_COUNT" -ge 1 ]; then
-    for f in "${DEBIAN_RUN_CHRONY_DHCP}"/*; do
+    for f in "${CHRONY_DHCP_DIRPATH}"/*; do
       # shellcheck disable=SC2002
       IP_ADDR=$(cat "$f" | awk '{print $2}')
       NTP_SERVERS+="$NTP_SERVERS $IP_ADDR"
@@ -214,7 +131,7 @@ if [ -d "${DEBIAN_RUN_CHRONY_DHCP}" ]; then
   fi
 else
   echo "WARNING: DHCP 'dhclient' client is not updating the "
-  echo "   ${DEBIAN_RUN_CHRONY_DHCP} file from that /etc/dhcp/dhclient-exit.d/chrony "
+  echo "   ${CHRONY_DHCP_DIRPATH} file from that /etc/dhcp/dhclient-exit.d/chrony "
   echo "   DHCP client dispatcher-script file."
 fi
 echo "Configured NTP addr peer:   ${NTP_ADDR_PEER_A[*]}"
@@ -250,13 +167,13 @@ fi
 # Because it is a lexiographical-order drop-in config subdir,
 # we seek the last file entry there (using 'zzz')
 
-FILENAME="zzz-remote-chronyc-all-denied.conf"
-FILEPATH="$CHRONY_CONFD_DIRNAME"
-NEW_FILE="$FILEPATH/$FILENAME"
-cat << DROPIN_NTP_CLIENT_ALLOWED_CONF | sudo tee "${NEW_FILE}" >/dev/null
+touch "${DROPIN_CONF_FILESPEC}"
+chmod 0640 "${DROPIN_CONF_FILESPEC}"
+chown "${CHRONY_USER}:root" "${DROPIN_CONF_FILESPEC}"
+cat << DROPIN_NTP_CLIENT_ALLOWED_CONF | sudo tee "${DROPIN_CONF_FILESPEC}" >/dev/null
 #
-# File: $(basename "$NEW_FILE")
-# Path: $(dirname "$NEW_FILE")
+# File: $(basename "$DROPIN_CONF_FILESPEC")
+# Path: $(dirname "$DROPIN_CONF_FILESPEC")
 # Title: Deny all remote 'chronyc' access to this host
 # Description:
 #   Restrict the access to Chrony CLI to 'cmddeny all' (or nobody).
