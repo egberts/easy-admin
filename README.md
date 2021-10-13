@@ -1,5 +1,7 @@
 # easy-admin
-These scripts are for easy system administration. Scripts that helps white-lab managers. Also bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
+These scripts are for easy Debian system administration. 
+
+Scripts that helps white-lab managers. Also bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
 You installed a package using one of those distro package tools. They didn't configure your box correctly or it was barely usable at "basic settings".
 
