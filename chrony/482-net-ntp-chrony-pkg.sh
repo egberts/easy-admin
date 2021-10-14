@@ -31,6 +31,7 @@ DEFAULT_DROPIN_CONF_FILENAME="zzz-remote-chronyc-all-denied.conf"
 CHRONY_CONF_DIRPATH="$sysconfdir/chrony"
 CHRONY_CONFD_DIRPATH="$CHRONY_CONF_DIRPATH/conf.d"
 CHRONY_SOURCESD_DIRPATH="$CHRONY_CONF_DIRPATH/sources.d"
+CHRONY_RUN_DIRPATH="$localstatedir/run/chrony"
 
 CHRONY_CONF_FILESPEC="$CHRONY_CONF_DIRPATH/$DEFAULT_CHRONY_CONF_FILENAME"
 DROPIN_CONF_FILESPEC="$CHRONY_CONFD_DIRPATH/$DEFAULT_DROPIN_CONF_FILENAME"
@@ -55,7 +56,7 @@ for this_username in $USERNAMES_LIST; do
   found_in_passwd="$(grep -e ^"${this_username}": /etc/passwd )"
   if [ -n "$found_in_passwd" ]; then
     CHRONY_USER="$(echo "$found_in_passwd" | awk -F: '{print $1}')"
-    CHRONY_GROUP="$(id -g -n "$CHRONY_USER")"
+    CHRONY_GROUP="$(id -G -n "$CHRONY_USER")"
     break;
   fi
 done
@@ -71,11 +72,21 @@ echo "Username '$CHRONY_USER' found."
 # Chrony infrastructure
 ##############################################################
 #
+# Find the Chrony config directory.
+if [ ! -d "$CHRONY_CONF_DIRPATH" ]; then
+  echo "Ummm, Chrony is missing the $CHRONY_CONF_DIRPATH directory."
+  exit 9
+fi
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONF_DIRPATH"
+sudo chmod 0750 "$CHRONY_CONF_DIRPATH"
+
 # Find the Chrony config file.
 if [ ! -f "$CHRONY_CONF_FILESPEC" ]; then
   echo "Ummm, Chrony is missing the $CHRONY_CONF_FILESPEC file."
   exit 9
 fi
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONF_FILESPEC"
+sudo chmod 0640 "$CHRONY_CONF_FILESPEC"
 
 # check if /etc/chrony/conf.d exist, if not, create them
 if [ ! -d "$CHRONY_CONFD_DIRPATH" ]; then
@@ -92,6 +103,13 @@ if [ ! -d "$CHRONY_SOURCESD_DIRPATH" ]; then
 fi
 sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_SOURCESD_DIRPATH"
 sudo chmod 0750 "$CHRONY_SOURCESD_DIRPATH"
+
+if [ ! -d "$CHRONY_RUN_DIRPATH" ]; then
+  echo "Package install should have created this $CHRONY_RUN_DIRPATH; aborted."
+  edit 9
+fi
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_RUN_DIRPATH"
+sudo chmod 0750 "$CHRONY_RUN_DIRPATH"
 
 function stop_disable_sysd()
 {
@@ -167,9 +185,9 @@ fi
 # Because it is a lexiographical-order drop-in config subdir,
 # we seek the last file entry there (using 'zzz')
 
-touch "${DROPIN_CONF_FILESPEC}"
-chmod 0640 "${DROPIN_CONF_FILESPEC}"
-chown "${CHRONY_USER}:root" "${DROPIN_CONF_FILESPEC}"
+sudo touch "${DROPIN_CONF_FILESPEC}"
+sudo chmod 0640 "${DROPIN_CONF_FILESPEC}"
+sudo chown "${CHRONY_USER}:${CHRONY_GROUP}" "${DROPIN_CONF_FILESPEC}"
 cat << DROPIN_NTP_CLIENT_ALLOWED_CONF | sudo tee "${DROPIN_CONF_FILESPEC}" >/dev/null
 #
 # File: $(basename "$DROPIN_CONF_FILESPEC")
@@ -187,3 +205,4 @@ cat << DROPIN_NTP_CLIENT_ALLOWED_CONF | sudo tee "${DROPIN_CONF_FILESPEC}" >/dev
 cmddeny all
 
 DROPIN_NTP_CLIENT_ALLOWED_CONF
+

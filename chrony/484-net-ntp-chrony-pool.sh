@@ -81,12 +81,12 @@ if [ "$DISTRO_MANUF" == "Debian" ]; then
   DEFAULT_PREFIX=""  # '/'
   DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
   DEFAULT_LOCALSTATEDIR=""  # '/'
-  EXTENDED_SYSCONFDIR_DIRNAME="bind"
+  EXTENDED_SYSCONFDIR_DIRNAME="chrony"
 elif [ "$DISTRO_MANUF" == "Redhat" ]; then
   DEFAULT_PREFIX=""  # '/'
   DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
   DEFAULT_LOCALSTATEDIR="/var"
-  EXTENDED_SYSCONFDIR_DIRNAME="named"  # change this often
+  EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
 else
   DEFAULT_PREFIX="/usr"
   DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var

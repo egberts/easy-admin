@@ -170,6 +170,26 @@ if [ ! -w "$CONF_FILESPEC" ]; then
   SUDO_BIN=sudo
 fi
 
+# USERNAMES_LIST="_named bind9 bind named"  # new ISC Bind9
+# USERNAMES_LIST="_ntp ntp chrony"  # new NTP
+USERNAMES_LIST="_chrony chrony ntp"  # new Chrony
+
+for this_username in $USERNAMES_LIST; do
+  found_in_passwd="$(grep -e ^"${this_username}": /etc/passwd )"
+  if [ -n "$found_in_passwd" ]; then
+    USERNAME="$(echo "$found_in_passwd" | awk -F: '{print $1}')"
+    break;
+  fi
+done
+
+if [ -z "$USERNAME" ]; then
+  echo "List of usernames not found: $USERNAMES_LIST"
+  exit 9
+fi
+echo "Username '$USERNAME' found."
+GROUPNAME="$(id -G -n "$USERNAME")"
+
+
 # Syntax: create_file CONF_FILESPEC [file-permission [owner:group]]
 function create_file
 {
@@ -278,7 +298,7 @@ function annotate
 }
 
 echo "Writing $CONF_FILESPEC config file..."
-create_file "$CONF_FILESPEC" 0640 "${CHRONY_USERNAME}:${CHRONY_GROUPNAME}"
+create_file "$CONF_FILESPEC" 0640 "${USERNAME}:${GROUPNAME}"
 add_file_headers "Configuration file for Chrony NTP daemon"
 
 # DHCP-CHRONY is provided by 'chrony' package

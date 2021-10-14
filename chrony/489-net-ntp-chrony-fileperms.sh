@@ -205,16 +205,16 @@ if [ "$REPLY" != "c" ]; then
 
 else
   echo "CIS Security settings..."
-  file_perm_check CONF_FILESPEC "640" "_chrony" "root"
-  file_perm_check CHRONY_CONF_DIR "750" "_chrony" "root"
-  file_perm_check CHRONY_CONFD_DIR "750" "_chrony" "root"
-  file_perm_check CHRONY_SOURCESD_DIR "750" "_chrony" "root"
+  file_perm_check CONF_FILESPEC "640" "_chrony" "_chrony"
+  file_perm_check CHRONY_CONF_DIR "750" "_chrony" "_chrony"
+  file_perm_check CHRONY_CONFD_DIR "750" "_chrony" "_chrony"
+  file_perm_check CHRONY_SOURCESD_DIR "750" "_chrony" "_chrony"
 
   # /var/run/chrony (or /var/chrony) can adjusted for chrony tool restriction
   #   0755 @ /var/run/chrony for anyone can use these chrony tools
   #   0750 @ /var/run/chrony for chrony user/group can use these chrony tools
-  file_perm_check CHRONY_RUN_DIR "750" "_chrony" "root"
-  file_perm_check CHRONY_KEYS_FILESPEC "600" "_chrony" "root"
+  file_perm_check CHRONY_RUN_DIR "750" "_chrony" "_chrony"
+  file_perm_check CHRONY_KEYS_FILESPEC "600" "_chrony" "_chrony"
   file_perm_check CHRONY_DRIFT_FILESPEC "600" "_chrony" "_chrony"
 
 fi

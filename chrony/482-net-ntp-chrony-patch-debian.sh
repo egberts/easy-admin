@@ -57,7 +57,7 @@ for this_username in $USERNAMES_LIST; do
   found_in_passwd="$(grep -e ^"${this_username}": /etc/passwd )"
   if [ -n "$found_in_passwd" ]; then
     CHRONY_USER="$(echo "$found_in_passwd" | awk -F: '{print $1}')"
-    CHRONY_GROUP="$(id -g -n "$CHRONY_USER")"
+    CHRONY_GROUP="$(id -G -n "$CHRONY_USER")"
     break;
   fi
 done
