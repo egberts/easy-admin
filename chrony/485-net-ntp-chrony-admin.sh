@@ -465,7 +465,7 @@ if [ -z "$NEED_CMD_ACL_NET_LOOPBACK" ]; then
     # to use the admin tool to Chrony daemon;
     # there is no 'everybody' option here.
     # the tool is named Chrony CLI (chronyc) utility.
-    #  root-only   'cmdport 0'  # turns off UNIX socket
+    #  root-only   'bindacqdevice /'  # turns off UNIX socket
     #  root-only   'cmddeny all' # turns off network access
     #  chrony-group (leave cmdport and cmddeny alone)
     echo ""
@@ -679,13 +679,13 @@ if [ -n "$NEED_CMD_ACL_UNIX_SOCKET" ]; then
   write_note_bindcmdaddress
   if [ "$NEED_CMD_ACL_UNIX_SOCKET" -eq 0 ]; then
     echo "...No UNIX file permissions needed."
-    write_conf "bindcmdaddress /"
+    write_conf "bindcmddevice /"
     write_note ""
   else
     echo "...UNIX file permissions needed for chronyc UNIX socket access."
     echo "...Start adding '_chrony' group supplemental to selected user/UID"
     write_note "# UNIX file permissions needed for chronyc UNIX socket access."
-    write_conf "bindcmdaddress $CHRONY_SOCK_FILESPEC"
+    write_conf "bindcmddevice $CHRONY_SOCK_FILESPEC"
     write_note ""
   fi
 fi
