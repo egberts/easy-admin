@@ -679,7 +679,7 @@ if [ -n "$NEED_CMD_ACL_UNIX_SOCKET" ]; then
   write_note_bindcmdaddress
   if [ "$NEED_CMD_ACL_UNIX_SOCKET" -eq 0 ]; then
     echo "...No UNIX file permissions needed."
-    write_conf "bindcmddevice /"
+    write_conf "bindcmdaddress /"
     write_note ""
   else
     echo "...UNIX file permissions needed for chronyc UNIX socket access."
