@@ -124,8 +124,6 @@ echo ""
 echo "Verified nameservers: $VERIFIED_NAMESERVERS_LIST"
 
 echo ""
-echo "SUGGESTIONS"
-echo "-----------"
 if [ "$SYSTEMD_LOOPBACK_DNS_USED" == "yes" ] &&
    [ "$SYSTEMD_LOOPBACK_DNS_ACTIVE" == "no" ]; then
   echo "This is weird; your 127.0.0.53 DNS server is dead,"
@@ -231,6 +229,9 @@ function find_config_value
 find_config_value "main" "systemd-resolved"
 NETWORKMANAGER_INI_SYSTEMD_RESOLVED="$CONFIG_VALUE"
 
+echo ""
+echo "SUGGESTIONS"
+echo "-----------"
 # Concurrency of different resolver daemons
 if [ -n "$NETWORKMANAGER_BIN" ] && [ -n "$SYSTEMCTL_BIN" ]; then
   # Both binaries exist
@@ -269,6 +270,6 @@ if [ -n "$NETWORKMANAGER_BIN" ] && [ -n "$SYSTEMCTL_BIN" ]; then
     echo "Both systemd and NetworkManager are fighting over $RESOLV_CONF_FILESPEC"
   fi
 fi
-
+echo "Done."
 exit 0
 
