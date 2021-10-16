@@ -2,11 +2,11 @@
 These scripts are for easy Debian (and some Redhat) system administration for a
 simple bare minimum server.
 
-Scripts that helps white-lab managers. Also bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
+Scripts that would only help white-lab managers; and also to help us bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
-You installed a package using one of those distro package tools. They didn't configure your box correctly or it was barely usable at "basic settings".
+PREMISE: You installed a package using one of those distro package tools. They didn't configure your box correctly or it was barely usable at "basic settings".
 
-Now we have these bash scripts, that takes you even further in customization.
+SOLUTION: Now we have these bash scripts, that takes you even further in customization.
 
 You run them,
 it looks at what kind of OS and network interfaces you have,
