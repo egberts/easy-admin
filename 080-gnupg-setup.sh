@@ -65,7 +65,7 @@ fi
 echo "Passed minimum GPG $MIN_GPG_VERSION version check."
 
 USER_NAME="$USER"
-GROUP_NAME="$(id -g -n $USER )"
+GROUP_NAME="$(id -g -n "$USER" )"
 
 # Ensure that file ~/.gnupg/gpg-agent.conf exists before going any further
 DOT_GNUPG_DIRNAME=".gnupg"
@@ -76,6 +76,73 @@ if [ ! -d "$DOT_GNUPG_DIRPATH" ]; then
   chown "${USER_NAME}:${GROUP_NAME}" "$DOT_GNUPG_DIRPATH"
   mkdir "$DOT_GNUPG_DIRPATH"
 fi
+
+# Check permission or bail
+if [ "$(stat -c %a "$DOT_GNUPG_DIRPATH")" != "700" ]; then
+  echo "File permission of $DOT_GNUPG_DIRPATH directory is not SAFE!"
+  ls -lat "$DOT_GNUPG_DIRPATH"
+  exit 6
+fi
+
+GPG_CONF_FILENAME="gpg.conf"
+GPG_CONF_FILESPEC="$DOT_GNUPG_DIRPATH/$GPG_CONF_FILENAME"
+if [ -f "$GPG_CONF_FILESPEC" ]; then
+  touch "$GPG_CONF_FILESPEC"
+  chmod 0600 "$GPG_CONF_FILESPEC"
+  chown "${USER_NAME}:${GROUP_NAME}" "$GPG_CONF_FILESPEC"
+  GPG_CONF_APPEND="-a"
+  echo "Appending to $GPG_CONF_FILESPEC config file..."
+else
+  echo "File $GPG_CONF_FILESPEC is missing, creating..."
+fi
+
+# Check permission or bail
+if [ "$(stat -c %a "$GPG_CONF_FILESPEC")" != "700" ]; then
+  echo "File permission of $GPG_CONF_FILESPEC file was not SAFE; adjusted."
+  chmod 0600 "$GPG_CONF_FILESPEC"
+fi
+
+# Drop some settings into ~/.gnupg/gpg-agent.conf
+cat << GPG_EOF | tee -p "$GPG_CONF_APPEND" "$GPG_CONF_FILESPEC" >/dev/null 2>&1
+#
+# File: gpg.conf
+# Path: ~/.gnupg
+# Title: GPG configuration file
+# Creator: $(basename "$0")
+# Date: $(date)
+#
+utf8-strings
+
+# verbose
+
+# debug-level 5
+
+max-cert-depth 5
+
+#
+# default-new-key-algo option can be used to change the default algorithms for
+# key generation.  The string is similiar to the arguments required for the
+# command --add-quick-key but slightly different.  For example, the current
+# default of "rsa2048/cert,sign+rsa2048/encr" (or "rsa3072") can be changed to
+# the value of what we currently call future default, which is
+# "ed25519/cert,sign+cv25519/encr".  You need to consult the source code to
+# learn the details.  Note that the advanced key generation commands can always
+# be used to specify a key algorithm directly.
+
+# default-new-key-algo "rsa2048/cert,sign+rsa2048/encr"  # old default
+default-new-key-algo "ed25519/cert,sign+cv25519/encr"
+
+# trust-model "classic"
+trust-model "pgp"
+
+GPG_EOF
+retsts=$?
+if [ "$retsts" -ne 0 ]; then
+  echo "Error writing to $GPG_CONF_FILESPEC. Errcode: $retsts"
+  exit $retsts
+fi
+echo "File $GPG_CONF_FILESPEC created."
+
 GPG_AGENT_CONF_FILENAME="gpg-agent.conf"
 GPG_AGENT_CONF_FILESPEC="$DOT_GNUPG_DIRPATH/$GPG_AGENT_CONF_FILENAME"
 if [ ! -f "$GPG_AGENT_CONF_FILESPEC" ]; then
@@ -88,7 +155,7 @@ if [ ! -f "$GPG_AGENT_CONF_FILESPEC" ]; then
   echo "Creating $GPG_AGENT_CONF_FILESPEC config file..."
   echo "GPG Agent Default Cache TTL: $GPG_AGENT_DEFAULT_CACHE_TTL"
   echo "GPG Agent Maximum Cache TTL: $GPG_AGENT_MAX_CACHE_TTL"
-  cat << GPG_AGENT_EOF | tee $GPG_AGENT_CONF_FILESPEC >/dev/null 2>&1
+  cat << GPG_AGENT_EOF | tee "$GPG_AGENT_CONF_FILESPEC" >/dev/null 2>&1
 #
 # File: gpg-agent.conf
 # Path: ~/.gnupg
@@ -143,18 +210,6 @@ default-cache-ttl $GPG_AGENT_DEFAULT_CACHE_TTL
 
 max-cache-ttl $GPG_AGENT_MAX_CACHE_TTL
 
-#
-# default-new-key-algo option can be used to change the default algorithms for
-# key generation.  The string is similiar to the arguments required for the
-# command --add-quick-key but slightly different.  For example, the current
-# default of "rsa2048/cert,sign+rsa2048/encr" (or "rsa3072") can be changed to
-# the value of what we currently call future default, which is
-# "ed25519/cert,sign+cv25519/encr".  You need to consult the source code to
-# learn the details.  Note that the advanced key generation commands can always
-# be used to specify a key algorithm directly.
-
-# default-new-key-algo "rsa2048/cert,sign+rsa2048/encr"  # old default
-default-new-key-algo "ed25519/cert,sign+cv25519/encr"
 
 #
 # ssh-fingerprint-digest selects the digest algorithm used to compute such
@@ -163,14 +218,27 @@ default-new-key-algo "ed25519/cert,sign+cv25519/encr"
 
 ssh-fingerprint-digest SHA256
 
+pinentry-timeout 60
+
 GPG_AGENT_EOF
+  retsts=$?
+  if [ "$retsts" -ne 0 ]; then
+    echo "Error writing to $GPG_AGENT_CONF_FILESPEC. Errcode: $retsts"
+    exit $retsts
+  fi
   echo "File $GPG_AGENT_CONF_FILESPEC created."
 fi
+exit
 
 # Refresh any existing keys
 echo ""
 echo "Refreshing GnuPG keys ..."
 gpg --refresh >/dev/null 2>&1
+retsts=$?
+if [ "$retsts" -ne 0 ]; then
+  echo "Error refreshing GPG keyfile. Errcode: $retsts"
+  exit $retsts
+fi
 
 echo ""
 echo "Dropping in GPG-specific bash profile login script snippet."
@@ -225,6 +293,8 @@ DROPIN_FILEPATH="$DROPIN_DIRPATH"
 DROPIN_FILESPEC="$DROPIN_FILEPATH/$DROPIN_FILENAME"
 
 echo "Creating $DROPIN_FILESPEC ..."
+touch $DROPIN_FILESPEC
+chmod a+rx $DROPIN_FILESPEC
 cat << DROPIN_EOF | sudo tee "$DROPIN_FILESPEC" >/dev/null 2>&1
 #
 # File: $DROPIN_FILENAME
