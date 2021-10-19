@@ -24,15 +24,15 @@
 
 BASHRC_DROPIN_DIRNAME=".bashrc.d"
 BASHRC_DROPIN_PATHNAME="$HOME"
-BASHRC_DROPIN_DIRSPEC="${BASHRC_DROPIN_PATHNAME}/.bashrc.d"
+BASHRC_DROPIN_DIRSPEC="${BASHRC_DROPIN_PATHNAME}/$BASHRC_DROPIN_DIRNAME"
 
-echo "Checking for a $BASHRC_DROP_IN_DIRSPEC directory..."
+echo "Checking for a $BASHRC_DROPIN_DIRSPEC directory..."
 if [ ! -d "$BASHRC_DROPIN_DIRSPEC" ]; then
   echo "Directory $BASHRC_DROPIN_DIRSPEC does not exist; creating..."
   mkdir "$BASHRC_DROPIN_DIRSPEC"
   chmod 0700 "$BASHRC_DROPIN_DIRSPEC"
 fi
-echo "Checking for $BASHRC_DROP_IN_DIRSPEC subdirectories..."
+echo "Checking for $BASHRC_DROPIN_DIRSPEC subdirectories..."
 for this_dir in aliases completions plugins; do
   THIS_DROPIN_DIRSPEC="$BASHRC_DROPIN_DIRSPEC/$this_dir"
   if [ ! -d "$THIS_DROPIN_DIRSPEC" ]; then
@@ -123,7 +123,7 @@ echo "  (A)ppend drop-in scripting at end of your existing ~/.bashrc"
 read -rp "Backup, Overwrite, or Append to your ~/.bashrc file? (B/o/a): " -eiB
 REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
 if [ -z "$REPLY" ] || [ "$REPLY" == 'b' ]; then
-  mv -v -i $DOT_BASHRC_FILESPEC "$DOT_BASHRC_FILESPEC.backup"
+  mv -v -i "$DOT_BASHRC_FILESPEC" "$DOT_BASHRC_FILESPEC.backup"
   create_dot_bashrc_header
   cp -v -i "$SKEL_DOT_BASHRC_FILESPEC" "$DOT_BASHRC_FILESPEC"
   append_dot_bashrc
