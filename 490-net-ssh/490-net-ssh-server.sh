@@ -6,6 +6,17 @@
 
 MINI_REPO=${PWD}
 
+prefix=/usr
+prefix=        # Debian
+# exec_prefix="$prefix"
+# VAR_DIRPATH="$exec_prefix/var"  # Redhat
+# VAR_DIRPATH=""  # Debian
+
+sysconfdir="$prefix/etc"  # Redhat
+sysconfdir="$prefix/etc/ssh"  # Debian
+# localstatedir="$VAR_DIRPATH/run"
+
+
 # We are forcing no-root login permitted here
 # so let us check to ensure that SOMEONE can
 # log back in as non-root and become root
@@ -54,26 +65,31 @@ sudo apt install openssh-server
 
 echo "We are blowing away the old SSH settings"
 
+SSHD_CONFIG_FILENAME="sshd_config"
+SSHD_CONFIG_DIRPATH="$sysconfdir"
+SSHD_CONFIG_FILESPEC="$SSHD_CONFIG_DIRPATH/$SSHD_CONFIG_FILENAME"
 # Only the first copy is saved as the backup
-if [ ! -f /etc/ssh/sshd_config.backup ]; then
-  mv /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
+if [ ! -f "${SSHD_CONFIG_FILESPEC}.backup" ]; then
+  mv "$SSHD_CONFIG_FILESPEC" "${SSHD_CONFIG_FILESPEC}.backup"
 fi
+sudo chown root:ssh "$SSHD_CONFIG_FILESPEC"
+sudo chmod 640 "$SSHD_CONFIG_FILESPEC"
+
 
 # Update the SSH server settings
 #
 
-DATE="$(date)"
-cat << SSHD_EOF | sudo tee /etc/ssh/sshd_config
+cat << SSHD_EOF | sudo tee "$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
 #
-# File: sshd_config
-# Path: /etc/ssh
+# File: $SSHD_CONFIG_FILENAME
+# Path: $SSHD_CONFIG_DIRPATH
 # Title: SSH server configuration file
 #
 # Edition: sshd(8) v8.4p1 compiled-default
 #          OpenSSL 1.1.1k  25 Mar 2021
 #          \$ /usr/sbin/sshd -f /dev/null -T
-# Creator: ${0}
-# Date: ${DATE}
+# Creator: $(basename "$0")
+# Date: $(date)
 #
 # Sort Order: Program Execution
 #
@@ -113,25 +129,26 @@ cat << SSHD_EOF | sudo tee /etc/ssh/sshd_config
 include "/etc/ssh/sshd_config.d/*.conf"
 SSHD_EOF
 
-sudo mkdir /etc/ssh/sshd_config.d
-sudo cp "$MINI_REPO"/sshd_config.d/* /etc/ssh/sshd_config.d/
+SSHD_CONFIG_DIRNAME="sshd_config.d"
+SSHD_CONFIG_DIRSPEC="$sysconfdir/$SSHD_CONFIG_DIRNAME"
+if [ ! -d "$SSHD_CONFIG_DIRSPEC" ]; then
+  sudo mkdir "$SSHD_CONFIG_DIRSPEC"
+fi
+sudo chown root:ssh "$SSHD_CONFIG_DIRSPEC"
+sudo chmod 750 "$SSHD_CONFIG_DIRSPEC"
+sudo cp "$MINI_REPO"/sshd_config.d/* "$SSHD_CONFIG_DIRSPEC"/
+
+sudo chown root:ssh ${SSHD_CONFIG_DIRSPEC}/*
+sudo chmod 640 ${SSHD_CONFIG_DIRSPEC}/*
 
 
-sudo chown root:ssh /etc/ssh/sshd_config
-sudo chmod 640 /etc/ssh/sshd_config
-
-sudo chown root:ssh /etc/ssh/sshd_config.d
-sudo chmod 750 /etc/ssh/sshd_config.d
-
-sudo chown root:ssh /etc/ssh/sshd_config.d/*
-sudo chmod 640 /etc/ssh/sshd_config.d/*
-
-
-sudo sshd -T -t
-RETSTS=$?
-if [ $RETSTS -ne 0 ]; then
+sudo sshd -T -t >/dev/null 2>&1
+retsts=$?
+if [ $retsts -ne 0 ]; then
   echo "Error during ssh config syntax checking."
-  exit 3
+  echo "Showing sshd_config output"
+  sudo sshd -T -t
+  exit "$retsts"
 fi
 
 # Check if non-root user has 'ssh' supplementary group membership
@@ -151,6 +168,7 @@ if [ $FOUND -eq 0 ]; then
   echo "  usermod -g ssh ${USER}"
   exit 1
 fi
+exit
 
 sudo systemctl restart ssh.service
 
