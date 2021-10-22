@@ -1,0 +1,775 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+#   ?SECTION NEW
+#   
+#   Packets in the NEW state are processed by rules in this section. If
+#   the INVALID and/or UNTRACKED sections are empty or not included,
+#   then the packets in the corresponding state(s) are also processed
+#   in this section.
+#   
+#   Note
+#   If you are not familiar with Netfilter to the point where you are
+#   comfortable with the differences between the various connection
+#   tracking states, then it is suggested that you place all of your
+#   rules in the NEW section (That's after the line that reads ?SECTION
+#   NEW').
+#   
+#   Warning
+#   If you specify FASTACCEPT=Yes in shorewall.conf[2](5) then the ALL,
+#   ESTABLISHED and RELATED sections must be empty.
+#   
+#   An exception is made if you are running Shorewall 4.4.27 or later
+#   and you have specified a non-default value for RELATED_DISPOSITION
+#   or RELATED_LOG_LEVEL. In that case, you may have rules in the
+#   RELATED section of this file.
+#
+#   Wolfe's note:  
+#    1. Never a good idea to move rules between sections. (unless you know)
+#    2. It is safe to organized by source-dest, as long as ordering within
+#       those matching tuple is still being maintained
+#    3. sub-chains go at the end of each sub-section
+#
+#   See following for further details.
+#     /usr/share/shorewall/macro.*
+#
+#   For information about entries in this file, type "man shorewall-rules"
+#
+# Header: action, src-ip, dst-ip, protocol, dest-port, src-port, orig-dest,
+#             rate-limit, user/group, mark, conn-limit, time
+# Action: `shorewall  reload|restart|safe-restart|safe-start|star]`
+# Source: Shorewall/Rules/process_rules()
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+#============================================================================
+#== NEW == NEW == NEW == NEW == NEW == NEW == NEW == NEW == NEW == NEW 
+#============================================================================
+?SECTION NEW
+
+#
+#  All Section-NEW DROPs/REJECTs goes here firstly
+#
+?COMMENT Stop NETBIOS crap
+REJECT		all		red		tcp	137,445
+REJECT		all		red		udp	137:139
+
+?COMMENT Disallow port 3333
+REJECT		all		red		tcp	3333
+# ?COMMENT Invalid(DROP)
+# Invalid(DROP)	red		all		tcp
+
+?COMMENT Disallow multicast IRC port to DMZ
+DROP        all     dmz:224.0.0.0/4 udp 6667
+DROP        all     dmz:224.0.0.0/4 tcp 6667
+
+#
+#  All Section-NEW ACCEPTs goes here after DROPs/REJECTs
+#
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   red-red
+#   red-fw
+#   red-grn
+#     red-dmz
+#     red-blue
+#     red-grn
+#     red-white
+#   ^^red-green^^
+#   red-vmnet
+#
+# red-fw - (NEW Connection section)
+# red-fw - Typically, servers on this host
+#       Don't allow connection pickup from the red zone
+#
+?COMMENT red-fw Ping
+ACCEPT		red		$FW		icmp
+?COMMENT red-fw Ping
+Ping(ACCEPT)	red             $FW
+?COMMENT red-fw traceroute
+Trcrt(ACCEPT)	red             $FW
+?COMMENT red-fw DNS
+DNS(ACCEPT)	red		$FW
+?COMMENT red-fw SSH
+ACCEPT:info	red		$FW	tcp	22     # should remove this
+ACCEPT:info	red		$FW	tcp	2223
+?COMMENT red-fw Hidden Master DNS
+ACCEPT		red		$FW	tcp	345
+ACCEPT		red		$FW	udp	345
+?COMMENT red-fw NTP
+NTP(ACCEPT)	red		$FW
+# HTTPS(ACCEPT)	red		$FW
+?COMMENT red-fw Submission
+Submission(ACCEPT)	red	$FW
+# ACCEPT:info	red:^[US,A2]	$FW	tcp	2224 # Geo rejected ATT MiFi
+?COMMENT red-fw portknocked SSH
+PortKnock:info  red             $FW     tcp     2224,2134,2799,2245
+
+# IMAPS(ACCEPT)	red		$FW
+?COMMENT red-fw OpenVPN
+OpenVPN(ACCEPT)	red		$FW
+# Drop 465/tcp smtps from Anonymous Proxy (A1) & satellite provider network (A2)
+?COMMENT red-fw drop SMTPS from foreign countries
+###DROP:info	red:^[A1,A2,CN]	$FW	tcp	465
+?COMMENT red-fw SMTPS
+SMTPS(ACCEPT)	red		$FW
+?COMMENT red-fw Nintendo ConnTest
+ACCEPT		red		$FW	udp	- 50920 # Nintendo ConnTest
+?COMMENT red-fw Inbound webservers
+Web(ACCEPT)	red		$FW
+?COMMENT red-fw HTTPS(8443)
+ACCEPT          red             $FW     tcp     8443
+?COMMENT red-fw Mail submission
+Submission(ACCEPT)	red	$FW
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-request
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-reply
+?COMMENT red-fw drop IRC from webcams
+DROP    red     $FW     udp 6667
+DROP    red     $FW     tcp 6667
+
+?COMMENT red-fw drop counter
+DROP	red	$FW
+
+
+# red-dmz (NEW Connection section)
+
+# red-blue (NEW Connection section)
+?COMMENT red-blue: forwarding UPnP
+forwardUPnP     red		blue
+
+# red-grn (NEW Connection section)
+
+# red-white (NEW Connection section)
+
+# red-green (NEW Connection section)
+#    What goes all the way through?
+?COMMENT red-green: forwarding UPnP
+forwardUPnP     red		green
+?COMMENT red-green: BitTorrent
+BitTorrent(ACCEPT)	red	green
+ACCEPT	red	green	tcp 6969  # BitTorrent (unofficial)
+ACCEPT	red	green	udp 6969  # BitTorrent (unofficial)
+
+
+# red-vmnet (NEW Connection section)
+?COMMENT red-vmnet: all
+ACCEPT:info	red		vmnet	
+
+#########################################################
+#   fw-red
+#   fw-fw
+#   fw-green
+#     fw-dmz
+#     fw-blue
+#     fw-grn
+#     fw-white
+#   fw-green
+#   fw-vmnet
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+
+# fw-red (NEW Connection section)
+?COMMENT fw-red
+DROP:info	$FW		red:54.200.75.96	
+DROP:info	$FW		red:54.200.75.96	
+?COMMENT fw-red DHCP-Bcast
+ACCEPT		$FW   		red:255.255.255.255/32 	udp	67   68
+?COMMENT fw-red DHCP-Unicast
+ACCEPT		$FW   		red		udp	67   68
+?COMMENT fw-red ping
+Ping(ACCEPT)	$FW             red
+?COMMENT fw-red traceroute
+Trcrt(ACCEPT)	$FW             red
+?COMMENT fw-red SSH
+SSH(ACCEPT)	$FW		red
+?COMMENT fw-red DNS
+DNS(ACCEPT)	$FW		red
+?COMMENT fw-red NTP
+NTP(ACCEPT)	$FW		red
+?COMMENT fw-red HTTP/HTTPS
+Web(ACCEPT)	$FW		red
+?COMMENT fw-red secured SMTP
+Submission(ACCEPT)	$FW	red
+?COMMENT fw-red Rsync
+Rsync(ACCEPT)	$FW		red
+?COMMENT fw-red finger
+Finger(ACCEPT)	$FW		red
+?COMMENT fw-red Git
+Git(ACCEPT)     $FW		red
+?COMMENT fw-red HKP
+HKP(ACCEPT)	$FW		red
+?COMMENT fw-red secured IMAP
+#### IMAP(ACCEPT)	$FW		red
+IMAPS(ACCEPT)	$FW		red
+
+
+
+# fw-fw (NEW Connection section)
+#
+# What stupid applications do with they talk to themselves instead of sockets
+?COMMENT fw-fw Ping
+ACCEPT		$FW		$FW		icmp
+?COMMENT fw-fw Ping
+Ping(ACCEPT)	$FW             $FW
+?COMMENT fw-fw traceroute
+Trcrt(ACCEPT)	$FW             $FW
+?COMMENT fw-fw ISC-Bind control port
+RNDC(ACCEPT)	$FW		$FW
+?COMMENT fw-fw SSH
+SSH(ACCEPT)	$FW		$FW
+?COMMENT fw-fw DNS
+DNS(ACCEPT)	$FW		$FW
+?COMMENT fw-fw HTTP/HTTPS
+Web(ACCEPT)	$FW		$FW
+?COMMENT fw-fw HTTPS(8443)
+ACCEPT          $FW		$FW	tcp	8443
+?COMMENT fw-fw Mail submission
+Submission(ACCEPT)	$FW	$FW
+?COMMENT fw-fw SMTPS
+SMTPS(ACCEPT)	$FW		$FW
+# RDP(ACCEPT)	$FW		$FW
+# VNC(ACCEPT)	$FW		$FW
+?COMMENT fw-fw WWW proxy
+Squid(ACCEPT)	$FW		$FW
+?COMMENT fw-fw webmin
+ACCEPT		$FW		$FW	tcp	12137  # webmin
+?COMMENT fw-fw Nagio NPRE
+ACCEPT		$FW		$FW	tcp	5666   # nagio npre
+
+# fw-blue (NEW Connection section)
+?COMMENT fw-blue icmp
+ACCEPT		$FW		blue		icmp
+?COMMENT fw-blue ping
+Ping(ACCEPT)	$FW             blue
+?COMMENT fw-blue DLNA
+ACCEPT		$FW		blue	udp	-	1900 # DLNA server
+?COMMENT fw-blue SSH
+SSH(ACCEPT)	$FW		blue
+
+# fw-grn (NEW Connection section)
+
+# fw-white (NEW Connection section)
+
+?COMMENT fw-white ping
+ACCEPT		$FW		white		icmp
+?COMMENT fw-white ping
+Ping(ACCEPT)	$FW             white
+?COMMENT fw-white traceroute
+Trcrt(ACCEPT)	$FW             white
+?COMMENT fw-white DLNA
+ACCEPT		$FW		white	udp	-	1900 # DLNA server
+?COMMENT fw-white Syslog
+Syslog(ACCEPT)	$FW		white
+?COMMENT fw-white SSH
+SSH(ACCEPT)	$FW		white
+
+# fw-green (NEW Connection section)
+?COMMENT fw-green icmp
+ACCEPT		$FW		green		icmp
+?COMMENT fw-green ping
+Ping(ACCEPT)	$FW             green
+?COMMENT fw-green traceroute
+Trcrt(ACCEPT)	$FW             green
+?COMMENT fw-green SSH
+SSH(ACCEPT)	$FW		green
+?COMMENT fw-green DNS
+DNS(ACCEPT)	$FW		green
+?COMMENT fw-green HTTP/HTTPS
+Web(ACCEPT)	$FW		green
+?COMMENT fw-green custom HTTP
+ACCEPT		$FW		green:172.28.130.10	tcp	8088 # avian
+?COMMENT fw-green NAT-uPNP
+# sync port range for uPnP/UDP to /proc/sys/net/ipv4/ip_local_port_range
+ACCEPT		$FW		green	udp	-	10000:61000 # if fw->green is DENY
+?COMMENT fw-green collectd
+ACCEPT		$FW		green	tcp	8888
+
+
+# fw-dmz (NEW Connection section)
+
+
+# fw-vmnet (NEW Connection section)
+
+?COMMENT fw-vmnet ping
+ACCEPT		$FW		vmnet		icmp
+?COMMENT fw-vmnet ping
+Ping(ACCEPT)	$FW             vmnet
+?COMMENT fw-vmnet traceroute
+Trcrt(ACCEPT)	$FW             vmnet
+?COMMENT fw-vmnet SSH server
+SSH(ACCEPT)	$FW             vmnet
+
+#
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   dmz-red
+#   dmz-fw
+#   dmz-green
+#     dmz-dmz
+#     dmz-blue
+#     dmz-grn
+#     dmz-white
+#   dmz-green
+#   dmz-vmnet
+
+
+# dmz-red (NEW Connection section)
+DROP        all     dmz:224.0.0.0/4 tcp 6667
+DROP        all     dmz:224.0.0.0/4 udp 6667
+
+# dmz-fw (NEW Connection section)
+?COMMENT dmz-fw icmp
+ACCEPT		dmz		$FW		icmp
+?COMMENT dmz-fw ping
+Ping(ACCEPT)	dmz             $FW
+?COMMENT dmz-fw traceroute
+Trcrt(ACCEPT)	dmz		$FW
+?COMMENT dmz-fw DNS
+DNS(ACCEPT)	dmz		$FW
+?COMMENT dmz-fw UPnP + NAT-PMP
+ACCEPT		dmz		$FW	udp	5351
+allowinUPnP	dmz		$FW	# if dmz->fw is default DENY for uPnP
+
+# dmz-dmz (NEW Connection section)
+DROP    dmz     dmz     tcp 6667
+DROP    dmz     dmz     udp 6667
+
+# dmz-blue (NEW Connection section)
+DROP:debug    dmz   blue     tcp 6667
+DROP:debug    dmz   blue     udp 6667
+
+# dmz-grn (NEW Connection section)
+
+# dmz-white (NEW Connection section)
+
+# dmz-green (NEW Connection section)
+
+# dmz-vmnet (NEW Connection section)
+
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   blue-red
+#   blue-fw
+#   blue-green
+#     blue-dmz
+#     blue-blue
+#     blue-grn
+#     blue-white
+#   blue-vmnet
+
+# blue-red (NEW Connection section)
+ACCEPT		blue		red		icmp
+Ping(ACCEPT)	blue		red
+Trcrt(ACCEPT)	blue		red
+
+# blue-fw (NEW Connection section)
+?COMMENT blue-fw
+ACCEPT		blue		$FW		icmp
+Ping(ACCEPT)	blue		$FW
+Trcrt(ACCEPT)	blue		$FW
+?COMMENT blue-fw SSH
+SSH(ACCEPT)	blue		$FW
+DNS(ACCEPT)	blue		$FW
+DNSAmp(ACCEPT)	blue		$FW
+DAAP(ACCEPT)	blue		$FW
+ACCEPT		blue		$FW	udp	48856  # DAAP
+ACCEPT		blue		$FW	udp	52178  # DAAP
+NTP(ACCEPT)	blue		$FW
+Web(ACCEPT)	blue		$FW
+?COMMENT bluefw HTTPS(8443)
+ACCEPT          blue		$FW	tcp	8443
+?COMMENT blue-fw SMTPS
+SMTPS(ACCEPT)	blue		$FW
+IMAP(ACCEPT)	blue		$FW
+Submission(ACCEPT)	blue	$FW
+IMAPS(ACCEPT)	blue		$FW
+Syslog(ACCEPT)	blue		$FW
+Squid(ACCEPT)	blue		$FW
+OpenVPN(ACCEPT)	blue		$FW
+?COMMENT blue-fw DLNA server
+ACCEPT		blue		$FW	udp	1900 # DLNA server
+ACCEPT		blue		$FW	tcp	8200 # DLNA server
+?COMMENT blue-fw UPnP + NAT-PMP
+ACCEPT		blue		$FW	udp	5351
+allowinUPnP	blue		$FW	# if blue->fw is default DENY for uPnP
+allowinUPnP	blue		$FW	udp	1234
+
+# blue->dmz (NEW Connection section)
+
+# blue->blue (NEW Connection section)
+
+# blue->grn (NEW Connection section)
+
+# blue->white (NEW Connection section)
+
+# blue->green (NEW Connection section)
+
+# blue-vmnet (NEW Connection section)
+
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   grn-red
+#   grn-fw
+#   grn-green
+#     grn-dmz
+#     grn-blue
+#     grn-grn
+#     grn-white
+#   grn-vmnet
+
+
+# grn-red
+?COMMENT grn->red drop badstuff
+# Silent reject of Singapore/Russia
+DROP		grn		red:92.242.0.0/16	tcp	8192
+DROP		grn		red:111.221.77.0/24	tcp	8192
+?COMMENT grn->red Sophos Management Server
+# Sophos Management Server (pinhole open)
+ACCEPT		grn		red:134.223.168.178	tcp	8192
+?COMMENT grn->red 3DS connection test
+# kyle's 3ds crap
+# Nintendo connection test (conntest)
+ACCEPT		grn		red:69.25.139.140	tcp	80
+# Nintendo connection test (speedtrace) to nncs1.app.nintendowifi.net
+ACCEPT		grn		red:202.32.117.142	udp	33334
+ACCEPT		grn		red:202.32.117.142	udp	10025
+ACCEPT		grn		red:202.32.117.143	udp	10025
+# Connor's PC laptop 802.11
+?COMMENT grn->red Connor's PC laptop 802.11
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	- 6969
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	53
+# ACCEPT		grn:$BATTLENET_CLIENT	red	tcp	53
+# ACCEPT		grn:$BATTLENET_CLIENT	red	tcp	843
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	5351
+# ACCEPT		grn:$BATTLENET_CLIENT	red	tcp	1119
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	1119
+# BitTorrent(ACCEPT)	grn:$BITTORRENT_CLIENT	red
+# DNAT red grn:$BITTORRENT_CLIENT tcp 6969
+# DNAT red grn:$BITTORRENT_CLIENT tcp 6881:6889
+# ACCEPT	grn:$BITTORRENT_CLIENT	red	udp	- 80
+# Gnutella(ACCEPT)	grn:$GNUTELLA_CLIENT	red
+# ACCEPT		grn:$BATTLENET_CLIENT red
+# safe DNS
+DNS(ACCEPT)	grn		red:8.8.8.8,8.8.4.4	  # Google DNS
+DNS(ACCEPT)	grn		red:208.67.222.123,208.67.220.123  # OpenDNS FamilyShield
+DNS(ACCEPT)	grn		red:208.67.222.222,208.67.220.220  # OpenDNS
+DNS(ACCEPT)	grn		red:199.85.126.10,199.85.127.10	  # Norton S
+DNS(ACCEPT)	grn		red:199.85.126.20,199.85.127.20	  # Norton S+P
+DNS(ACCEPT)	grn		red:199.85.126.30,199.85.127.30	  # Norton S+P+O
+# DNS(ACCEPT)	grn		red
+Webcache(ACCEPT)	grn		red
+HTTP(ACCEPT)	grn		red
+HTTPS(ACCEPT)	grn		red
+Ping(ACCEPT)	grn		red
+Trcrt(ACCEPT)	grn		red
+SSH(ACCEPT)	grn		red
+# SMTP(ACCEPT)	grn		red
+JabberSecure(ACCEPT) grn	red
+?COMMENT grn-red SMTPS
+SMTPS(ACCEPT)	grn		red
+IMAP(ACCEPT)	grn		red
+# HTTP video using applicaiton/x-sdp video streaming via igmpv3lite/udp
+Submission(ACCEPT)	grn	red
+OpenVPN(ACCEPT)	grn		red
+IMAPS(ACCEPT)	grn		red
+Git(ACCEPT)     grn		red
+HKP(ACCEPT)	grn		red
+Rsync(ACCEPT)	grn		red
+Finger(ACCEPT)	grn		red
+NTP(ACCEPT)	grn		red
+PCA(ACCEPT)	grn		red	# PCAnywhere
+MySQL(ACCEPT)	grn		red
+# no unsecured POP3 allowed, only secured POP3
+POP3S(ACCEPT)	grn		red
+Rsync(ACCEPT)	grn		red
+Telnet(ACCEPT)	grn		red
+NNTP(ACCEPT)	grn		red
+NNTPS(ACCEPT)	grn		red
+VNC(ACCEPT)	grn		red
+Whois(ACCEPT)	grn		red
+IPsec(ACCEPT)	grn		red
+# REJECT:$LOG	grn		red		tcp	25	#Stop direct loc->net SMTP (Comcast uses submission).
+SMTP(REJECT)	grn		red	#Stop direct loc->net SMTP (Comcast uses submission).
+# REJECT:$LOG	grn		red		udp	1025:1031	#MS Messaging
+
+# grn-fw (NEW Connection section)
+?COMMENT grn-fw icmp
+ACCEPT		grn		$FW	icmp
+?COMMENT grn-fw ping
+Ping(ACCEPT)	grn		$FW
+?COMMENT grn-fw DNS
+DNS(ACCEPT)	grn		$FW
+?COMMENT grn-fw HTTPS(8443)
+ACCEPT          grn		$FW	tcp	8443
+?COMMENT grn-fw SMTPS
+SMTPS(ACCEPT)	grn		$FW
+?COMMENT grn-fw DLNA server
+ACCEPT		grn		$FW	udp	-	1900 # DLNA server
+ACCEPT		grn		$FW	tcp	8200 # DLNA server
+?COMMENT grn-fw DAAP
+DAAP(ACCEPT)	grn		$FW   
+ACCEPT		grn		$FW	udp	48856  # DAAP
+ACCEPT		grn		$FW	udp	52178  # DAAP
+?COMMENT grn-fw UPnP + NAT-PMP
+ACCEPT		grn		$FW	udp	5351
+allowinUPnP	grn		$FW	# if grn->fw is default DENY for uPnP
+?COMMENT grn-fw SSH
+SSH(ACCEPT)	grn		$FW
+
+# grn-dmz  (Policy PERMIT) (NEW Connection section)
+
+# grn-blue (Policy PERMIT) (NEW Connection section)
+
+# grn-grn (Policy PERMIT) (NEW Connection section)
+
+# grn-white (Policy PERMIT) (NEW Connection section)
+
+Syslog(ACCEPT)	grn		white
+
+# grn-green (Policy PERMIT) (NEW Connection section)
+
+# grn-vmnet (Policy PERMIT) (NEW Connection section)
+
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   white-red
+#   white-fw
+#   white-green
+#     white-dmz
+#     white-blue
+#     white-grn
+#     white-white
+#   white-vmnet
+
+
+# white-red
+
+# white-fw
+#   largely ignored by policy-bypass but for documentation purpose here
+?COMMENT grn-fw DLNA server
+ACCEPT		white		$FW	udp	-	1900 # DLNA server
+ACCEPT		white		$FW	tcp	8200 # DLNA server
+DAAP(ACCEPT)	white		$FW
+ACCEPT		white		$FW	udp	48856  # DAAP
+ACCEPT		white		$FW	udp	52178  # DAAP
+?COMMENT white-fw UPnP + NAT-PMP
+ACCEPT		white		$FW	udp	5351   # UPnP
+?COMMENT white-fw SMTPS
+SMTPS(ACCEPT)	white		$FW
+?COMMENT white-fw HTTPS(8443)
+ACCEPT          white		$FW	tcp	8443
+HTTPS(ACCEPT)	white		$FW
+allowinUPnP	white		$FW	# if white->fw is default DENY for uPnP
+?COMMENT white-fw SSH
+SSH(ACCEPT)	white		$FW
+
+# white-dmz  (Default Policy DENY) (NEW Connection section)
+
+# white-blue (Default Policy DENY) (NEW Connection section)
+
+# white-grn (Default Policy DENY) (NEW Connection section)
+
+# white-white (Default Policy DENY) (NEW Connection section)
+
+# white-green (Default Policy DENY) (NEW Connection section)
+
+# white-vmnet (Default Policy DENY) (NEW Connection section)
+SSH(ACCEPT)	white		vmnet
+
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   green-red
+#   green-fw
+#   green-green
+#     green-dmz
+#     green-blue
+#     green-grn
+#     green-white
+#   green-vmnet
+
+# green-red (NEW Connection section)
+# Special section: STRAIGHT-THROUGH
+?COMMENT green->red
+
+# green-fw (NEW Connection section)
+#
+?COMMENT green-fw icmp
+ACCEPT		green		$FW		icmp
+?COMMENT green-fw ping
+Ping(ACCEPT)	green		$FW
+?COMMENT green-fw traceroute
+Trcrt(ACCEPT)	green		$FW
+?COMMENT green-fw SSH
+SSH(ACCEPT)	green		$FW
+?COMMENT green-fw DNS
+DNS(ACCEPT)	green		$FW
+?COMMENT green-fw DNSAmp
+DNSAmp(ACCEPT)	green		$FW
+?COMMENT green-fw DAAP
+DAAP(ACCEPT)	green		$FW
+ACCEPT		green		$FW	udp	48856  # DAAP
+ACCEPT		green		$FW	udp	52178  # DAAP
+?COMMENT green-fw NTP
+NTP(ACCEPT)	green		$FW
+?COMMENT green-fw HTTP/HTTPS
+Web(ACCEPT)	green		$FW
+?COMMENT green-fw HTTPS(8443)
+ACCEPT          green		$FW	tcp	8443
+?COMMENT green-fw SMTPS
+SMTPS(ACCEPT)	green		$FW
+?COMMENT green-fw IMAP
+IMAP(ACCEPT)	green		$FW
+?COMMENT green-fw secured SMTP submission
+Submission(ACCEPT)	green	$FW
+?COMMENT green-fw secured IMAPS
+IMAPS(ACCEPT)	green		$FW
+?COMMENT green-fw Squid
+Squid(ACCEPT)	green		$FW
+?COMMENT green-fw OpenVPN
+OpenVPN(ACCEPT)	green		$FW
+?COMMENT green-fw webmin
+ACCEPT		green		$FW	tcp	12137
+# chains go at the end of a subsection
+?COMMENT green-fw UPnP + NAT-PMP
+ACCEPT		green		$FW	udp	5351
+allowinUPnP	green		$FW	# if green->fw is default DENY for uPnP
+ACCEPT		green		$FW	tcp	4767  # GP
+
+# green-dmz (NEW Connection section)
+
+# green-blue (NEW Connection section)
+
+# green-grn (NEW Connection section)
+
+# green-white (NEW Connection section)
+?COMMENT green-white syslog
+Syslog(ACCEPT)	green		white
+
+# green-green (NEW Connection section)
+
+# green-vmnet (NEW Connection section)
+
+
+#########################################################
+# Firewall order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   vmnet-red
+#   vmnet-fw
+#   vmnet-green
+#     vmnet-dmz
+#     vmnet-blue
+#     vmnet-grn
+#     vmnet-white
+#   vmnet-vmnet
+
+# vmnet-red (Default Policy DENY) (NEW Connection section)
+
+# vmnet-fw (Default Policy DENY) (NEW Connection section)
+
+# vmnet-dmz  (Default Policy DENY) (NEW Connection section)
+
+# vmnet-blue (Default Policy DENY) (NEW Connection section)
+
+# vmnet-grn (Default Policy DENY) (NEW Connection section)
+
+# vmnet-white (Default Policy DENY) (NEW Connection section)
+
+# vmnet-green (Default Policy DENY) (NEW Connection section)
+
+# vmnet-vmnet (Default Policy DENY) (NEW Connection section)
+
+
+
+#######################################################################
+# In some cases (when running an LTSP server on the Shorewall system), 
+# you might want to transparently proxy web connections that 
+# originate on the firewall itself. This requires care to ensure 
+# that Squid's own web connections are not proxied.
+# REDIRECT  $FW        3128     tcp      www     -     -      -     !proxy
+
+# SQUID1
+# REDIRECT  green	        3128   tcp      www          -          !192.168.1.7
+# REDIRECT  green	        3128   tcp      https        -          !192.168.1.7
+
+# There may be a requirement to exclude additional destination 
+# hosts or networks from being redirected. For example, you 
+# might also want requests destined for 8.8.8.0/24 to 
+# not be routed to Squid.
+# REDIRECT  green	        3128     tcp      www          -          !192.168.1.7,8.8.8.0/24
+# Squid(ACCEPT)	green			$FW
+
+
+
+# EXTERNAL direct access to SQUID from local
+# Suppose that you want to exclude 192.168.1.5 and 192.168.1.33 
+# from the proxy. Your rules would then be:
+#REDIRECT  green:!192.168.1.5,192.168.1.33\
+#                     3128     tcp      www              -          !192.168.1.7,8.8.8.0/24
+# ACCEPT		green	red	tcp	www
+# ACCEPT		$FW	red	tcp	https
+
+# ALL:DROP order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   all-red
+#   all-fw
+#   all-green
+#     all-dmz
+#     all-blue
+#     all-grn
+#     all-white
+#   all-vmnet
+#
+# all-fw - (NEW Connection section)
+# all-fw - Typically, servers on this host
+#       Don't allow connection pickup from the all zone
+
+DROP        all     dmz:224.0.0.0/4 udp 6667
+DROP        all     dmz:224.0.0.0/4 tcp 6667
+DROP        all     dmz:224.0.0.0/4 udp 6668
+DROP        all     dmz:224.0.0.0/4 tcp 6668
+DROP        all     dmz:224.0.0.0/4 udp 6669
+DROP        all     dmz:224.0.0.0/4 tcp 6669
+
+# ALL:ACCEPT order  (red, fw, dmz, blue, grn, white, green, vmnet)
+#   all-red
+#   all-fw
+#vv all-green vvv
+#     all-dmz
+#     all-blue
+#     all-grn
+#     all-white
+#   all-vmnet
+#
+# all-fw - (ANY Connection section)
+# all-fw - Typically, servers on this host
+#       Don't allow connection pickup from the all zone
+?COMMENT all-red multicast
+ACCEPT		all		red:224.0.0.0/4
+?COMMENT all-fw multicast
+ACCEPT		all		$FW:224.0.0.0/4
+
+?COMMENT all-blue multicast
+ACCEPT		all		  blue:224.0.0.0/4
+?COMMENT all-grn multicast
+ACCEPT		all		  grn:224.0.0.0/4
+?COMMENT all-white multicast
+ACCEPT		all		  white:224.0.0.0/4
+?COMMENT all-green multicast
+ACCEPT		all		green:224.0.0.0/4
+
+?COMMENT all-vmnet multicast
+ACCEPT		all		vmnet:224.0.0.0/4
+
+
+#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE
