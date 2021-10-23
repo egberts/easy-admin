@@ -1,30 +1,48 @@
 #!/bin/bash
-#
 # File: 439-net-sysctl-performance.sh
 # Title:  Set kernel to high-performance via sysctl
+# Description:
 #
-SYSCTLCONF=/etc/sysctl.d
-FILEPATH=$SYSCTLCONF
 
-if [ -f /etc/sysctl.conf ]; then
+DATE="$(date)"
+CREATOR="$(basename "$0")"
+
+
+sysconfdir="${sysconfdir:-/etc}"
+
+SYSCTL_FILENAME="sysctl.conf"
+SYSCTL_FILESPEC="$sysconfdir/$SYSCTL_FILENAME"
+
+SYSCTLD_DIRNAME="sysctl.d"
+SYSCTLD_DIRPATH="$sysconfdir/$SYSCTLD_DIRNAME"
+
+echo "Default settings for $SYSCTLD_DIRPATH."
+
+if [ -f "$SYSCTL_FILESPEC" ]; then
   echo "ERROR: /etc/sysctl.conf exists; delete or rename it away"
   exit 9
 fi
 
-if [ -f /etc/sysctl.d/99-sysctl.conf ]; then
+DISTRO_DEFAULT_SYSCTL_FILESPEC="$SYSCTLD_DIRPATH/99-sysctl.conf"
+if [ -f "$DISTRO_DEFAULT_SYSCTL_FILESPEC" ]; then
+  echo "File $DISTRO_DEFAULT_SYSCTL_FILESPEC exists."
+  echo "It starts with 99, so any of our earlier settings would be "
+  echo "overridden by this distro default sysctl setting.  Remove it."
   echo "ERROR: /etc/sysctl.d/99-sysctl.conf exists; delete or rename it away"
   exit 9
 fi
 
+echo ""
 echo "Populating /etc/sysctl.d with sysctl settings..."
-DATE="$(date)"
 FILENAME=randomize_va_space.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
+# Path: ${SYSCTLD_DIRPATH}
 # Title: Randomize kernel virtual address at each executable load
-# Creator: $0
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 #
@@ -43,12 +61,14 @@ kernel.randomize_va_space = 2
 EOF
 
 FILENAME=net_core_netdev_max_backlog.conf
-cat < EOF
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
+# Path: ${SYSCTLD_DIRPATH}
 # Title:  Maximum size of interface's receive queue
-# Creator: $0
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 #   This parameter sets the maximum size of the network
@@ -68,12 +88,14 @@ net.core.netdev_max_backlog = 2500
 EOF
 
 FILENAME=memory_usage_network_stack.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
+# Path: ${SYSCTLD_DIRPATH}
 # Title: Memory usage by network stack in the operating system
-# Creator: $0
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -99,12 +121,14 @@ net.ipv4.tcp_rmem = 10240 87380 12582912
 EOF
 
 FILENAME=ip_router_forwarding_state.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
+# Path: ${SYSCTLD_DIRPATH}
 # Title: controls IP router forwarding
-# Creator: $0
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -124,12 +148,14 @@ net.ipv6.conf.enp5s0.disable_ipv6 = 1
 EOF
 
 FILENAME=tcp_throughput_performance.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
+# Path: ${SYSCTLD_DIRPATH}
 # Title: TCP throughput improvement
-# Creator: $0
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Reference:
 #  - https://www.uperf.org
@@ -207,12 +233,14 @@ net.ipv4.tcp_sacks = 0
 EOF
 
 FILENAME=ip_routing_controls.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title: Do not accept IP source routing
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -233,12 +261,14 @@ EOF
 
 
 FILENAME=linux_kernel.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title: Minimize revealing internal kernel-based address pointer
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -258,12 +288,14 @@ kernel.sysrq = 0
 EOF
 
 FILENAME=ipv6.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title:  Disable IPv6
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -276,12 +308,14 @@ EOF
 
 
 FILENAME=shared_memory_for_apps.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title: Increased share memory for PostgreSQL
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 #   VPN and PostgreSQL
@@ -310,12 +344,14 @@ EOF
 
 
 FILENAME=bridge_vs_memory_cache.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title: Disable ntfiler for bridging
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -332,15 +368,16 @@ EOF
 
 
 FILENAME=kernel_hardening.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title:  Restrict \`dmesg\` displaying sensitive kernel-based address pointers
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
-# Reference:
 #
 
 # dmesg provides plenty of treasures for malware
@@ -351,16 +388,17 @@ EOF
 
 
 FILENAME=router_mode.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title: Disable ICMP redirects & IPv6 router advertisements
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
-# Reference:
-#
+#   Disables the ICMP redirects (and flushes the IP route cache)
 
 # This host IS a router
 # however, we are selective in what we redirect
@@ -393,20 +431,20 @@ net.ipv6.conf.all.accept_ra = 0
 net.ipv6.conf.default.accept_ra = 0
 net.ipv6.conf.br0.accept_ra = 1
 
-
 EOF
 
 
 FILENAME=binfmt.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title:  Disable mounting of BINFMT
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
-# Reference:
 #
 
 # systemctl mask proc-sys-fs-binfmt_misc.automount
@@ -416,15 +454,15 @@ fs.binfmt_misc.status = 0
 EOF
 
 
-
-
 FILENAME=netfilter_nat_conntrack.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title: Enable connection tracker helper for nftables
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -440,12 +478,14 @@ EOF
 
 
 FILENAME=fs_hardlink_protect.conf
-cat << EOF | sudo tee $FILEPATH/$FILENAME
+SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
+echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
+cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
-# Title:
-# Creator: $0
+# Path: ${SYSCTLD_DIRPATH}
+# Title:  Protect against creating/following links under certain conditions
+# Creator: ${CREATOR}
 # Date: ${DATE}
 # Description:
 # Reference:
@@ -461,4 +501,6 @@ fs.protected_hardlinks = 1
 fs.protected_symlinks = 1
 EOF
 
-
+echo ""
+echo "Done."
+exit 0
