@@ -28,7 +28,12 @@ fi
 # Find installed editors
 FOUND_EDITORS=
 for this_editor in $TRY_EDITORS; do
-  editor_bin="$(which "$this_editor")"
+  # Checking if Shorewall is installed
+
+  # 'which' is too-Debian-specific
+  # 'command -v' doesn't work if binary has restricted file permissions
+  # 'whereis -b' is our cup-of-tea.
+  editor_bin="$(whereis -b "$this_editor" | awk '{ print $2 }')"
   if [ -n "$editor_bin" ]; then
     FOUND_EDITORS+="$editor_bin "
   fi
