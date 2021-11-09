@@ -93,7 +93,7 @@ else
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
 
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemods_openssh_sshd.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemod-openssh-sshd.sh"
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
   echo "# File: $(basename "$FILE_SETTINGS_FILESPEC")" >> "$FILE_SETTINGS_FILESPEC"

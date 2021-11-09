@@ -90,7 +90,7 @@ else
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
 
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemods_openssh_ssh.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemod-openssh-ssh.sh"
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
 # shellcheck disable=SC2094
