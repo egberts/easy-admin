@@ -27,6 +27,7 @@
 DEFAULT_BUILDROOT="build"  # $CWD/build
 CHROOT_DIR="${CHROOT_DIR:-}"  # used only during installing in root session
 BUILDROOT="${BUILDROOT:-${DEFAULT_BUILDROOT}${CHROOT_DIR}}"   # where output files go
+DEFAULT_SSH_GROUP="ssh"
 
 #####################################################################
 # OpenSSH source defined
@@ -76,8 +77,10 @@ runstatedir="$localstatedir/run"
 # bind9 maintainer tweaks
 expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
 
+SSH_GROUP="${DEFAULT_SSH_GROUP}"
+
 OPENSSH_SSHD_BIN_FILESPEC="$sbindir/$OPENSSH_SSHD_CONF_FILEPART"
-OPENSSH_SSH_BIN_FILESPEC="$sbindir/$OPENSSH_SSH_CONF_FILEPART"
+OPENSSH_SSH_BIN_FILESPEC="$bindir/$OPENSSH_SSH_CONF_FILEPART"
 
 #####################################################################
 # Distro-maintainers related

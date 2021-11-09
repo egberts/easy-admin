@@ -69,7 +69,7 @@ fi
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.
-ABSPATH="$(dirname $BUILDROOT)"
+ABSPATH="$(dirname "$BUILDROOT")"
 if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
   echo "We are backing up old SSH settings"
@@ -86,13 +86,13 @@ if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
   fi
 else
   echo "Creating subdirectories to $BUILDROOT ..."
-  mkdir -p $BUILDROOT
+  mkdir -p "$BUILDROOT"
 
   FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemods_openssh_sshd.sh"
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
-  echo "#!/bin/bash" > $FILE_SETTINGS_FILESPEC
-  echo "# File: $(basename $FILE_SETTINGS_FILESPEC)" >> $FILE_SETTINGS_FILESPEC
-  echo "# Path: ${PWD}/$(dirname $FILE_SETTINGS_FILESPEC)" >> $FILE_SETTINGS_FILESPEC
+  echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
+  echo "# File: $(basename "$FILE_SETTINGS_FILESPEC")" >> "$FILE_SETTINGS_FILESPEC"
+  echo "# Path: ${PWD}/$(dirname "$FILE_SETTINGS_FILESPEC")" >> "$FILE_SETTINGS_FILESPEC"
   echo "# Title: File permission settings for SSH daemon"
 fi
 
@@ -159,7 +159,8 @@ flex_chown root:ssh "$SSHD_CONFD_DIRSPEC"
 flex_chmod 750 "$SSHD_CONFD_DIRSPEC"
 cp "$MINI_REPO"/* "${BUILDROOT}$SSHD_CONFD_DIRSPEC"/
 
-for this_file in $(ls -1 ${SSHD_CONFD_DIRSPEC}/*); do
+# shellcheck disable=SC2045
+for this_file in $(ls -1 "${SSHD_CONFD_DIRSPEC}"/*); do
   flex_chown root:ssh "$this_file"
   flex_chmod 640 "$this_file"
 done
@@ -172,12 +173,16 @@ flex_chown root:ssh "$SSH_KEY_FILESPEC"
 flex_chmod 640 "$SSH_KEY_FILESPEC"
 touch "${BUILDROOT}${SSH_KEY_FILESPEC}"
 
-$OPENSSH_SSHD_BIN_FILESPEC -T -t -h ${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key -f ${BUILDROOT}${SSHD_CONF_FILESPEC} >/dev/null 2>&1
+$OPENSSH_SSHD_BIN_FILESPEC -T -t \
+    -h "${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key" \
+    -f "${BUILDROOT}${SSHD_CONF_FILESPEC}" >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Error during ssh config syntax checking."
   echo "Showing sshd_config output"
-  $OPENSSH_SSHD_BIN_FILESPEC -T -t -h ${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key -f ${BUILDROOT}${SSHD_CONF_FILESPEC}
+  $OPENSSH_SSHD_BIN_FILESPEC -T -t \
+    -h "${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key" \
+    -f "${BUILDROOT}${SSHD_CONF_FILESPEC}"
   exit "$retsts"
 fi
 
