@@ -59,7 +59,7 @@ fi
 echo ""
 
 # Check if 'sftpusers' group exist
-FOUND_SFTPUSERS_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $4; }')"
+FOUND_SFTPUSERS_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $1; }')"
 if [ -z "$FOUND_SFTPUSERS_GROUP" ]; then
   echo "There is no one in the '$SSH_SFTP_GROUP' group; "
   echo "ALL remote file copy possible by ALL users."
@@ -72,41 +72,13 @@ if [ -z "$FOUND_SFTPUSERS_GROUP" ]; then
 fi
 echo ""
 
-# Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SSH_USERS_BY_GROUP" ]; then
-  echo "There is no one in the '$SSH_SFTP_GROUP' group; "
-  echo "no remote file copy possible."
-  echo ""
-  echo "To add remote file copy by a user, run:"
-  echo "  sudo usermod -a -G $SSH_SFTP_GROUP <your-user-name>"
-  echo ""
-  echo "Aborted."
-  exit 1
-fi
-echo ""
-exit
-
-flex_chown root:sftpusers /usr/lib/openssh/sftp-server
-flex_chmod 0750 /usr/lib/ssh/opensftp-server
+SFTP_SERVER_BINSPEC="${libdir}/${MAINT_SSH_DIR_NAME}/sftp-server"
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.
 ABSPATH="$(dirname "$BUILDROOT")"
 if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
-  echo "We are backing up old SSH settings"
-  # Only the first copy is saved as the backup
-  if [ ! -f "${SSH_CONF_FILESPEC}.backup" ]; then
-    BACKUP_FILENAME=".backup-$(date +'%Y%M%d%H%M')"
-    echo "Moving /etc/ssh/* to /etc/ssh/${BACKUP_FILENAME}/ ..."
-    mv "$SSH_CONF_FILESPEC" "${SSH_CONF_FILESPEC}.backup"
-    retsts=$?
-    if [ $retsts -ne 0 ]; then
-      echo "ERROR: Failed to create a backup of /etc/ssh/*"
-      exit 3
-    fi
-  fi
 else
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
@@ -121,11 +93,27 @@ else
   echo "# Path: ${PWD}/$(dirname "$FILE_SETTINGS_FILESPEC")"; \
   echo "# Title: File permission settings for SSH client"; \
   } >> "$FILE_SETTINGS_FILESPEC"
-  mkdir -p "$BUILDROOT$SSH_CONFD_DIRSPEC"
+  mkdir -p "$BUILDROOT"
 fi
 
-flex_chown root:${SSH_GROUP} "$SSH_CONF_FILESPEC"
-flex_chmod 640      "$SSH_CONF_FILESPEC"
+# Create the build script file before checking if anyone is using it.
+flex_chown root:${SSH_SFTP_GROUP} "$SFTP_SERVER_BINSPEC"
+flex_chmod 0750 "$SFTP_SERVER_BINSPEC"
+exit
+
+# Check if anyone has 'ssh' group access on this host
+SSH_USERS_BY_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $4; }')"
+if [ -z "$SSH_USERS_BY_GROUP" ]; then
+  echo "There is no one in the '$SSH_SFTP_GROUP' group; "
+  echo "no remote file copy possible."
+  echo ""
+  echo "To add remote file copy by a user, run:"
+  echo "  sudo usermod -a -G $SSH_SFTP_GROUP <your-user-name>"
+  echo ""
+  echo "Aborted."
+  exit 1
+fi
+echo ""
 
 
 FOUND=0
@@ -153,5 +141,5 @@ else
   echo "to the '$SSH_SFTP_GROUP' supplemental group; run:"
   echo "  usermod -g ${SSH_SFTP_GROUP} <app-username>"
 fi
-
+echo ""
 echo "Done."
