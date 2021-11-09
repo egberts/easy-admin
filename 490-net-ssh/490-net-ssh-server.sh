@@ -51,19 +51,24 @@ if [ -z "$SUDO_USERS_BY_GROUP" ]; then
   # Well, no direct root and no sudo-able user account, this is rather bad.
   if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
     echo "no root access possible from non-root"
-    echo "Run:"
-    echo "  usermod -g sudo <your-user-name>"
+    echo ""
+    echo "You probably need to run:"
+    echo "  usermod -a -G sudo <your-user-name>"
+    echo ""
+    echo "And add a line to '/etc/sudoers':"
+    echo "  %sudo   ALL=(ALL:ALL) ALL"
+    echo ""
     exit 1
   fi
 fi
 
 # Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep ssh /etc/group | awk -F: '{ print $4; }')"
+SSH_USERS_BY_GROUP="$(grep $SSH_GROUP /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SSH_USERS_BY_GROUP" ]; then
   echo "There is no one in the 'ssh' group; "
   echo "no remote access possible."
   echo "To add remote access, run:"
-  echo "  usermod -g ssh <your-user-name>"
+  echo "  usermod -a -G $SSH_GROUP <your-user-name>"
   exit 1
 fi
 
@@ -170,8 +175,12 @@ ALGORITHM_USED="${ALGORITHM_USED:-ed25519}"
 SSH_KEY_FILESPEC="$ext_ssh_dirspec/ssh_host_${ALGORITHM_USED}_key"
 flex_touch "$SSH_KEY_FILESPEC"
 flex_chown root:ssh "$SSH_KEY_FILESPEC"
-flex_chmod 640 "$SSH_KEY_FILESPEC"
+flex_chmod 600 "$SSH_KEY_FILESPEC"
 touch "${BUILDROOT}${SSH_KEY_FILESPEC}"
+
+if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+  chmod 600 "${BUILDROOT}${SSH_KEY_FILESPEC}"
+fi
 
 $OPENSSH_SSHD_BIN_FILESPEC -T -t \
     -h "${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key" \
@@ -189,7 +198,7 @@ fi
 # Check if non-root user has 'ssh' supplementary group membership
 
 FOUND=0
-USERS_IN_SSH_GROUP="$(grep ssh /etc/group | awk -F: '{ print $4 }')"
+USERS_IN_SSH_GROUP="$(grep $SSH_GROUP /etc/group | awk -F: '{ print $4 }')"
 for THIS_USERS in $USERS_IN_SSH_GROUP; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
     if [ "${this_user}" == "${USER}" ]; then
@@ -202,7 +211,7 @@ done
 if [ $FOUND -eq 0 ]; then
   echo "User ${USER} cannot access this SSH server here."
   echo "Must execute:"
-  echo "  usermod -g ssh ${USER}"
+  echo "  usermod -a -G $SSH_GROUP ${USER}"
   exit 1
 fi
 

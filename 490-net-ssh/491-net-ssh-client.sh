@@ -53,7 +53,7 @@ if [ -z "$SUDO_USERS_BY_GROUP" ]; then
   if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
     echo "no root access possible from non-root"
     echo "Run:"
-    echo "  usermod -g sudo <your-user-name>"
+    echo "  usermod -a -G sudo <your-user-name>"
     exit 1
   fi
 fi
@@ -65,7 +65,7 @@ if [ -z "$SSH_USERS_BY_GROUP" ]; then
   echo "There is no one in the 'ssh' group; "
   echo "no remote access possible."
   echo "To add remote access, run:"
-  echo "  usermod -g $SSH_GROUP <your-user-name>"
+  echo "  usermod -a -G $SSH_GROUP <your-user-name>"
   exit 1
 fi
 
