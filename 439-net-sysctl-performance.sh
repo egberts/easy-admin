@@ -40,6 +40,7 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 # For most systems, this setting is the default and the
 # most secure setting.
 kernel.randomize_va_space = 2
+
 EOF
 
 FILENAME=net_core_netdev_max_backlog.conf
@@ -60,11 +61,13 @@ cat < EOF
 #   default value of netdev_max_backlog is typically
 #   1000 frames.
 #
+#   Maximum backlog number of unprocessed packets before kernel drops
+#
 # Reference:
 #  - KVM Network Performance - Best Practices and Tuning Recommendations
 #      https://www.ibm.com/downloads/cas/ZVJGQX8E
 #
-net.core.netdev_max_backlog = 2500
+net.core.netdev_max_backlog = 25000
 EOF
 
 FILENAME=memory_usage_network_stack.conf
@@ -83,6 +86,9 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 net.core.wmem_max = 12582912
 net.core.rmem_max = 12582912
 
+# Setting maximum option memory (TBR)
+net.core.optmem_max = 524287
+
 # Increase TCP read/write buffers toenable scaling to a
 # larger window size.  Larger window's increase the
 # amount of data to be transferred before an
@@ -95,7 +101,27 @@ net.core.rmem_max = 12582912
 # value used in here was 4,136,960 bytes.  However,
 # 4.x+ kernels accept values over 16MB.
 net.ipv4.tcp_wmem = 10240 87380 12582912
+
+#  TCP window size for single connections:
+#
+#   The receive buffer (RX_WINDOW) size must be at least as large as the
+#   Bandwidth-Delay Product of the communication link between the sender and
+#   receiver. Due to the variations of RTT, you may want to increase the buffer
+#   size up to 2 times the Bandwidth-Delay Product. Reference page 289 of
+#   "TCP/IP Illustrated, Volume 1, The Protocols" by W. Richard Stevens.
+#
+#   At 10Gb speeds, use the following formula::
+#
+#       RX_WINDOW >= 1.25MBytes * RTT(in milliseconds)
+#       Example for RTT with 100us: RX_WINDOW = (1,250,000 * 0.1) = 125,000
+#
+#   RX_WINDOW sizes of 256KB - 512KB should be sufficient.
+#
+#   Setting the min, max, and default receive buffer (RX_WINDOW) size::
 net.ipv4.tcp_rmem = 10240 87380 12582912
+
+net.ipv4.tcp_mem = 10240 87380 12582912
+
 EOF
 
 FILENAME=ip_router_forwarding_state.conf
@@ -112,15 +138,57 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 #      https://www.ibm.com/downloads/cas/ZVJGQX8E
 #  - https://www.uperf.org
 #
+# ip_forward - BOOLEAN
+#        - 0 - disabled (default)
+#        - not 0 - enabled
+#
+#        Forward Packets between interfaces.
+#
+#        This variable is special, its change resets all configuration
+#        parameters to their default state (RFC1122 for hosts, RFC1812
+#        for routers)
+
 net.ipv4.ip_forward = 1
 
-net.ipv4.conf.all.forwarding=1
-net.ipv4.conf.default.forwarding=1
+# conf/all/forwarding - BOOLEAN
+#    Enable global IPv6 forwarding between all interfaces.
+#
+#    IPv4 and IPv6 work differently here; e.g. netfilter must be used
+#    to control which interfaces may forward packets and which not.
+#
+#    This also sets all interfaces' Host/Router setting
+#    'forwarding' to the specified value.  See below for details.
+#
+#    This referred to as global forwarding.
 
+net.ipv4.conf.all.forwarding=1
 net.ipv6.conf.all.forwarding=1
+
+# ``conf/default/*``:
+#  Change the interface-specific default settings.
+
+net.ipv4.conf.default.forwarding=1
 net.ipv6.conf.default.forwarding=1
 
+
+# disable_ipv6 - BOOLEAN
+#    Disable IPv6 operation.  If accept_dad is set to 2, this value
+#    will be dynamically set to TRUE if DAD fails for the link-local
+#    address.
+#
+#    Default: FALSE (enable IPv6 operation)
+#
+#    When this value is changed from 1 to 0 (IPv6 is being enabled),
+#    it will dynamically create a link-local address on the given
+#    interface and start Duplicate Address Detection, if necessary.
+#
+#    When this value is changed from 0 to 1 (IPv6 is being disabled),
+#    it will dynamically delete all addresses and routes on the given
+#    interface. From now on it will not possible to add addresses/routes
+#    to the selected interface.
+
 net.ipv6.conf.enp5s0.disable_ipv6 = 1
+
 EOF
 
 FILENAME=tcp_throughput_performance.conf
@@ -134,8 +202,14 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 # Reference:
 #  - https://www.uperf.org
 #
+# tcp_allowed_congestion_control - STRING
+#    Show/set the congestion control choices available to non-privileged
+#    processes. The list is a subset of those listed in
+#    tcp_available_congestion_control.
+#
 # The default algorithm for most kernel is 'reno'.
 # After 13 variants of TCP congestion control, cubic is the best
+
 net.ipv4.tcp_congestion_control = cubic
 
 # tcp_fin_timeout parameter determines the length of
@@ -203,7 +277,27 @@ net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_timestamps = 0
 
 # We are not communicating through a satellite so TCP-SACK can go
-net.ipv4.tcp_sacks = 0
+net.ipv4.tcp_sack = 0
+net.ipv4.tcp_dsack = 0
+
+# tcp_max_syn_backlog - INTEGER
+#    Maximal number of remembered connection requests (SYN_RECV),
+#    which have not received an acknowledgment from connecting client.
+#
+#    This is a per-listener limit.
+#
+#    The minimal value is 128 for low memory machines, and it will
+#    increase in proportion to the memory of machine.
+#
+#    If server suffers from overload, try increasing this number.
+#
+#    Remember to also check /proc/sys/net/core/somaxconn
+#    A SYN_RECV request socket consumes about 304 bytes of memory.
+#
+# Setting large number of incoming TCP connection requests
+
+net.ipv4.tcp_max_syn_backlog=3000
+
 EOF
 
 FILENAME=ip_routing_controls.conf
@@ -218,6 +312,15 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 # Reference:
 #
 # Do not accept source routing
+#
+# accept_source_route - INTEGER
+# Accept source routing (routing extension header).
+#
+#    - >= 0: Accept only routing header type 2.
+#    - < 0: Do not accept routing header.
+#
+#    Default: 0
+
 net.ipv4.conf.all.accept_source_route = 0
 net.ipv4.conf.default.accept_source_route = 0
 net.ipv6.conf.all.accept_source_route = 0
@@ -318,15 +421,52 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 # Creator: $0
 # Date: ${DATE}
 # Description:
-# Reference:
+
+
+# bridge-nf-call-ip6tables - BOOLEAN
+#    - 1 : pass bridged IPv6 traffic to ip6tables' chains.
+#    - 0 : disable this.
 #
+#    Default: 1
 
 # net.bridge.bridge-nf-call-ip6tables = 0
-# net.bridge.bridge-nf-call-iptables = 0
-# net.bridge.bridge-nf-call-arptables = 0
+
+# bridge-nf-call-iptables - BOOLEAN
+#    - 1 : pass bridged IPv4 traffic to iptables' chains.
+#    - 0 : disable this.
 #
+#    Default: 1
+
+# net.bridge.bridge-nf-call-iptables = 0
+
+# net.bridge.bridge-nf-call-arptables = 0
+
+# bridge-nf-filter-vlan-tagged - BOOLEAN
+#    - 1 : pass bridged vlan-tagged ARP/IP/IPv6 traffic to {arp,ip,ip6}tables.
+#    - 0 : disable this.
+#
+#    Default: 0
+net.bridge.bridge-nf-filter-vlan-tagged = 0
+
+# bridge-nf-pass-vlan-input-dev - BOOLEAN
+#    - 1: if bridge-nf-filter-vlan-tagged is enabled, try to find a vlan
+#         interface on the bridge and set the netfilter input device to the
+#         vlan. This allows use of e.g. "iptables -i br0.1" and makes the
+#         REDIRECT target work with vlan-on-top-of-bridge interfaces.  When no
+#         matching vlan interface is found, or this switch is off, the input
+#         device is set to the bridge interface.
+#
+#    - 0: disable bridge netfilter vlan interface lookup.
+#
+#    Default: 0
+
+net.bridge.bridge-nf-pass-vlan-input-dev = 0
+
+#
+# Reference:
 # https://googleprojectzero.blogspot.com/2018/09/a-cache-invalidation-bug-in-linux.html
 # https://security-tracker.debian.org/tracker/CVE-2018-17182
+
 EOF
 
 
@@ -375,6 +515,13 @@ net.ipv4.route.flush=1
 
 
 # Make sure no one can alter the routing tables
+# accept_redirects - BOOLEAN
+#
+#    Functional default:
+#
+#    - enabled if local forwarding is disabled.
+#    - disabled if local forwarding is enabled.
+
 net.ipv4.conf.all.accept_redirects=0
 net.ipv4.conf.default.accept_redirects=0
 net.ipv6.conf.enp5s0.accept_redirects=0
@@ -386,13 +533,40 @@ net.ipv4.conf.default.secure_redirects=0
 net.ipv4.conf.all.log_martians=1
 net.ipv4.conf.default.log_martians=1
 
+# icmp_echo_ignore_broadcasts - BOOLEAN
+#    If set non-zero, then the kernel will ignore all ICMP ECHO and
+#    TIMESTAMP requests sent to it via broadcast/multicast.
+#
+#    Default: 1
+
 net.ipv4.icmp_echo_ignore_broadcasts=1
 
 # Router advertisement
+# accept_ra - INTEGER
+#    Accept Router Advertisements; autoconfigure using them.
+#
+#    It also determines whether or not to transmit Router
+#    Solicitations. If and only if the functional setting is to
+#    accept Router Advertisements, Router Solicitations will be
+#    transmitted.
+#
+#    Possible values are:
+#
+#    ==  ===========================================================
+#     0  Do not accept Router Advertisements.
+#     1  Accept Router Advertisements if forwarding is disabled.
+#     2  Overrule forwarding behaviour. Accept Router Advertisements
+#        even if forwarding is enabled.
+#    ==  ===========================================================
+#
+#    Functional default:
+#
+#    - enabled if local forwarding is disabled.
+#    - disabled if local forwarding is enabled.
+
 net.ipv6.conf.all.accept_ra = 0
 net.ipv6.conf.default.accept_ra = 0
 net.ipv6.conf.br0.accept_ra = 1
-
 
 EOF
 
@@ -413,9 +587,8 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 
 fs.binfmt_misc.status = disable
 fs.binfmt_misc.status = 0
+
 EOF
-
-
 
 
 FILENAME=netfilter_nat_conntrack.conf
@@ -457,7 +630,9 @@ cat << EOF | sudo tee $FILEPATH/$FILENAME
 #
 # Protects against creating or following links under certain conditions
 # Debian kernels have both set to 1 (restricted)
+fs.protected_fifos = 1
 fs.protected_hardlinks = 1
+fs.protected_regulars = 1
 fs.protected_symlinks = 1
 EOF
 
