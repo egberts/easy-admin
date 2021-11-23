@@ -1,6 +1,7 @@
 #!/bin/bash
 # File: 070-bashrc.sh
 # Title: Clean up bashrc
+#1
 # Design:
 #    For system-wide settings
 #    Check if /etc/profile
