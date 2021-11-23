@@ -15,33 +15,27 @@
 #
 
 echo "Creating SSH client configuration files..."
-MINI_REPO="./ssh_config.d"
+MINI_REPO="${PWD}"
 
 source ./ssh-openssh-common
 
+echo "Check the OpenSSH client for appropriate file permission settings"
+echo ""
 
-# We are forcing no-root login permitted here
-# so let us check to ensure that SOMEONE can
-# log back in as non-root and become root
+DEFAULT_ETC_CONF_DIRNAME="ssh"
 
-# Check if root takes a password locally on this host
-WARNING_NO_ROOT_LOGIN=0
+source ssh-openssh-common.sh
 
-# Check for '!' substring in root entry of /etc/shadow file.
-if [ -r /etc/shadow ]; then
-  ROOT_LOGIN_PWD="$(grep root /etc/shadow | awk -F: '{ print $2; }')"
-  if [[ "$ROOT_LOGIN_PWD" == *'!'* ]]; then
-    WARNING_NO_ROOT_LOGIN=1
-  fi
-else
-  echo "Skipping the check for no-root-login condition..."
-fi
+SSH_CONFIG_FILENAME="ssh_config"
+SSH_CONFIG_FILESPEC="${sysconfdir}/$SSH_CONFIG_FILENAME"
 
-# Check for '*' substring in root entry of /etc/shadow file.
-if [[ "$ROOT_LOGIN_PWD" == *'*'* ]]; then
-  WARNING_NO_ROOT_LOGIN=1
-  echo "This host has no direct root login for SSH client."
-fi
+SSH_CONFIGD_DIRNAME="ssh_config.d"
+SSH_CONFIGD_DIRSPEC="${sysconfdir}/$SSH_CONFIGD_DIRNAME"
+
+REPO_DIR="$PWD/$SSH_CONFIGD_DIRNAME"
+
+FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
+rm "$FILE_SETTINGS_FILESPEC"
 
 # Check if anyone has 'sudo' group access on this host
 SUDO_USERS_BY_GROUP="$(grep sudo /etc/group | awk -F: '{ print $4; }')"
@@ -110,9 +104,13 @@ flex_chmod 640      "$SSH_CONF_FILESPEC"
 # Update the SSH server settings
 #
 
-create_script_header "$SSH_CONF_FILESPEC" "OpenSSH daemon configuration file"
-
-cat << SSH_EOF | tee "$BUILDROOT$SSH_CONF_FILESPEC" >/dev/null 2>&1
+DATE="$(date)"
+echo "Creating ${BUILDROOT}$SSH_CONFIG_FILESPEC ..."
+cat << SSH_EOF | tee "${BUILDROOT}${SSH_CONFIG_FILESPEC}" >/dev/null
+#
+# File: $SSH_CONFIG_FILENAME
+# Path: $sysconfdir
+# Title: SSH client configuration file
 #
 # Edition: ssh(8) v8.4p1 compiled-default
 #          OpenSSL 1.1.1k  25 Mar 2021
@@ -128,35 +126,45 @@ cat << SSH_EOF | tee "$BUILDROOT$SSH_CONF_FILESPEC" >/dev/null 2>&1
 # follows (note that keywords are case-insensitive and
 # arguments are case-sensitive):
 
-include "/etc/ssh/ssh_config.d/*.conf"
+include "${SSH_CONFIGD_DIRSPEC}/*.conf"
 SSH_EOF
 
-# Create Debian-specific subdirectory for SSH-specific configuration settings
-flex_mkdir "$SSH_CONFD_DIRSPEC"
-flex_chown root:ssh "$SSH_CONFD_DIRSPEC"
-flex_chmod 750 "$SSH_CONFD_DIRSPEC"
-cp "$MINI_REPO"/* "${BUILDROOT}$SSH_CONFD_DIRSPEC"/
-
-if [ ! -d "${BUILDROOT}${SSH_CONFD_DIRSPEC}" ]; then
-  echo "Mmmmmm."
-  exit 0
+if [ ! -d "$REPO_DIR" ]; then
+  echo "Repo directory $REPO_DIR missing; aborted."
+  exit 9
 fi
-CONFD_DIRLIST="$(ls -1 "${BUILDROOT}${SSH_CONFD_DIRSPEC}"/*)"
-for this_file in $CONFD_DIRLIST; do
-  this_confd="${SSH_CONFD_DIRSPEC}/$(basename "$this_file")"
-  flex_chown root:ssh "$this_confd"
-  flex_chmod 640 "$this_confd"
-done
-echo ""
+flex_mkdir ${SSH_CONFIGD_DIRSPEC}
+cp ${REPO_DIR}/* "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
 
-$OPENSSH_SSH_BIN_FILESPEC -G -F "${BUILDROOT}${SSH_CONF_FILESPEC}" localhost >/dev/null 2>&1
-retsts=$?
-if [ $retsts -ne 0 ]; then
+flex_chmod 640 "$SSH_CONFIG_FILESPEC"
+flex_chown root:ssh "$SSH_CONFIG_FILESPEC"
+
+flex_chmod 750 "$SSH_CONFIGD_DIRSPEC"
+flex_chown root:ssh "$SSH_CONFIGD_DIRSPEC"
+
+CONF_LIST="$(find "${REPO_DIR}" -maxdepth 1 -name "*.conf")"
+for this_subconf_file in $CONF_LIST; do
+  base_name="$(basename "$this_subconf_file")"
+  cp "$this_subconf_file" "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
+  flex_chmod 640 "${SSH_CONFIGD_DIRSPEC}/$base_name"
+  flex_chown root:ssh "${SSH_CONFIGD_DIRSPEC}/$base_name"
+done
+
+
+echo "Checking ${BUILDROOT}${SSH_CONFIG_FILESPEC} for any syntax error ..."
+ssh -G localhost >/dev/null 2>&1
+RETSTS=$?
+if [ $RETSTS -ne 0 ]; then
+  echo "Error during ssh config syntax checking. Showing error output"
+  echo "Cmd: ssh -G localhost -v"
+  ssh -G localhost -v
   echo "Error during ssh config syntax checking."
   echo "Showing ssh_config output"
   $OPENSSH_SSH_BIN_FILESPEC -G -F "${BUILDROOT}${SSH_CONF_FILESPEC}" localhost
   exit "$retsts"
 fi
+echo "Passes syntax checks."
+echo ""
 
 # Check if non-root user has 'ssh' supplementary group membership
 
@@ -185,5 +193,6 @@ else
   echo "to the '$SSH_GROUP' supplemental group; run:"
   echo "  usermod -g ${SSH_GROUP} <app-username>"
 fi
+echo ""
 
 echo "Done."

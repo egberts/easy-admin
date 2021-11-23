@@ -32,7 +32,7 @@
 #   Modified: none
 #   Created: none
 
-echo "Setup ISC DHCP Server"
+echo "ISC DHCP Server configuration"
 echo ""
 source dhcp-isc-common.sh
 
@@ -41,7 +41,7 @@ DHCPD_DIRSPEC="$sysconfdir"
 echo "CHROOT_DIR: $CHROOT_DIR"
 echo "BUILDROOT: $BUILDROOT"
 flex_mkdir "$DHCPD_DIRSPEC"
-flex_mkdir "$BUILD_TMP"
+mkdir "$BUILD_TMP"
 
 DHCPD_CONF_FILENAME="dhcpd.conf"
 DHCPD_CONF_FILESPEC="${DHCPD_DIRSPEC}/$DHCPD_CONF_FILENAME"

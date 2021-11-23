@@ -13,34 +13,40 @@
 #   SYSCONFDIR="/etc"
 #   LIBDIR="$PREFIX/lib"
 #
+# System files:
+#   Created: none
+#   Modified: none
 
-MINI_REPO="./sshd_config.d"
+MINI_REPO="${PWD}"
+DEFAULT_ETC_CONF_DIRNAME="ssh"
 
-source ./ssh-openssh-common
-
-
-# We are forcing no-root login permitted here
-# so let us check to ensure that SOMEONE can
-# log back in as non-root and become root
+source ssh-openssh-common.sh
+FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-server.sh"
+rm -f "${FILE_SETTINGS_FILESPEC}"
 
 # Check if root takes a password locally on this host
 WARNING_NO_ROOT_LOGIN=0
 
-# Check for '!' substring in root entry of /etc/shadow file.
-if [ -r /etc/shadow ]; then
+if [ "$USER" == "root" ]; then
+  # We are forcing no-root login permitted here
+  # so let us check to ensure that SOMEONE can
+  # log back in as non-root and become root
+
+  # Check for '!' substring in root entry of /etc/shadow file.
   ROOT_LOGIN_PWD="$(grep root /etc/shadow | awk -F: '{ print $2; }')"
   if [[ "$ROOT_LOGIN_PWD" == *'!'* ]]; then
     WARNING_NO_ROOT_LOGIN=1
   fi
-else
-  echo "Skipping the check for no-root-login condition..."
-fi
 
-# Check for '*' substring in root entry of /etc/shadow file.
-if [[ "$ROOT_LOGIN_PWD" == *'*'* ]]; then
-  WARNING_NO_ROOT_LOGIN=1
+  # Check for '*' substring in root entry of /etc/shadow file.
+  if [[ "$ROOT_LOGIN_PWD" == *'*'* ]]; then
+    WARNING_NO_ROOT_LOGIN=1
+  fi
+  echo "This host has no direct root login (only sudo)"
+else
+  echo "Non-root: Unable to check if direct root login is possible."
 fi
-echo "This host has no direct root login (only sudo)"
+echo ""
 
 # Check if anyone has 'sudo' group access on this host
 SUDO_USERS_BY_GROUP="$(grep sudo /etc/group | awk -F: '{ print $4; }')"
@@ -72,47 +78,29 @@ if [ -z "$SSH_USERS_BY_GROUP" ]; then
   exit 1
 fi
 
-# Even if we are root, we abide by BUILDROOT directive as to
-# where the final configuration settings goes into.
-ABSPATH="$(dirname "$BUILDROOT")"
-if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
-  echo "$BUILDROOT is an absolute path, we probably need root privilege"
-  echo "We are backing up old SSH settings"
-  # Only the first copy is saved as the backup
-  if [ ! -f "${SSHD_CONF_FILESPEC}.backup" ]; then
-    BACKUP_FILENAME=".backup-$(date +'%Y%M%d%H%M')"
-    echo "Moving /etc/ssh/* to /etc/ssh/${BACKUP_FILENAME}/ ..."
-    mv "$SSHD_CONF_FILESPEC" "${SSHD_CONF_FILESPEC}.backup"
-    retsts=$?
-    if [ $retsts -ne 0 ]; then
-      echo "ERROR: Failed to create a backup of /etc/ssh/*"
-      exit 3
-    fi
-  fi
-else
-  echo "Creating subdirectories to $BUILDROOT ..."
-  mkdir -p "$BUILDROOT"
+SSHD_CONFIGD_DIRNAME="sshd_config.d"
+SSHD_CONFIGD_DIRSPEC="$sysconfdir/$SSHD_CONFIGD_DIRNAME"
+flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
 
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemod-openssh-sshd.sh"
-  echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
-  echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
-  echo "# File: $(basename "$FILE_SETTINGS_FILESPEC")" >> "$FILE_SETTINGS_FILESPEC"
-  echo "# Path: ${PWD}/$(dirname "$FILE_SETTINGS_FILESPEC")" >> "$FILE_SETTINGS_FILESPEC"
-  echo "# Title: File permission settings for SSH daemon"
+SSHD_CONFIG_FILENAME="sshd_config"
+SSHD_CONFIG_FILESPEC="$sysconfdir/$SSHD_CONFIG_FILENAME"
+
+# Only the first copy is saved as the backup
+if [ ! -f "${SSHD_CONFIG_FILESPEC}.backup" ]; then
+  mv "$SSHD_CONFIG_FILESPEC" "${SSHD_CONFIG_FILESPEC}.backup"
 fi
-
-mkdir -p "$BUILDROOT$SSHD_CONFD_DIRSPEC"
-
-flex_chown root:ssh "$SSHD_CONF_FILESPEC"
-flex_chmod 640      "$SSHD_CONF_FILESPEC"
+flex_chown root:ssh "$SSHD_CONFIG_FILESPEC"
+flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
 
 
 # Update the SSH server settings
 #
 
-create_script_header "$SSHD_CONF_FILESPEC" "OpenSSH daemon configuration file"
-
-cat << SSHD_EOF | tee "$BUILDROOT$SSHD_CONF_FILESPEC" >/dev/null 2>&1
+cat << SSHD_EOF | tee "$BUILDROOT$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
+#
+# File: $SSHD_CONFIG_FILENAME
+# Path: $sysconfdir
+# Title: SSH server configuration file
 #
 # Edition: sshd(8) v8.4p1 compiled-default
 #          OpenSSL 1.1.1k  25 Mar 2021
@@ -155,49 +143,49 @@ cat << SSHD_EOF | tee "$BUILDROOT$SSHD_CONF_FILESPEC" >/dev/null 2>&1
 # * User Authentication
 # * Channel/Connection Layer
 
-include "/etc/ssh/sshd_config.d/*.conf"
+include "${SSHD_CONFIGD_DIRSPEC}/*.conf"
 SSHD_EOF
 
-# Create Debian-specific subdirectory for SSH-specific configuration settings
-flex_mkdir "$SSHD_CONFD_DIRSPEC"
-flex_chown root:ssh "$SSHD_CONFD_DIRSPEC"
-flex_chmod 750 "$SSHD_CONFD_DIRSPEC"
-cp "$MINI_REPO"/* "${BUILDROOT}$SSHD_CONFD_DIRSPEC"/
+if [ ! -d "$SSHD_CONFIGD_DIRSPEC" ]; then
+  flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
+fi
+flex_chown root:ssh "$SSHD_CONFIGD_DIRSPEC"
+flex_chmod 750 "$SSHD_CONFIGD_DIRSPEC"
+cp "$MINI_REPO"/${SSHD_CONFIGD_DIRNAME}/* "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
 
-# shellcheck disable=SC2045
-for this_file in $(ls -1 "${SSHD_CONFD_DIRSPEC}"/*); do
-  flex_chown root:ssh "$this_file"
-  flex_chmod 640 "$this_file"
+CONF_LIST="$(find ${SSHD_CONFIGD_DIRSPEC} -maxdepth 1 -name "*.conf")"
+for this_subconf_file in $CONF_LIST; do
+  flex_chown root:ssh "$this_subconf_file"
+  flex_chmod 640 "$this_subconf_file"
 done
 
-# Touch an empty host key file
-ALGORITHM_USED="${ALGORITHM_USED:-ed25519}"
-SSH_KEY_FILESPEC="$ext_ssh_dirspec/ssh_host_${ALGORITHM_USED}_key"
-flex_touch "$SSH_KEY_FILESPEC"
-flex_chown root:ssh "$SSH_KEY_FILESPEC"
-flex_chmod 600 "$SSH_KEY_FILESPEC"
-touch "${BUILDROOT}${SSH_KEY_FILESPEC}"
+# Fake generate throwaway host key for syntax-checking effort
+TEMP_THROWAWAY_KEY="/tmp/fake-ssh-keys-$USER.key"
+ssh-keygen -t ed25519 -f "${TEMP_THROWAWAY_KEY}" -q -N ""
 
-if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
-  chmod 600 "${BUILDROOT}${SSH_KEY_FILESPEC}"
-fi
-
-$OPENSSH_SSHD_BIN_FILESPEC -T -t \
-    -h "${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key" \
-    -f "${BUILDROOT}${SSHD_CONF_FILESPEC}" >/dev/null 2>&1
+# Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
+/usr/sbin/sshd -T -t \
+    -f ${SSHD_CONFIG_FILESPEC} \
+    -h ${TEMP_THROWAWAY_KEY} \
+    >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Error during ssh config syntax checking."
   echo "Showing sshd_config output"
-  $OPENSSH_SSHD_BIN_FILESPEC -T -t \
-    -h "${BUILDROOT}${ext_ssh_dirspec}/ssh_host_ed25519_key" \
-    -f "${BUILDROOT}${SSHD_CONF_FILESPEC}"
+  /usr/sbin/sshd -T -t -f ${BUILDROOT}${SSHD_CONFIG_FILESPEC} -h ${TEMP_THROWAWAY_KEY}
+  rm "$TEMP_THROWAWAY_KEY"
+  rm "${TEMP_THROWAWAY_KEY}.pub"
   exit "$retsts"
 fi
+echo "${BUILDROOT}$SSHD_CONFIG_FILESPEC passes syntax-checker."
+echo ""
+rm "$TEMP_THROWAWAY_KEY"
+rm "${TEMP_THROWAWAY_KEY}.pub"
 
 # Check if non-root user has 'ssh' supplementary group membership
 
 FOUND=0
+<<<<<<< Updated upstream
 USERS_IN_SSH_GROUP="$(grep $SSH_GROUP /etc/group | awk -F: '{ print $4 }')"
 for THIS_USERS in $USERS_IN_SSH_GROUP; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
@@ -206,6 +194,21 @@ for THIS_USERS in $USERS_IN_SSH_GROUP; do
       FOUND=1
     fi
   done
+||||||| constructed merge base
+USERS_IN_SSH_GROUP="$(grep ssh /etc/group | awk -F: '{ print $4 }')"
+for THIS_USER in $USERS_IN_SSH_GROUP; do
+  if [ "${THIS_USER}" == "${USER}" ]; then
+    echo "User ${USER} has access to this hosts SSH server"
+    FOUND=1
+  fi
+=======
+USERS_IN_SSH_GROUP="$(grep ssh /etc/group | awk -F: '{ print $4 }')"
+for THIS_USER in $USERS_IN_SSH_GROUP; do
+  if [ "${THIS_USER}" == "${USER}" ]; then
+    echo "User '${USER}' has access to this hosts SSH server"
+    FOUND=1
+  fi
+>>>>>>> Stashed changes
 done
 
 if [ $FOUND -eq 0 ]; then
@@ -214,4 +217,6 @@ if [ $FOUND -eq 0 ]; then
   echo "  usermod -a -G $SSH_GROUP ${USER}"
   exit 1
 fi
-
+echo ""
+echo "Done."
+>>>>>>> Stashed changes
