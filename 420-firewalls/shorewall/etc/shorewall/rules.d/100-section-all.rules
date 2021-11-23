@@ -1,0 +1,35 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#   ?SECTION ALL
+#   This section was added in Shorewall 4.4.23. Rules in this section
+#   are applied, regardless of the connection tracking state of the
+#   packet and are applied before rules in the other sections.
+#
+#   Wolfe's note:  
+#    1. Never a good idea to move rules between sections. (unless you know)
+#    2. It is safe to organized by source-dest, as long as ordering within
+#       those matching tuple is still being maintained
+#    3. sub-chains go at the end of each sub-section
+#
+#   See following for further details.
+#     /usr/share/shorewall/macro.*
+#
+#   For information about entries in this file, type "man shorewall-rules"
+#
+# Header: action, src-ip, dst-ip, protocol, dest-port, src-port, orig-dest,
+#             rate-limit, user/group, mark, conn-limit, time
+# Action: `shorewall  reload|restart|safe-restart|safe-start|star]`
+# Source: Shorewall/Rules/process_rules()
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+#============================================================================
+#== ALL == ALL == ALL == ALL == ALL == ALL == ALL == ALL == ALL == ALL == ALL 
+#============================================================================
+?SECTION ALL
+

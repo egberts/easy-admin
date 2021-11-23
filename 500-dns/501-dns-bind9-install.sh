@@ -9,3 +9,7 @@ sudo apt install bind9-utils
 
 echo "Installing 'host -A mydomain' command ..."
 sudo apt install bind9-host
+
+# Development packages requires
+# apt install libtool-bin
+# apt install libcap-dev

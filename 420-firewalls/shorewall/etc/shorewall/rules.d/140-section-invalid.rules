@@ -1,0 +1,43 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+#   ?SECTION INVALID
+#
+#   Added in Shorewall 4.5.13. Packets in the INVALID state are
+#   processed by rules in this section.
+#   
+#   The only Actions allowed in this section are ACCEPT, DROP, REJECT,
+#   LOG, NFLOG, NFQUEUE and QUEUE.
+#   
+#   There is an implicit rule added at the end of this section that
+#   invokes the INVALID_DISPOSITION (shorewall.conf[2](5)).
+#
+#   Wolfe's note:  
+#    1. Never a good idea to move rules between sections. (unless you know)
+#    2. It is safe to organized by source-dest, as long as ordering within
+#       those matching tuple is still being maintained
+#    3. sub-chains go at the end of each sub-section
+#
+#   See following for further details.
+#     /usr/share/shorewall/macro.*
+#
+#   For information about entries in this file, type "man shorewall-rules"
+#
+# Header: action, src-ip, dst-ip, protocol, dest-port, src-port, orig-dest,
+#             rate-limit, user/group, mark, conn-limit, time
+# Action: `shorewall  reload|restart|safe-restart|safe-start|star]`
+# Source: Shorewall/Rules/process_rules()
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+#============================================================================
+#== INVALID == INVALID == INVALID == INVALID == INVALID == INVALID == INVALID 
+#============================================================================
+?SECTION INVALID
+ACCEPT		red		all
+
