@@ -1,0 +1,5 @@
+#
+# https://googleprojectzero.blogspot.com/2018/09/a-cache-invalidation-bug-in-linux.html
+# https://security-tracker.debian.org/tracker/CVE-2018-17182
+
+kernel.dmesg_restrict = 1
