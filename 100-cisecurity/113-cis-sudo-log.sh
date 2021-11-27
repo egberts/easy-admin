@@ -13,5 +13,7 @@ if [ -z "$LOGFILE_SEEN" ];then
 else
   echo "In /etc/sudoers, 'Defaults logfile=' exists."
 fi
+
+# TODO: Check file permission of filespec in 'logfile=<filespec>'
 echo "Done."
 exit 0

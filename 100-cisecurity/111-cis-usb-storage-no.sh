@@ -2,11 +2,14 @@
 # File: 111-usb-storage-no.sh
 # Title: Remove USB storage kernel module
 #
-BUILDROOT="${BUILDROOT:-/tmp}"
 
-USBS_FILENAME="usb_storage.conf"
-USBS_DIRPATH="/etc/modprobe.d"
-USBS_FILESPEC="${BUILDROOT}${USBS_DIRPATH}/$USBS_FILENAME"
+chroot_dir="${chroot_dir:-}"
+buildroot_param="${BUILDROOT:-build}"
+BUILDROOT="${buildroot_param}${chroot_dir}"
+
+usbs_filename="usb_storage.conf"
+usbs_dirpath="/etc/modprobe.d"
+usbs_filespec="${BUILDROOT}${usbs_dirpath}/$usbs_filename"
 echo "CIS recommendation for removal of Debian USB Storage"
 echo ""
 read -rp "Enter in 'continue' to run: "
@@ -14,11 +17,18 @@ if [ "$REPLY" != 'continue' ]; then
   echo "Aborted."
   exit 254
 fi
-echo "Writing $USBS_FILESPEC..."
-sudo touch "$USBS_FILESPEC"
-sudo chown root:root "$USBS_FILESPEC"
-sudo chmod 0644      "$USBS_FILESPEC"
-sudo cat << USB_STORAGE_EOF | sudo tee "$USBS_FILESPEC"
+
+if [ ! -d "$BUILDROOT" ]; then
+  mkdir -p "$BUILDROOT"
+fi
+if [ ! -d "${BUILDROOT}/$usbs_dirpath" ]; then
+  mkdir -p "${BUILDROOT}/$usbs_dirpath"
+fi
+echo "Writing $usbs_filespec..."
+sudo touch "$usbs_filespec"
+sudo chown root:root "$usbs_filespec"
+sudo chmod 0644      "$usbs_filespec"
+sudo cat << USB_STORAGE_EOF | sudo tee "$usbs_filespec"
 install usb-storage /bin/true
 USB_STORAGE_EOF
 

@@ -2,33 +2,43 @@
 # File: 150-protocol-dccp.sh
 # Title: Remove DCCP protocol kernel module
 #
-BUILDROOT="${BUILDROOT:-/tmp}"
 
-DCCP_MODULE="dccp"
-
-DCCP_FILENAME="protocol-dccp-no.conf"
-DCCP_FILEPATH="/etc/modprobe.d"
-DCCP_FILESPEC="${BUILDROOT}/$DCCP_FILEPATH/$DCCP_FILENAME"
 echo "CIS recommendation for removal of DCCP Protocol"
 echo ""
-read -rp "Enter in 'continue' to run: "
-if [ "$REPLY" != 'continue' ]; then
-  echo "Aborted."
-  exit 254
+CHROOT_DIR="${CHROOT_DIR:-}"
+BUILDROOT="${BUILDROOT:-build}"
+
+if [ "${BUILDROOT:0:1}" != "/" ]; then
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/os-modules-protocol-dccp.sh"
+  echo "Building $FILE_SETTINGS_FILESPEC script ..."
+  mkdir -p "$BUILDROOT"
+  rm -f "$FILE_SETTINGS_FILESPEC"
 fi
-DIRNAME="$(dirname "$DCCP_FILESPEC")"
-if [ ! -d "$DIRNAME" ]; then
-  echo "Making $DIRNAME directory..."
-  sudo mkdir -p "$DIRNAME"
+
+source installer.sh
+
+dccp_module="dccp"
+
+dccp_filename="protocol-dccp-no.conf"
+dccp_filepath="/etc/modprobe.d"
+dccp_filespec="$dccp_filepath/$dccp_filename"
+
+# check ACTUAL modules.d directory
+if [ ! -d "$dccp_filepath" ]; then
+  # Flex create that directory (later via script)
+  flex_mkdir "$dccp_filepath"
+  flex_chown root:root "$dccp_filepath"
+  flex_chmod 0755 "$dccp_filepath"
 fi
-echo "Writing $DCCP_FILESPEC..."
-sudo touch "$DCCP_FILESPEC"
-sudo chown root:root "$DCCP_FILESPEC"
-sudo chmod 0644      "$DCCP_FILESPEC"
-sudo cat << PROTOCOL_DCCP_EOF | sudo tee "$DCCP_FILESPEC"
+
+echo "Writing $dccp_filespec..."
+flex_touch "$dccp_filespec"
+flex_chown root:root "$dccp_filespec"
+flex_chmod 0644      "$dccp_filespec"
+cat << PROTOCOL_DCCP_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dccp_filespec"
 #
-# File: $DCCP_FILENAME
-# Path: $DCCP_FILEPATH
+# File: $dccp_filename
+# Path: $dccp_filepath
 # Title: Ensure that DCCP protocol is disabled
 # Creator: $(basename "$0")
 # Date: $(date)
@@ -36,13 +46,9 @@ sudo cat << PROTOCOL_DCCP_EOF | sudo tee "$DCCP_FILESPEC"
 # References:
 #   CIS Benchmark - Debian 10 - section 3.4.1
 #
-install $DCCP_MODULE /bin/true
+install $dccp_module /bin/true
 PROTOCOL_DCCP_EOF
-
-# Do the removal of dccp kernel module right now
-PROTOCOL_DCCP_LOADED="$(lsmod | grep $DCCP_MODULE)"
-if [ -n "$PROTOCOL_DCCP_LOADED" ]; then
-  sudo rmmod $DCCP_MODULE
-fi
+echo ""
 
 echo "Done."
+

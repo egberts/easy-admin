@@ -3,35 +3,52 @@
 # Title: Minimize the various banners of logons
 #
 
-BUILDROOT=${BUILDROOT:-/tmp}
+echo "Enforcing coherent login banners":
+echo ""
+CHROOT_DIR="${CHROOT_DIR:-}"
+BUILDROOT="${BUILDROOT:-build}"
 
-ISSUE_NET_FILENAME="issue.net"
-ISSUE_FILENAME="issue"
-ISSUE_FILEPATH="/etc"
-ISSUE_FILESPEC="${BUILDROOT}${ISSUE_FILEPATH}/${ISSUE_FILENAME}"
-ISSUE_NET_FILESPEC="${BUILDROOT}${ISSUE_FILEPATH}/${ISSUE_NET_FILENAME}"
-echo "Creating $ISSUE_FILESPEC..."
-touch "$ISSUE_FILESPEC"
-chown root:root "$ISSUE_FILESPEC"
-chmod 0644      "$ISSUE_FILESPEC"
-cat << ISSUE_EOF | sudo tee "$ISSUE_FILESPEC"
-Authorized uses only. All activity may be monitored and reported.
-ISSUE_EOF
-
-echo "Creating $ISSUE_NET_FILESPEC..."
-touch "$ISSUE_NET_FILESPEC"
-chown root:root "$ISSUE_NET_FILESPEC"
-chmod 0644      "$ISSUE_NET_FILESPEC"
-cat << ISSUE_EOF | sudo tee "$ISSUE_NET_FILESPEC"
-Authorized uses only. All activity may be monitored and reported.
-ISSUE_EOF
-
-if [ "$BUILDROOT" == '/' ]; then
-  MOTD_FILENAME="motd"
-  MOTD_FILEPATH="/etc"
-  MOTD_FILESPEC="${BUILDROOT}${MOTD_FILEPATH}/${MOTD_FILENAME}"
-  echo "Removing $MOTD_FILESPEC..."
-  sudo rm -i "$MOTD_FILESPEC"
-else
-  echo "Also run 'rm $MOTD_FILEPATH/$MOTD_FILENAME' command."
+if [ "${BUILDROOT:0:1}" != "/" ]; then
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/os-file-settings-banners.sh"
+  echo "Building $FILE_SETTINGS_FILESPEC script ..."
+  mkdir -p "$BUILDROOT"
+  rm "$FILE_SETTINGS_FILESPEC"
 fi
+
+source installer.sh
+
+issue_filename="issue"
+issue_filepath="/etc"
+issue_filespec="${issue_filepath}/${issue_filename}"
+
+echo "Creating $issue_filespec..."
+flex_mkdir "$(dirname "$issue_filespec")"
+flex_touch "$issue_filespec"
+flex_chown root:root "$issue_filespec"
+flex_chmod 0644      "$issue_filespec"
+cat << ISSUE_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$issue_filespec" >/dev/null
+Authorized uses only. All activity may be monitored and reported.
+ISSUE_EOF
+echo ""
+
+issue_net_filename="issue.net"
+issue_net_filespec="${issue_filepath}/${issue_net_filename}"
+echo "Creating $issue_net_filespec..."
+flex_touch "$issue_net_filespec"
+flex_chown root:root "$issue_net_filespec"
+flex_chmod 0644      "$issue_net_filespec"
+cat << ISSUE_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$issue_net_filespec">/dev/null
+Authorized uses only. All activity may be monitored and reported.
+ISSUE_EOF
+echo ""
+
+# Remove /etc/motd.d
+MOTD_DIRNAME="motd.d"
+MOTD_DIRPATH="/etc"
+MOTD_DIRSPEC="${MOTD_DIRPATH}/${MOTD_DIRNAME}"
+if [ -d "$MOTD_DIRSPEC" ]; then
+  echo "You should also be removing $MOTD_FILESPEC..."
+  echo ""
+fi
+
+echo "Done."
