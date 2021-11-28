@@ -1,0 +1,15 @@
+
+Dynamic IP Address
+------------------
+Methods of DHCP client sending new IP address to a DNS server varied, greatly.
+
+DHCP client is used to obtain a local dynamic IP address.  
+
+DHCP client must start before any kind of DNS server runs.  DNS server must also be reloaded/restarted after DHCP client later changes its IP address.
+
+To hand a new IP address to the DNS server, most DHCP clients have hooks (helper-script) support.  Helper-script is often written in bash (via hash shebang line).
+
+In this scenario, the DHCP client helper-script just updates the DNS configuration file and instructs the active DNS server to reload its config file(s).
+
+WARNING: systemd DHCP does not have hook support, as its made for desktops, not servers.  Find another DHCP client. ISC DHCP (`dhclient`) client is a good choice.  NetworkManager is second best.
+
