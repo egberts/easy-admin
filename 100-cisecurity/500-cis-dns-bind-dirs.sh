@@ -3,11 +3,16 @@
 # Title: Check file permissions of various files
 #
 # Description:
-#   Usage:  500-cis-dns-bind-dirs.sh [ -t <chroot-dir> ] <named.conf-filespec>
+# Usage:
+#   500-cis-dns-bind-dirs.sh
+#          [ -i <bind9-instance-name> ]
+#          [ -t <chroot-dir> ] 
+#          <named.conf-filespec>
 #
-# as guided by a parent named.conf configuration file.
-# So split-horizon have two separate parent named.conf (and their own
-# set of included configuration files).
+#      -t : optional top-level directory path to chroot directory
+#      -i : optional Bind9 instance name, typically one for each named daemon
+#
+# - split-horizon have two instance names.
 #
 # TODO:
 #   named v9.16 opens /usr/lib/ssl/openssl.cnf  (check that?)
@@ -21,7 +26,8 @@
 function cmd_show_syntax_usage {
     cat << USAGE_EOF
 Usage:  $0
-        [-t|--tempdir <chroot-dir>] \
+	[-t|--chroot-dir <chroot-dir>] \
+        [-i|--instance <bind9-instance-name>] \
         [ --help|-h ] [ --verbosity|-v ]
         < named.conf-filespec >
 USAGE_EOF
@@ -29,8 +35,8 @@ USAGE_EOF
 }
 
 # Call getopt to validate the provided input.
-options=$(getopt -o ht:vV \
-          --long help,tempdir:,verbose,version -- "$@" )
+options=$(getopt -o hit:vV \
+          --long help,instance:,chroot-dir:,verbose,version -- "$@" )
 RETSTS=$?
 [[ ${RETSTS} -eq 0 ]] || {
     echo "Incorrect options provided"
@@ -39,19 +45,24 @@ RETSTS=$?
 }
 
 CHROOT=
-NCC_OPT=
+ncc_opt=
 VERBOSITY=0
 
 eval set -- "${options}"
 while true; do
     case "$1" in
+    -i|--instance)
+        shift;  # The arg is next in position args
+        INSTANCE=$1  # deferred argument checking
+        ;;
     -t|--tempdir)
         shift;  # The arg is next in position args
         CHROOT=$1  # deferred argument checking
-        NCC_OPT="-t $CHROOT"
+        ncc_opt="-t $CHROOT"
         ;;
     -v|--verbose)
         ((VERBOSITY=VERBOSITY+1))
+	readonly VERBOSITY
         ;;
     -V|--version)
         echo "$0: version TBA"
@@ -73,68 +84,68 @@ done
 # ARG1_MODE="${1:-${DEFAULT_CMD_MODE}}"
 # ARG2_NAME="${2}"
 
-SUDO_BIN=
+sudo_bin=
 if [ $EUID -ne 0 ]; then
   echo "WARN: User $UID is not root; may need 'sudo' evocation"
   echo "Will user-prompt before any writing operation is needed."
-  SUDO_BIN=sudo
+  sudo_bin=sudo
 fi
 
-NAMED_CHECKCONF_BIN="$(whereis -b named-checkconf | awk '{print $2}')"
-if [ -z "$NAMED_CHECKCONF_BIN" ]; then
+named_checkconf_bin="$(whereis -b named-checkconf | awk '{print $2}')"
+if [ -z "$named_checkconf_bin" ]; then
   echo "named-checkconf is not found; Aborted."
   exit 1
 fi
 
 # Auto determine Distro of Linux
-LSB_RELEASE="$(whereis -b lsb_release | awk '{print $2}')"
-if [ -n "$LSB_RELEASE" ]; then
-  DISTRO=$($LSB_RELEASE -s -i)
-  # if [ "$DISTRO" = "Debian" ]; then
-  #   GROUPNAME='bind'
+lsb_release_result="$(whereis -b lsb_release | awk '{print $2}')"
+if [ -n "$lsb_release_result" ]; then
+  distro_name=$($lsb_release_result -s -i)
+  # if [ "$distro_name" = "Debian" ]; then
+  #   bind_groupname='bind'
   # else
-  #   GROUPNAME='named'
+  #   bind_groupname='named'
   # fi
 else
-  DISTRO='Unknown'
-  # GROUPNAME='named'
+  distro_name='Unknown'
+  # bind_groupname='named'
 fi
 
-BIND_USERNAME='bind'
+selected_bind_username='bind'
 # Pick up the user/group names
-TRY_USERNAMES="bind named"
-for bind_username in $TRY_USERNAMES; do
-  FOUND_BINDNAME_A=("$(grep -E -- "^$bind_username" /etc/passwd)")
-  if [ ${#FOUND_BINDNAME_A[@]} -gt 1 ]; then
+known_bind_usernames="bind named"
+for bind_username in $known_bind_usernames; do
+  found_bindname_A=("$(grep -E -- "^$bind_username" /etc/passwd)")
+  if [ ${#found_bindname_A[@]} -gt 1 ]; then
     echo "Too many $bind_username accounts."
     echo "Aborted"
     exit 9
-  elif [ -n "${FOUND_BINDNAME_A[0]}" ]; then
-    BIND_USERNAME="${bind_username}"
-    BIND_HOMEDIR="$(echo "${FOUND_BINDNAME_A[0]}" | awk -F: '{print $6}')"
+  elif [ -n "${found_bindname_A[0]}" ]; then
+    selected_bind_username="${bind_username}"
+    bind_home_dir="$(echo "${found_bindname_A[0]}" | awk -F: '{print $6}')"
   fi
 done
-echo "Bind9 user account name is automatically determined as: '$BIND_USERNAME'"
-if [ -z "$BIND_HOMEDIR" ]; then
-  echo "User '$BIND_USERNAME' $HOME directory is undefined"
+echo "Bind9 user account name is automatically determined as: '$selected_bind_username'"
+if [ -z "$bind_home_dir" ]; then
+  echo "User '$selected_bind_username' $HOME directory is undefined"
   echo "Aborted."
   exit 123
 fi
-echo "User $BIND_USERNAME \$HOME=$BIND_HOMEDIR"
+echo "User $selected_bind_username \$HOME=$bind_home_dir"
 
 # Now extract that Bind9 user $HOME directory (also varied across distros)
 # named needs a $HOME for statistics, dump-files, cache dumps.
 # named puts other files elsewhere depending on static/dynamic/write/read needs
 # Keyword: 'directory'
-find_bind_home="$(grep "$BIND_USERNAME" /etc/passwd | awk -F: '{print $6}')"
+find_bind_home="$(grep "$selected_bind_username" /etc/passwd | awk -F: '{print $6}')"
 if [ -z "$find_bind_home" ]; then
-  echo "Unable to determine $HOME for '$BIND_USERNAME' user."
+  echo "Unable to determine $HOME for '$selected_bind_username' user."
   echo "Aborted"
   exit 123
 else
   DEFAULT_USER_HOME_DIRNAME="$find_bind_home"
 fi
-BIND_SHELL="$(grep -e "^$BIND_USERNAME" /etc/passwd|awk -F: '{print $7}')"
+bind_shell="$(grep -e "^$selected_bind_username" /etc/passwd|awk -F: '{print $7}')"
 # Later, we can override USER_HOME with named.conf's 'directory' keyword,
 # if any.
 # This override of USER_HOME shall occur before first usage of $USER_HOME
@@ -207,7 +218,7 @@ function find_include_clauses
 {
   local val
   echo "Scanning for 'include' clauses..."
-  val="$($SUDO_BIN cat "$NAMED_FILESPEC" | grep -E -- "^\s*[\s\{]*\s*include\s*")"
+  val="$($sudo_bin cat "$NAMED_FILESPEC" | grep -E -- "^\s*[\s\{]*\s*include\s*")"
   val="$(echo "$val" | awk '{print $2}' | tr -d ';')"
   val="${val//\"/}"
   val="$(echo "$val" | xargs)"
@@ -216,9 +227,9 @@ function find_include_clauses
 }
 
 # List of primary configuration file and all included configuration files.
-CONFIG_FILES="$NAMED_FILESPEC"
+config_files_list="$NAMED_FILESPEC"
 find_include_clauses
-CONFIG_FILES="$NAMED_FILESPEC $CONFIG_VALUE"
+config_files_list="$NAMED_FILESPEC $CONFIG_VALUE"
 
 
 # Read the entire config file
@@ -227,14 +238,14 @@ echo "Reading in $NAMED_FILESPEC..."
 echo "May need access via sudo..."
 # Capture non-STDERR output of named-checkconf, if any
 # shellcheck disable=SC2086
-named_conf_all_includes="$("$SUDO_BIN" "$NAMED_CHECKCONF_BIN" $NCC_OPT -p -x "$NAMED_FILESPEC" 2>/dev/null)$"
+named_conf_all_includes="$($sudo_bin $named_checkconf_bin $ncc_opt -p -x "$NAMED_FILESPEC" 2>/dev/null)$"
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
   # capture only STDERR output of named-checkconf
   # shellcheck disable=SC2086
-  errmsg="$("$SUDO_BIN" "$NAMED_CHECKCONF_BIN" $NCC_OPT -p -x "$NAMED_FILESPEC" 1>/dev/null)"
+  errmsg="$($sudo_bin $named_checkconf_bin $ncc_opt -p -x "$NAMED_FILESPEC" 1>/dev/null)"
   echo "Need to fix error in $NAMED_FILESPEC before going further"
-  echo "CLI: $SUDO_BIN $NAMED_CHECKCONF_BIN $NCC_OPT -p -x $NAMED_FILESPEC"
+  echo "CLI: $sudo_bin $named_checkconf_bin $ncc_opt -p -x $NAMED_FILESPEC"
   echo "Error code: $RETSTS"
   echo "Error message: $errmsg"
   exit $RETSTS
@@ -246,7 +257,7 @@ function find_config_value
 {
   local val
   echo "Scanning for '$1' ..."
-  # named_conf_all_includes="$($SUDO_BIN named-checkconf -p -x $NAMED_FILESPEC 2>/dev/null)$"
+  # named_conf_all_includes="$($sudo_bin named-checkconf -p -x $NAMED_FILESPEC 2>/dev/null)$"
   val="$(echo "$named_conf_all_includes" | grep -E -- "^\s*[\s\{]*\s*${1}\s*")"
   val="$(echo "$val" | awk '{print $2}' | tr -d ';')"
   val="${val//\"/}"
@@ -273,20 +284,20 @@ function find_file_statement()
     zone_files_list="$zone_files_list $add_file"
     ((tmp_fidx+=1))
 fi
-  ZONE_FILE_STATEMENTS_A[$zone_idx_tmp]="$zone_files_list"
+  zone_file_statements_A[$zone_idx_tmp]="$zone_files_list"
   unset regex_file_statements t tmp_fidx zone_files_list zone_idx_tmp
 }
 
 find_zone_clauses()
 {
   ZONE_IDX=0
-  ZONE_CLAUSES_A=()
+  zone_clauses_A=()
   local s=$1 named_conf_by_zone_a=()
   # If you added any more pairs of (), you must add BASH_REMATCH[n+1] below
   regex_zone_clauses='[^zone]*zone[\n[:space:]]*(\S{1,64})[\n[:space:]]*\S{0,6}[\n[:space:]]*(\{[\n[:space:]]*)[^zone]*'
   #echo "find_zone_clauses: called"
   while [[ $s =~ $regex_zone_clauses ]]; do
-    ZONE_CLAUSES_A[$ZONE_IDX]="$(echo "${BASH_REMATCH[1]}" | xargs)"
+    zone_clauses_A[$ZONE_IDX]="$(echo "${BASH_REMATCH[1]}" | xargs)"
     s=${s#*"${BASH_REMATCH[1]}"}
     s=${s#*"${BASH_REMATCH[2]}"}
     named_conf_by_zone_a[$ZONE_IDX]="$s" # echo "$s" | xargs )"
@@ -350,32 +361,32 @@ sysconfdir=$prefix/etc
 localstatedir=$prefix/var
 # exec_prefix=$prefix
 DATAROOTDIR=$prefix/share
-DATADIR=$DATAROOTDIR
+datadir=$DATAROOTDIR
 
 # TODO Need additional clarity with CHROOT
 # SYSROOT=/   # used with chroot?
 # CHROOT_DIR="/var/named"  # Bind9 ARM handbook
 
 # CIS-specific default???
-DYNDIR="/var/lib/bind/dynamic"  # Debian 9,10,11
+dynamic_dir="/var/lib/bind/dynamic"  # Debian 9,10,11
 
 # distro-specific default
-DISTRO='Debian'
-if [ "$DISTRO" = 'Debian' ]; then
+distro_name='Debian'
+if [ "$distro_name" = 'Debian' ]; then
   prefix="/usr"
   sysconfdir="/etc/bind"
   localstatedir=""
   # CHROOT_DIR="/var/lib/named"
 
-  DYNDIR="/var/lib/bind/dynamic"  # Debian 9,10,11
+  dynamic_dir="/var/lib/bind/dynamic"  # Debian 9,10,11
 
-elif [ "$DISTRO" = 'Redhat' ]; then
+elif [ "$distro_name" = 'Redhat' ]; then
   prefix="/usr"
   sysconfdir="/etc/bind"
   localstatedir="/var"
   # CHROOT_DIR="/var/lib/named"
 
-  DYNDIR="/var/lib/bind/dynamic"  # TBD/TODO
+  dynamic_dir="/var/lib/bind/dynamic"  # TBD/TODO
 fi
 
 echo "final configure/autogen/autoreconf settings:"
@@ -384,7 +395,7 @@ echo "  sysconfdir:    $sysconfdir"
 echo "  localstatedir: $localstatedir"
 
 # Typically, when shell switches user, current directory switches to new $HOME
-CWD_DIR="$BIND_HOMEDIR"
+cwd_dir="$bind_home_dir"
 
 # Now for CIS defaults
 # Directory for temporary runtime files, typically '/var/run/named'
@@ -395,23 +406,23 @@ CIS_RUNDIR="$localstatedir/run/named"
 # Now for the many default settings
 # DEFAULT_RNDC_CONF_DIRNAME="$sysconfdir"
 # DEFAULT_RNDC_CONF_FILENAME="rndc.conf"
-DEFAULT_DUMP_DIRNAME="$CWD_DIR"
+DEFAULT_DUMP_DIRNAME="$cwd_dir"
 DEFAULT_DUMP_FILENAME="named_dump.db"  # named/config.c/defaultconf
-DEFAULT_STATISTICS_DIRNAME="$CWD_DIR"
+DEFAULT_STATISTICS_DIRNAME="$cwd_dir"
 DEFAULT_STATISTICS_FILENAME="named.stats"   # named/config.c/defaultconf
-DEFAULT_MEMSTATISTICS_DIRNAME="$CWD_DIR"  # TODO: needs verification
+DEFAULT_MEMSTATISTICS_DIRNAME="$cwd_dir"  # TODO: needs verification
 DEFAULT_MEMSTATISTICS_FILENAME="named.memstats"  # named/config.c/defaultconf
 # named-checkconf seems to pick up autoreconf/autogen/configure settings
 # by doing 'named-checkconf -V'
 DEFAULT_LOCKFILE_DIRNAME="$localstatedir/run/named"  # TODO sure its localstatedir?
 DEFAULT_LOCKFILE_FILENAME="named.lock"
-DEFAULT_MANAGED_KEYS_DIRNAME="$CWD_DIR"  # named/server.c
+DEFAULT_MANAGED_KEYS_DIRNAME="$cwd_dir"  # named/server.c
 DEFAULT_MANAGED_KEYS_FILENAME="managed-keys.bind"  # only if 'view-less'
 DEFAULT_RANDOM_DIRNAME="/dev"
 DEFAULT_RANDOM_FILENAME="random"  # bind9/config.h #define PATH_RANDOMDEV
 DEFAULT_PIDFILE_DIRNAME="$localstatedir/run/named"  # named/config.c/defaultconf
 DEFAULT_PIDFILE_FILENAME="named.pid"  # named/config.c/defaultconf
-DEFAULT_SECROOTS_DIRNAME="$CWD_DIR"
+DEFAULT_SECROOTS_DIRNAME="$cwd_dir"
 DEFAULT_SECROOTS_FILENAME="named.secroots"  # named/config.c/defaultconf
 DEFAULT_BINDKEY_DIRNAME="$sysconfdir"
 DEFAULT_BINDKEY_FILENAME="bind.keys"
@@ -421,34 +432,34 @@ DEFAULT_GSSAPI_KEYTAB_DIRNAME="/etc"
 DEFAULT_GSSAPI_KEYTAB_FILENAME="krb5.key"
 # no default for Zone files, must be explicit, must be a minimum of one
 # for authoritative level 1/2 server.  Might have zone(s) in caching mode.
-DEFAULT_KEY_DIRNAME="/var/cache/bind"  # Do not put CWD_DIR/BIND_HOME in here
-DEFAULT_RECURSING_DIRNAME="$CWD_DIR"
+DEFAULT_KEY_DIRNAME="/var/cache/bind"  # Do not put cwd_dir/bind_home in here
+DEFAULT_RECURSING_DIRNAME="$cwd_dir"
 DEFAULT_RECURSING_FILENAME="named.recursing"
 
-DEFAULT_JOURNAL_DIRNAME="$CWD_DIR"
-#DEFAULT_JOURNAL_FILENAME="$DEFAULT_MANAGED_KEYS_FILENAME.jnl"
+DEFAULT_JOURNAL_DIRNAME="$cwd_dir"
+#DEFAULT_JOURNAL_FILENAME="$DEFAULT_.jnl"
 
 # Scan entire configuration for 'zone's and 'logging, channel's
 
 # Find all 'zone' clauses in config file
 find_zone_clauses "$named_conf_all_includes"
-echo "ZONE_CLAUSES_A[*]: ${ZONE_CLAUSES_A[*]}"
-echo "ZONE_FILE_STATEMENTS_A[*]: ${ZONE_FILE_STATEMENTS_A[*]}"
-ZONES_COUNT=${#ZONE_CLAUSES_A[*]}
+echo "zone_clauses_A[*]: ${zone_clauses_A[*]}"
+echo "zone_file_statements_A[*]: ${zone_file_statements_A[*]}"
+zone_clauses_count=${#zone_clauses_A[*]}
 
 # Some settings which might be wiped-out by named.conf, selectively.
 
 # Keyword: 'dump-file'
 find_config_value "dump-file"
-CV_DUMP_FILESPEC
-if [ -n "$CV_DUMP_FILESPEC" ]; then
-  DUMP_DIR="$(dirname "$CV_DUMP_FILESPEC")"
-  DUMP_FILENAME="$(basename "$CV_DUMP_FILESPEC")"
+CV_dump_filespec
+if [ -n "$CV_dump_filespec" ]; then
+  DUMP_DIR="$(dirname "$CV_dump_filespec")"
+  DUMP_FILENAME="$(basename "$CV_dump_filespec")"
 else
   DUMP_DIR="$DEFAULT_DUMP_DIRNAME"
   DUMP_FILENAME="$DEFAULT_DUMP_FILENAME"
 fi
-DUMP_FILESPEC="$DUMP_DIR/$DUMP_FILENAME"
+dump_filespec="$DUMP_DIR/$DUMP_FILENAME"
 
 # Keyword: 'statistics-file'
 find_config_value "statistics-file"
@@ -461,10 +472,10 @@ else
   STATISTICS_DIR="$DEFAULT_STATISTICS_DIRNAME"
   STATISTICS_FILENAME="$DEFAULT_STATISTICS_FILENAME"
 fi
-STATISTICS_FILESPEC="$STATISTICS_DIR/$STATISTICS_FILENAME"
+statistics_filespec="$STATISTICS_DIR/$STATISTICS_FILENAME"
 
 # Keyword: 'memstatistics_file'
-# TODO: We think memstats goes into $CWD_DIR directory also
+# TODO: We think memstats goes into $cwd_dir directory also
 find_config_value "memstatistics-file"
 CV_MEMSTATS_FILESPEC="$CONFIG_VALUE"
 if [ -n "$CV_MEMSTATS_FILESPEC" ]; then
@@ -475,23 +486,23 @@ else
   MEMSTATISTICS_DIR="$DEFAULT_MEMSTATISTICS_DIRNAME"
   MEMSTATISTICS_FILENAME="$DEFAULT_MEMSTATISTICS_FILENAME"
 fi
-MEMSTATISTICS_FILESPEC="$MEMSTATISTICS_DIR/$MEMSTATISTICS_FILENAME"
+memstatistics_filespec="$MEMSTATISTICS_DIR/$MEMSTATISTICS_FILENAME"
 
 # Keyword: 'geoip-directory'  # going obsolete due its geoip-directory
 #   being incorporated into libmaxmindb library.
 
 # Keyword: 'lock-file'
 find_config_value "lock-file"
-CV_LOCK_FILESPEC="$CONFIG_VALUE"
-if [ -n "$CV_LOCK_FILESPEC" ]; then
-  LOCK_DIR="$(dirname "$CV_LOCK_FILESPEC")"
-  LOCK_FILENAME="$(basename "$CV_LOCK_FILESPEC")"
+CV_lock_filespec="$CONFIG_VALUE"
+if [ -n "$CV_lock_filespec" ]; then
+  LOCK_DIR="$(dirname "$CV_lock_filespec")"
+  LOCK_FILENAME="$(basename "$CV_lock_filespec")"
   echo "Redefining 'lock-file' to $LOCK_DIR/$LOCK_FILENAME"
 else
   LOCK_DIR="$DEFAULT_LOCKFILE_DIRNAME"
   LOCK_FILENAME="$DEFAULT_LOCKFILE_FILENAME"
 fi
-LOCK_FILESPEC="$LOCK_DIR/$LOCK_FILENAME"
+lock_filespec="$LOCK_DIR/$LOCK_FILENAME"
 
 # If view are used, managed keys no longer has default file/dir names
 # and managed keys will be tracked in separate files, one file per view;
@@ -509,7 +520,7 @@ fi
 
 # TODO:  Is that by total views or by total zones?
 # UPDATE: Doesn't look like total zones is working
-if [ "$ZONES_COUNT" -ge 10 ]; then
+if [ "$zone_clauses_count" -ge 10 ]; then
 # Break out filename by numbers of zones greater than 1
   MANAGEDKEYS_FILENAME="<not-a-file>"
   echo "Redefining default 'managed-keys-file' to $MANAGEDKEYS_FILENAME"
@@ -520,29 +531,29 @@ MANAGEDKEYS_FILESPEC="$MANAGEDKEYS_DIR/$MANAGEDKEYS_FILENAME"
 
 # Keyword: 'random-device'
 find_config_value "random-device"
-CV_RANDOM_FILESPEC="$CONFIG_VALUE"
-if [ -n "$CV_RANDOM_FILESPEC" ]; then
-  RANDOM_DIR="$(dirname "$CV_RANDOM_FILESPEC")"
-  RANDOM_FILENAME="$(basename "$CV_RANDOM_FILESPEC")"
+CV_random_filespec="$CONFIG_VALUE"
+if [ -n "$CV_random_filespec" ]; then
+  RANDOM_DIR="$(dirname "$CV_random_filespec")"
+  RANDOM_FILENAME="$(basename "$CV_random_filespec")"
   echo "Redefining 'random-device' to $RANDOM_DIR/$RANDOM_FILENAME"
 else
   RANDOM_DIR="$DEFAULT_RANDOM_DIRNAME"
   RANDOM_FILENAME="$DEFAULT_RANDOM_FILENAME"
 fi
-RANDOM_FILESPEC="$RANDOM_DIR/$RANDOM_FILENAME"
+random_filespec="$RANDOM_DIR/$RANDOM_FILENAME"
 
 # Keyword: 'pid-file'
 find_config_value "pid-file"
-CV_PID_FILESPEC="$CONFIG_VALUE"
-if [ -n "$CV_PID_FILESPEC" ]; then
-  PID_DIR="$(dirname "$CV_PID_FILESPEC")"
-  PID_FILENAME="$(basename "$CV_PID_FILESPEC")"
+CV_pid_filespec="$CONFIG_VALUE"
+if [ -n "$CV_pid_filespec" ]; then
+  PID_DIR="$(dirname "$CV_pid_filespec")"
+  PID_FILENAME="$(basename "$CV_pid_filespec")"
   echo "Redefining 'pid-file' to $PID_DIR/$PID_FILENAME"
 else
   PID_DIR="$DEFAULT_PIDFILE_DIRNAME"
   PID_FILENAME="$DEFAULT_PIDFILE_FILENAME"
 fi
-PID_FILESPEC="$PID_DIR/$PID_FILENAME"
+pid_filespec="$PID_DIR/$PID_FILENAME"
 
 # Keyword: 'recursing-file'
 find_config_value "recursing-file"
@@ -556,7 +567,7 @@ else
   RECURSING_FILENAME="$DEFAULT_RECURSING_FILENAME"
 fi
 # shellcheck disable=SC2034
-RECURSING_FILESPEC="$RECURSING_DIR/$RECURSING_FILENAME"
+recursing_filespec="$RECURSING_DIR/$RECURSING_FILENAME"
 
 # Keyword: 'secroots-file'
 find_config_value "secroots-file"
@@ -569,7 +580,7 @@ else
   SECROOTS_DIR="$DEFAULT_SECROOTS_DIRNAME"
   SECROOTS_FILENAME="$DEFAULT_SECROOTS_FILENAME"
 fi
-SECROOTS_FILESPEC="$SECROOTS_DIR/$SECROOTS_FILENAME"
+secroots_filespec="$SECROOTS_DIR/$SECROOTS_FILENAME"
 
 # Keyword: 'bindkeys-file'
 find_config_value "bindkeys-file"
@@ -608,16 +619,16 @@ else
   KEYTAB_DIR="$DEFAULT_GSSAPI_KEYTAB_DIRNAME"
   KEYTAB_FILENAME="$DEFAULT_GSSAPI_KEYTAB_FILENAME"
 fi
-KEYTAB_FILESPEC="$KEYTAB_DIR/$KEYTAB_FILENAME"
+keytab_filespec="$KEYTAB_DIR/$KEYTAB_FILENAME"
 
 # Keyword: 'file'  by zones
 # All zone files referenced in the configuration files regardless of DNS server
 # type
-ZONE_FILES="$(echo "${ZONE_FILE_STATEMENTS_A[*]}" | xargs)"
-if [ ${#ZONE_CLAUSES_A[*]} -gt 1 ]; then
-  MANAGED_KEYS_FILENAME=""
+zone_files_list="$(echo "${zone_file_statements_A[*]}" | xargs)"
+if [ ${#zone_clauses_A[*]} -gt 1 ]; then
+  =""
 else
-  MANAGED_KEYS_FILENAME="managed-keys"
+  ="managed-keys"
 fi
 
 # Keyword: 'key-directory'
@@ -633,8 +644,8 @@ else
   # defaults to one directory
   KEYDIR="$DEFAULT_KEY_DIRNAME"
 fi
-KEYDIR_LIST="$KEYDIR"   # decommission KEYDIR due to multiple directories
-# Do not put $BIND_HOME in 'key-directory' ENV_VAR
+key_dir_list="$KEYDIR"   # decommission KEYDIR due to multiple directories
+# Do not put $bind_home in 'key-directory' ENV_VAR
 # named has 'key-directory' compiled-in default set to '/var/cache/bind'
 # It was 'bind' user account who 'moved' into the same directory.
 # Arguably, user $HOME should be in its own directory '/var/bind'.
@@ -686,15 +697,15 @@ its_dir_exist "$bind_cfg_files"
 
 
 
-BIND_HOME="$CWD_DIR"
+bind_home="$cwd_dir"
 # Directory for managed keys which are dynamically updated
-DYNDIR="/var/bind/dynamic"  # explicit by Bind9 ARM handbook
+dynamic_dir="/var/bind/dynamic"  # explicit by Bind9 ARM handbook
 # Directory for dynamically updated slave zone files.
-SLAVEDIR="/var/bind/slave"
+slave_dir="/var/bind/slave"
 # Directory for statistics collecte at runtime.
-DATADIR="/var/log/named"
+datadir="/var/log/named"
 # Directory for log files
-LOGDIR="/var/log/named"
+log_dir="/var/log/named"
 
 # Directory for temporary files - Typically, '/tmp',
 # some methods for named to define temporary files are:
@@ -714,54 +725,54 @@ TMPDIR="/tmp"  # system-default, man tmpfile(3)
 
 echo "Based on $NAMED_FILESPEC settings..."
 echo ""
-echo "BIND_USERNAME: $BIND_USERNAME"
-echo "BIND_SHELL:   $BIND_SHELL"
-echo "CONFIG_FILES: $CONFIG_FILES"
-echo "ZONE_FILES:   $ZONE_FILES"
-echo "BIND_HOME:    $BIND_HOME"
+echo "selected_bind_username: $selected_bind_username"
+echo "bind_shell:   $bind_shell"
+echo "config_files_list: $config_files_list"
+echo "zone_files_list:   $zone_files_list"
+echo "bind_home:    $bind_home"
 echo "CIS_RUNDIR:   $CIS_RUNDIR"
-echo "DYNDIR:       $DYNDIR"
-echo "SLAVEDIR:     $SLAVEDIR"
-echo "DATADIR:      $DATADIR"
-echo "LOGDIR:       $LOGDIR"
+echo "dynamic_dir:       $dynamic_dir"
+echo "slave_dir:     $slave_dir"
+echo "datadir:      $datadir"
+echo "log_dir:       $log_dir"
 echo "TMPDIR:       $TMPDIR"
-echo "KEYDIR_LIST   $KEYDIR_LIST"
+echo "key_dir_list   $key_dir_list"
 echo "BINDKEY:      $BINDKEY"
-echo "ZONE_CLAUSES_A: ${ZONE_CLAUSES_A[*]}"
-echo "ZONE_FILE_STATEMENTS_A: ${ZONE_FILE_STATEMENTS_A[*]}"
-echo "PID_FILESPEC: $PID_FILESPEC"
+echo "zone_clauses_A: ${zone_clauses_A[*]}"
+echo "zone_file_statements_A: ${zone_file_statements_A[*]}"
+echo "pid_filespec: $pid_filespec"
 echo "SESSION_KEY_FILESPEC: $SESSION_KEY_FILESPEC"
 echo "JOURNAL_DIR:          $JOURNAL_DIR"
-echo "LOCK_FILESPEC:        $LOCK_FILESPEC"
+echo "lock_filespec:        $lock_filespec"
 echo "MANAGEDKEYS_DIR:      $MANAGEDKEYS_DIR"
 echo "MANAGEDKEYS_FILESPEC: $MANAGEDKEYS_FILESPEC"
-echo "RANDOM_FILESPEC:      $RANDOM_FILESPEC"
-echo "SECROOTS_FILESPEC:    $SECROOTS_FILESPEC"
-echo "DUMP_FILESPEC:        $DUMP_FILESPEC"
-echo "STATISTICS_FILESPEC:  $STATISTICS_FILESPEC"
-echo "MEMSTATISTICS_FILESPEC: $MEMSTATISTICS_FILESPEC"
-echo "KEYTAB_FILESPEC:      $KEYTAB_FILESPEC"
+echo "random_filespec:      $random_filespec"
+echo "secroots_filespec:    $secroots_filespec"
+echo "dump_filespec:        $dump_filespec"
+echo "statistics_filespec:  $statistics_filespec"
+echo "memstatistics_filespec: $memstatistics_filespec"
+echo "keytab_filespec:      $keytab_filespec"
 
 # Testing all directories for its file permission and file ownership settings
 
 
-TOTAL_FILES=0
-TOTAL_FILE_MISSINGS=0
-TOTAL_FILE_ERRORS=0
-TOTAL_PERM_ERRORS=0
+total_files=0
+total_file_missings=0
+total_file_errors=0
+total_perm_errors=0
 
 function file_perm_check
 {
-  ((TOTAL_FILES+=1))
+  ((total_files+=1))
   local filespec expected_fmod expected_groupname expected_username varnam
   varnam=$1
   # shellcheck disable=SC2086
   eval filespec=\$$1
-  $SUDO_BIN ls -1 "$filespec" >/dev/null 2>&1
+  $sudo_bin ls -1 "$filespec" >/dev/null 2>&1
   RETSTS=$?
   if [ $RETSTS -ne 0 ]; then
     echo "$filespec ($varnam): is missing."
-    ((TOTAL_FILE_MISSINGS+=1))
+    ((total_file_missings+=1))
   else
     local err_per_file msg_a this_fmod this_username this_groupname
     expected_fmod=$2
@@ -769,22 +780,22 @@ function file_perm_check
     expected_groupname=$4
     err_per_file=0
     msg_a=()
-    this_fmod="$($SUDO_BIN stat -c%a "$filespec")"
-    this_username="$($SUDO_BIN stat -c%U "$filespec")"
-    this_groupname="$($SUDO_BIN stat -c%G "$filespec")"
+    this_fmod="$($sudo_bin stat -c%a "$filespec")"
+    this_username="$($sudo_bin stat -c%U "$filespec")"
+    this_groupname="$($sudo_bin stat -c%G "$filespec")"
     if [ "$expected_fmod" != "$this_fmod" ]; then
       msg_a[$err_per_file]="...Expecting '$expected_fmod' file permission"
-      ((TOTAL_PERM_ERRORS+=1))
+      ((total_perm_errors+=1))
       ((err_per_file+=1))
     fi
     if [ "$expected_username" != "$this_username" ]; then
       msg_a[$err_per_file]="...Expecting '$expected_username' username"
-      ((TOTAL_PERM_ERRORS+=1))
+      ((total_perm_errors+=1))
       ((err_per_file+=1))
     fi
     if [ "$expected_groupname" != "$this_groupname" ]; then
       msg_a[$err_per_file]="...Expecting '$expected_groupname' group name"
-      ((TOTAL_PERM_ERRORS+=1))
+      ((total_perm_errors+=1))
       ((err_per_file+=1))
     fi
     echo -n "$this_fmod $this_username:$this_groupname ($varnam) $filespec: "
@@ -797,13 +808,13 @@ function file_perm_check
         echo "${msg_a[$idx]}"
         ((idx+=1))
       done
-      ((TOTAL_FILE_ERRORS+=1))
+      ((total_file_errors+=1))
     fi
     unset err_per_file
   fi
   unset filespec expected_fmod expected_groupname expected_username varnam
 }
-echo "BIND_USERNAME: $BIND_USERNAME"
+echo "selected_bind_username: $selected_bind_username"
 
 echo ""
 read -rp "CISecurity settings or Debian settings? (C/d): " -eiC
@@ -811,89 +822,89 @@ REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
 
 if [ "$REPLY" != "c" ]; then
   echo "Debian default settings..."
-  file_perm_check BIND_SHELL "755" "root" "root"
-  file_perm_check BIND_HOME "775" "root" "$BIND_USERNAME"
-  for config_file in $CONFIG_FILES; do
-    file_perm_check config_file "644" "root" "$BIND_USERNAME"
+  file_perm_check bind_shell "755" "root" "root"
+  file_perm_check bind_home "775" "root" "$selected_bind_username"
+  for config_file in $config_files_list; do
+    file_perm_check config_file "644" "root" "$selected_bind_username"
   done
-  for zone_file in $ZONE_FILES; do
+  for zone_file in $zone_files_list; do
     file_perm_check zone_file "644" "root" "root"
   done
-  file_perm_check CIS_RUNDIR "775" "root" "$BIND_USERNAME"
-  file_perm_check DYNDIR "2750" "root" "$BIND_USERNAME"
-  file_perm_check SLAVEDIR "770" "root" "$BIND_USERNAME"
-  file_perm_check DATADIR "770" "root" "$BIND_USERNAME"
-  file_perm_check LOGDIR "770" "root" "$BIND_USERNAME"
-  for key_dir in $KEYDIR_LIST; do
-    file_perm_check key_dir "775" "root" "$BIND_USERNAME"
+  file_perm_check CIS_RUNDIR "775" "root" "$selected_bind_username"
+  file_perm_check dynamic_dir "2750" "root" "$selected_bind_username"
+  file_perm_check slave_dir "770" "root" "$selected_bind_username"
+  file_perm_check datadir "770" "root" "$selected_bind_username"
+  file_perm_check log_dir "770" "root" "$selected_bind_username"
+  for key_dir in $key_dir_list; do
+    file_perm_check key_dir "775" "root" "$selected_bind_username"
   done
   file_perm_check TMPDIR "1777" "root" "root"
   # Bind key file shall be world-read for general inspection of file permissions
   file_perm_check BINDKEY "644" "root" "root"
-  file_perm_check PID_FILESPEC "644" "$BIND_USERNAME" "$BIND_USERNAME"
+  file_perm_check pid_filespec "644" "$selected_bind_username" "$selected_bind_username"
   # session-key only occurs when DHCP server is coordinating with this DNS
-  file_perm_check SESSION_KEY_FILESPEC "600" "$BIND_USERNAME" "$BIND_USERNAME"
-  file_perm_check JOURNAL_DIR "775" "root" "$BIND_USERNAME"
-  file_perm_check LOCK_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check MANAGEDKEYS_DIR "775" "root" "$BIND_USERNAME"
-  if [ -z "$MANAGED_KEYS_FILENAME" ]; then
-    file_perm_check MANAGEDKEYS_DIR "775" "root" "$BIND_USERNAME"
+  file_perm_check SESSION_KEY_FILESPEC "600" "$selected_bind_username" "$selected_bind_username"
+  file_perm_check JOURNAL_DIR "775" "root" "$selected_bind_username"
+  file_perm_check lock_filespec "640" "root" "$selected_bind_username"
+  file_perm_check MANAGEDKEYS_DIR "775" "root" "$selected_bind_username"
+  if [ -z "$" ]; then
+    file_perm_check MANAGEDKEYS_DIR "775" "root" "$selected_bind_username"
   else
-    file_perm_check MANAGED_KEYS_FILENAME "640" "root" "$BIND_USERNAME"
+    file_perm_check  "640" "root" "$selected_bind_username"
   fi
-  file_perm_check RANDOM_FILESPEC "666" "root" "root"
-  file_perm_check SECROOTS_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check DUMP_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check STATISTICS_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check MEMSTATISTICS_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check KEYTAB_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check RECURSING_FILESPEC  "640" "root" "$BIND_USERNAME"
+  file_perm_check random_filespec "666" "root" "root"
+  file_perm_check secroots_filespec "640" "root" "$selected_bind_username"
+  file_perm_check dump_filespec "640" "root" "$selected_bind_username"
+  file_perm_check statistics_filespec "640" "root" "$selected_bind_username"
+  file_perm_check memstatistics_filespec "640" "root" "$selected_bind_username"
+  file_perm_check keytab_filespec "640" "root" "$selected_bind_username"
+  file_perm_check recursing_filespec  "640" "root" "$selected_bind_username"
 
 else
   echo ""
   echo "Recommended CIS settings..."
 
-  file_perm_check BIND_HOME "770" "$BIND_USERNAME" "$BIND_USERNAME"
+  file_perm_check bind_home "770" "$selected_bind_username" "$selected_bind_username"
   # shellcheck disable=SC2034
-  for config_file in $CONFIG_FILES; do
-    file_perm_check config_file "640" "root" "$BIND_USERNAME"
+  for config_file in $config_files_list; do
+    file_perm_check config_file "640" "root" "$selected_bind_username"
   done
   # shellcheck disable=SC2034
-  for zone_file in $ZONE_FILES; do
-    file_perm_check zone_file "640" "root" "$BIND_USERNAME"
+  for zone_file in $zone_files_list; do
+    file_perm_check zone_file "640" "root" "$selected_bind_username"
   done
-  file_perm_check CIS_RUNDIR "2775" "root" "$BIND_USERNAME"
+  file_perm_check CIS_RUNDIR "2775" "root" "$selected_bind_username"
   # Key directory shall be world-read for general inspection of file permissions
   # shellcheck disable=SC2034
-  for key_dir in $KEYDIR_LIST; do
-    file_perm_check key_dir "770" "root" "$BIND_USERNAME"
+  for key_dir in $key_dir_list; do
+    file_perm_check key_dir "770" "root" "$selected_bind_username"
   done
-  file_perm_check PID_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check SESSION_KEY_FILESPEC "600" "$BIND_USERNAME" "root"
-  file_perm_check JOURNAL_DIR "2750" "$BIND_USERNAME" "root"
-  if [ -z "$MANAGED_KEYS_FILENAME" ]; then
-    file_perm_check MANAGEDKEYS_DIR "2750" "$BIND_USERNAME" "root"
+  file_perm_check pid_filespec "640" "root" "$selected_bind_username"
+  file_perm_check SESSION_KEY_FILESPEC "600" "$selected_bind_username" "root"
+  file_perm_check JOURNAL_DIR "2750" "$selected_bind_username" "root"
+  if [ -z "$" ]; then
+    file_perm_check MANAGEDKEYS_DIR "2750" "$selected_bind_username" "root"
   else
-    file_perm_check MANAGED_KEYS_FILENAME "640" "$BIND_USERNAME" "root"
+    file_perm_check  "640" "$selected_bind_username" "root"
   fi
 
 #########################
   file_perm_check TMPDIR "1777" "root" "root"
   # Bind key file shall be world-read for general inspection of file permissions
   file_perm_check BINDKEY "644" "root" "root"
-  file_perm_check LOCK_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check RANDOM_FILESPEC "666" "root" "root"
-  file_perm_check SECROOTS_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check DUMP_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check STATISTICS_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check MEMSTATISTICS_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check KEYTAB_FILESPEC "640" "root" "$BIND_USERNAME"
-  file_perm_check RECURSING_FILESPEC  "640" "root" "$BIND_USERNAME"
+  file_perm_check lock_filespec "640" "root" "$selected_bind_username"
+  file_perm_check random_filespec "666" "root" "root"
+  file_perm_check secroots_filespec "640" "root" "$selected_bind_username"
+  file_perm_check dump_filespec "640" "root" "$selected_bind_username"
+  file_perm_check statistics_filespec "640" "root" "$selected_bind_username"
+  file_perm_check memstatistics_filespec "640" "root" "$selected_bind_username"
+  file_perm_check keytab_filespec "640" "root" "$selected_bind_username"
+  file_perm_check recursing_filespec  "640" "root" "$selected_bind_username"
 
 fi
 
-echo "Total files:       $TOTAL_FILES"
-echo "File missing:          $TOTAL_FILE_MISSINGS"
-echo "File errors:           $TOTAL_FILE_ERRORS"
-echo "Permission errors:         $TOTAL_PERM_ERRORS"
+echo "Total files:       $total_files"
+echo "File missing:          $total_file_missings"
+echo "File errors:           $total_file_errors"
+echo "Permission errors:         $total_perm_errors"
 

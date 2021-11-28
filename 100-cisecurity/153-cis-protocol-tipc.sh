@@ -2,33 +2,40 @@
 # File: 150-protocol-tipc.sh
 # Title: Remove TIPC protocol kernel module
 #
-BUILDROOT="${BUILDROOT:-/tmp}"
-
-TIPC_MODULE="tipc"
-
-TIPC_FILENAME="protocol-tipc-no.conf"
-TIPC_FILEPATH="/etc/modprobe.d"
-TIPC_FILESPEC="${BUILDROOT}/$TIPC_FILEPATH/$TIPC_FILENAME"
 echo "CIS recommendation for removal of TIPC Protocol"
 echo ""
-read -rp "Enter in 'continue' to run: "
-if [ "$REPLY" != 'continue' ]; then
-  echo "Aborted."
-  exit 254
+CHROOT_DIR="${CHROOT_DIR:-}"
+BUILDROOT="${BUILDROOT:-build}"
+
+if [ "${BUILDROOT:0:1}" != "/" ]; then
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/os-modules-protocol-tipc.sh"
+  echo "Building $FILE_SETTINGS_FILESPEC script ..."
+  mkdir -p "$BUILDROOT"
+  rm -f "$FILE_SETTINGS_FILESPEC"
 fi
-DIRNAME="$(dirname "$TIPC_FILESPEC")"
-if [ ! -d "$DIRNAME" ]; then
-  echo "Making $DIRNAME directory..."
-  sudo mkdir -p "$DIRNAME"
+
+source installer.sh
+
+tipc_module="tipc"
+
+tipc_filename="protocol-tipc-no.conf"
+tipc_filepath="/etc/modprobe.d"
+tipc_filespec="$tipc_filepath/$tipc_filename"
+flex_mkdir "/etc"
+flex_mkdir "$tipc_filepath"
+if [ ! -d "$tipc_filepath" ]; then
+  flex_chown root:root "$tipc_filepath"
+  flex_chmod 0755 "$tipc_filepath"
 fi
-echo "Writing $TIPC_FILESPEC..."
-sudo touch "$TIPC_FILESPEC"
-sudo chown root:root "$TIPC_FILESPEC"
-sudo chmod 0644      "$TIPC_FILESPEC"
-sudo cat << PROTOCOL_TIPC_EOF | sudo tee "$TIPC_FILESPEC"
+
+echo "Writing $tipc_filespec..."
+flex_touch "$tipc_filespec"
+flex_chown root:root "$tipc_filespec"
+flex_chmod 0644      "$tipc_filespec"
+cat << PROTOCOL_TIPC_EOF | tee "${BUILDROOT}${CHROOT_DIR}$tipc_filespec" >/dev/null
 #
-# File: $TIPC_FILENAME
-# Path: $TIPC_FILEPATH
+# File: $tipc_filename
+# Path: $tipc_filepath
 # Title: Ensure that TIPC protocol is disabled
 # Creator: $(basename "$0")
 # Date: $(date)
@@ -36,13 +43,9 @@ sudo cat << PROTOCOL_TIPC_EOF | sudo tee "$TIPC_FILESPEC"
 # References:
 #   CIS Benchmark - Debian 10 - section 3.4.3
 #
-install $TIPC_MODULE /bin/true
+install $tipc_module /bin/true
 PROTOCOL_TIPC_EOF
-
-# Do the removal of tipc kernel module right now
-PROTOCOL_TIPC_LOADED="$(lsmod | grep $TIPC_MODULE)"
-if [ -n "$PROTOCOL_TIPC_LOADED" ]; then
-  sudo rmmod $TIPC_MODULE
-fi
+echo ""
 
 echo "Done."
+

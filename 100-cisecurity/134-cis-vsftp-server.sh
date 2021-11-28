@@ -7,8 +7,8 @@
 
 
 echo "Checking if FTP server is running..."
-VSFPTD_ENABLED="$(systemctl is-enabled vsftpd.service)"
-if [ "$VSFPTD_ENABLED" != 'disabled' ]; then
+vsfptd_active="$(systemctl is-active vsftpd.service)"
+if [ "$vsfptd_active" != 'inactive' ]; then
 
   # So, it is enabled... probably should prompt if we need it
   # But if it is a lone but dynamic interface, kill it
