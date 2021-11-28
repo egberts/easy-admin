@@ -4,21 +4,15 @@
 # Title: Create a public LAN interface
 #
 
-echo "Under NetworkManager, create ethernet interface for public LAN"
+echo "Under NetworkManager, create dynamic IPv4 interface for public LAN"
 echo "May prompt for sudo password..."
 echo ""
 
-nm_filelist="$(find /etc/NetworkManager/ -maxdepth 0 -type f)"
+nm_filelist="$(find /etc/NetworkManager/ -maxdepth 1 -type f)"
 
 if [ -z "$nm_filelist" ]; then
   echo "/etc/NetworkManager looks largely empty."
   echo "Looks like NetworkManager is not configured at all; Aborted."
-  exit 3
-fi
-exit 0
-read -rp "Type in 'continue' then press ENTER to continue: " 
-if [ "$REPLY" != 'continue' ]; then
-  echo "Aborted."
   exit 3
 fi
 
@@ -29,10 +23,28 @@ if [ -z "$which_nmcli_bin" ]; then
   exit 9
 fi
 
-interface_name="enp5s0"
-avail_interfaces="$(ip -4 -o addr | awk '{print $2}' | xargs)"
+# Make a list of available interfaces
+avail_interfaces="$(ip -4 -o addr show | awk '{print $2}' | grep -v 'lo' | xargs)"
 echo "Available interfaces: $avail_interfaces"
-exit 0
+PS3="Enter in digit: "
+select interface_name in $avail_interfaces; do
+  break
+done
+echo "REPLY: $REPLY"
+echo "interface_name: $interface_name"
+
+# Check if interface is already up and dynamic, then abort
+intf_status="$(ip -4 -o addr show dev $interface_name | awk '{print $9}')"
+if [ "$intf_status" == "dynamic" ]; then
+  echo "Interface $interface_name is already set up; aborted."
+  exit 3
+fi
+
+read -rp "Type in 'continue' then press ENTER to continue: "
+if [ "$REPLY" != 'continue' ]; then
+  echo "Aborted."
+  exit 3
+fi
 
 # Hide any error messages during deletion
 sudo nmcli c delete $interface_name >/dev/null 2>&1
