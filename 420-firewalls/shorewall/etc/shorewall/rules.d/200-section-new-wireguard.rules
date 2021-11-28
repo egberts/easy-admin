@@ -4,44 +4,10 @@
 # Title: Rules File for three-interface configuration.
 # Description:
 #
-#   If you are not familiar with Netfilter to the point where you are
-#   comfortable with the differences between the various connection
-#   tracking states, then it is suggested that you place all of your
-#   rules in the NEW section (That's after the line that reads ?SECTION
-#   NEW').
-#   
-#   Warning
-#   If you specify FASTACCEPT=Yes in shorewall.conf[2](5) then the ALL,
-#   ESTABLISHED and RELATED sections must be empty.
-#   
-#   An exception is made if you are running Shorewall 4.4.27 or later
-#   and you have specified a non-default value for RELATED_DISPOSITION
-#   or RELATED_LOG_LEVEL. In that case, you may have rules in the
-#   RELATED section of this file.
-#
-#   Wolfe's note:  
-#    1. Never a good idea to move rules between sections. (unless you know)
-#    2. It is safe to organized by source-dest, as long as ordering within
-#       those matching tuple is still being maintained
-#    3. sub-chains go at the end of each sub-section
-#
-#   See following for further details.
-#     /usr/share/shorewall/macro.*
-#
-#   For information about entries in this file, type "man shorewall-rules"
-#
-# Header: action, src-ip, dst-ip, protocol, dest-port, src-port, orig-dest,
-#             rate-limit, user/group, mark, conn-limit, time
-# Action: `shorewall  reload|restart|safe-restart|safe-start|star]`
-# Source: Shorewall/Rules/process_rules()
-#
 
 #ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
 #    							PORT	PORT(S)		DEST		LIMIT		GROUP
 
-#
-#  All Section-NEW DROPs/REJECTs goes here firstly
-#
 #
 ?COMMENT red-fw Wireguard
 ACCEPT		red		$FW		udp   51820

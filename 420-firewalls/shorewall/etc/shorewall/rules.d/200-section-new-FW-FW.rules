@@ -1,0 +1,40 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# What stupid applications do with they talk to themselves instead of sockets
+?COMMENT fw-fw Ping
+ACCEPT		$FW		$FW		icmp
+?COMMENT fw-fw Ping
+Ping(ACCEPT)	$FW             $FW
+?COMMENT fw-fw traceroute
+Trcrt(ACCEPT)	$FW             $FW
+?COMMENT fw-fw ISC-Bind control port
+RNDC(ACCEPT)	$FW		$FW
+?COMMENT fw-fw SSH
+SSH(ACCEPT)	$FW		$FW
+?COMMENT fw-fw DNS
+DNS(ACCEPT)	$FW		$FW
+?COMMENT fw-fw HTTP/HTTPS
+Web(ACCEPT)	$FW		$FW
+?COMMENT fw-fw HTTPS(8443)
+ACCEPT          $FW		$FW	tcp	8443
+?COMMENT fw-fw Mail submission
+Submission(ACCEPT)	$FW	$FW
+?COMMENT fw-fw SMTPS
+SMTPS(ACCEPT)	$FW		$FW
+# RDP(ACCEPT)	$FW		$FW
+# VNC(ACCEPT)	$FW		$FW
+?COMMENT fw-fw WWW proxy
+Squid(ACCEPT)	$FW		$FW
+?COMMENT fw-fw webmin
+ACCEPT		$FW		$FW	tcp	12137  # webmin
+?COMMENT fw-fw Nagio NPRE
+ACCEPT		$FW		$FW	tcp	5666   # nagio npre
+
