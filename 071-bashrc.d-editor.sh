@@ -75,7 +75,7 @@ echo "Writing for $EDITOR_BASHRC_DROPIN_FILESPEC script file..."
 cat << BASHRC_DROPIN_EOF | tee "$EDITOR_BASHRC_DROPIN_FILESPEC" >/dev/null 2>&1
 #
 # File: $(basename "$EDITOR_BASHRC_DROPIN_FILESPEC")
-# Path: $(dir "$EDITOR_BASHRC_DROPIN_FILESPEC")
+# Path: $(dirname "$EDITOR_BASHRC_DROPIN_FILESPEC")
 # Title: Default EDITOR for this user
 # Creator: $(basename "$0")
 # Date: $(date)
