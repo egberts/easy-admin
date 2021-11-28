@@ -34,7 +34,7 @@ fi
 
 echo ""
 echo "Populating /etc/sysctl.d with sysctl settings..."
-FILENAME=randomize_va_space.conf
+FILENAME=13-randomize_va_space.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -61,7 +61,7 @@ kernel.randomize_va_space = 2
 
 EOF
 
-FILENAME=net_core_netdev_max_backlog.conf
+FILENAME=06-net_core_netdev_max_backlog.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -90,7 +90,7 @@ cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 net.core.netdev_max_backlog = 25000
 EOF
 
-FILENAME=memory_usage_network_stack.conf
+FILENAME=05-memory_usage_network_stack.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -146,7 +146,7 @@ net.ipv4.tcp_mem = 10240 87380 12582912
 
 EOF
 
-FILENAME=ip_router_forwarding_state.conf
+FILENAME=10-ip_router_forwarding_state.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -215,7 +215,7 @@ net.ipv6.conf.enp5s0.disable_ipv6 = 1
 
 EOF
 
-FILENAME=tcp_throughput_performance.conf
+FILENAME=80-tcp_throughput_performance.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -326,7 +326,7 @@ net.ipv4.tcp_max_syn_backlog=3000
 
 EOF
 
-FILENAME=ip_routing_controls.conf
+FILENAME=20-ip_routing_controls.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -363,7 +363,7 @@ net.ipv4.icmp_ignore_bogus_error_responses = 1
 EOF
 
 
-FILENAME=linux_kernel.conf
+FILENAME=02-linux_kernel.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -390,27 +390,7 @@ kernel.kptr_restrict = 2
 kernel.sysrq = 0
 EOF
 
-FILENAME=ipv6.conf
-SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
-echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
-cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
-#
-# File: ${FILENAME}
-# Path: ${SYSCTLD_DIRPATH}
-# Title:  Disable IPv6
-# Creator: ${CREATOR}
-# Date: ${DATE}
-# Description:
-# Reference:
-#
-
-# DO NOT ENABLE UNTIL IPv6 Firewall is in place
-#
-net.ipv6.conf.enp5s0.disable_ipv6 = 1
-EOF
-
-
-FILENAME=shared_memory_for_apps.conf
+FILENAME=30-shared_memory_for_apps.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -446,7 +426,7 @@ kernel.shmall = 4294967296
 EOF
 
 
-FILENAME=bridge_vs_memory_cache.conf
+FILENAME=31-bridge_vs_memory_cache.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -507,7 +487,7 @@ EOF
 
 
 
-FILENAME=kernel_hardening.conf
+FILENAME=41-kernel_hardening.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -522,12 +502,11 @@ cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
 
 # dmesg provides plenty of treasures for malware
 kernel.dmesg_restrict = 1
-fs.suid_dumpable = 0
 
 EOF
 
 
-FILENAME=router_mode.conf
+FILENAME=49-router_mode.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -609,27 +588,7 @@ net.ipv6.conf.br0.accept_ra = 1
 EOF
 
 
-FILENAME=binfmt.conf
-SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
-echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
-cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
-#
-# File: ${FILENAME}
-# Path: ${SYSCTLD_DIRPATH}
-# Title:  Disable mounting of BINFMT
-# Creator: ${CREATOR}
-# Date: ${DATE}
-# Description:
-#
-
-# systemctl mask proc-sys-fs-binfmt_misc.automount
-
-fs.binfmt_misc.status = disable
-fs.binfmt_misc.status = 0
-
-EOF
-
-FILENAME=netfilter_nat_conntrack.conf
+FILENAME=17-netfilter_nat_conntrack.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
@@ -652,7 +611,7 @@ net.netfilter.nf_conntrack_helper = 1
 EOF
 
 
-FILENAME=fs_hardlink_protect.conf
+FILENAME=71-fs_hardlink_protect.conf
 SYSCTLD_DROPIN_FILESPEC="$SYSCTLD_DIRPATH/$FILENAME"
 echo "Creating $SYSCTLD_DROPIN_FILESPEC file..."
 cat << EOF | sudo tee "$SYSCTLD_DROPIN_FILESPEC" >/dev/null
