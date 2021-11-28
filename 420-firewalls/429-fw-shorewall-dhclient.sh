@@ -17,6 +17,16 @@
 DHCLIENT_ENTER_HOOK_SHOREWALL=/etc/dhcp/dhclient-exit-hooks.d/shorewall
 
 echo "Installing Shorewall-dhclient settings (may ask for sudo password)..."
+echo ""
+
+# check for existing dynamic IP interface (as a DHCP client)
+# if no dynamic IP interface, error and exit
+ANY_DYN_IP="$(ip -o addr | grep dynamic | awk '{print $8}')"
+if [ "$ANY_DYN_IP" != "dynamic" ]; then
+  echo "No dynamic IP netdev found.  Aborted."
+  exit 3
+fi
+exit 0
 
 # Checking if Shorewall is installed
 # 'which' is too-Debian-specific

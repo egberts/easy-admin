@@ -7,8 +7,7 @@ package_tarname="isc-dhcp-server"
 DEFAULT_ETC_CONF_DIRNAME="dhcp"
 
 CHROOT_DIR="${CHROOT_DIR:-}"
-BUILDROOT="${BUILDROOT:-build/}"
-BUILD_ISC="${BUILDROOT}/partial-dhcp"
+BUILDROOT="${BUILDROOT:-build}"
 
 source installer.sh
 source os-distro.sh
