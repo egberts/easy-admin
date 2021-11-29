@@ -2,5 +2,8 @@
 # clear
 #
 # Description: invoked after the firewall has been cleared.
+#
 # State: run-time
 # Action: done at shorewall 'clear'
+# Allowable pragma: '?INCLUDE' statement
+

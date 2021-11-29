@@ -10,8 +10,13 @@
 #
 #  $1 - Ethernet interface
 #
+# State: run-time
+# Action: Done at detect_dynamic_gateway()/lib.runtime
+# Allowable pragma: '?INCLUDE' statement
+
 # Action: done at DHCLIENT time?
 if [ -f /var/lib/dhcp/dhclient.${1}.leases ]; then
     grep 'option routers' /var/lib/dhcp/dhclient.${1}.leases | tail -n 1 | while read j1 j2 gateway; do echo $gateway | sed 's/;//'; return 0; done
 fi
 #LAST LINE - ADD YOUR ENTRIES ABOVE THIS ONE - DO NOT REMOVE
+

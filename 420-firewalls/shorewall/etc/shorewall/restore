@@ -1,7 +1,7 @@
 #
-# restored
+# restore
 #
-# Description: This script is invoked at the completion of a 
+# Description: This script is invoked at the beginning of a 
 #    successful shorewall restore and shorewall-lite restore.
 #
 # State: run-time
