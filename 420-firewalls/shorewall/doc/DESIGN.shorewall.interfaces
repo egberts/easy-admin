@@ -1,0 +1,582 @@
+After defining the 'zones' config file of Shorewall, next is the 'interfaces'.
+
+Recap of user prompting:
+
+    5. /etc/shorewall/zones
+    1. /etc/shorewall/providers
+    1. /etc/shorewall/params
+    3. /etc/shorewall/policy
+    2. /etc/shorewall/interfaces
+    4. /etc/shorewall/rules
+
+
+# Determine if interface spans multiple zones (subsetting)
+
+# SYSTEM-WIDE SETTINGS COLLECTION EFFORT
+
+default_gateways_A==$(ip route show default)
+no_gateway_found=($#default_gateways_A[@] -eq 0)
+
+bridge_interfaces_list=""
+for this_interface in netdev_interfaces
+  interfaces_name_A[this_interface]=$(echo $this_interface | remove [:port])
+  if $this_interface is in default_gateways_A[@]
+    is_a_non_internal_interfaces_A[this_interface]=1
+  else
+    is_a_non_internal_interfaces_A[this_interface]=0
+
+  interfaces_type_bridge_A[this_interface]=\
+        $(ip -4 link show type bridge dev $this_interface)
+  if interfaces_type_bridge_A[this_interface]
+    bridge_interfaces_list+=$this_interface
+
+  # TODO: ASSUMPTION HERE: Logical netdev name is same as physical netdev name
+  if this_interface has wildcard ('+')
+    is_a_wildcard_interface_name[this_interface]=1
+    is_a_wildcard_physical_name[this_interface]=1
+  else
+    is_a_wildcard_interface_name[this_interface]=0
+    is_a_wildcard_physical_name[this_interface]=0
+    
+done
+# constructed is_a_non_internal_interfaces_A[]
+# constructed interfaces_name_A[]
+# constructed interfaces_type_bridge_A[]
+# constructed bridge_interfaces_list
+# constructed is_a_wildcard_physical_name[this_interface]
+# constructed is_a_wildcard_interface_name[this_interface]
+
+# second-pass box-wide INTER-interface-specific settings
+# (correlating br0:1 bridge port with br0 interface)
+for this_interface in netdev_interfaces
+  if [:port] is in $this_interface
+    if $this_interface-"[:port]" is in $bridge_interfaces_list
+      is_a_bport_firewall_A[this_interface]=1
+    else
+      is_a_bport_firewall_A[this_interface]=0
+done
+
+
+#  BOX-WIDE PROMPTING
+
+  ######################################3
+  # Zones, how many?
+  ######################################
+  echo "First question, how many zones"?
+
+  ######################################3
+  # Providers, how many?
+  ######################################
+  echo "Multiple ISP providers:"
+  echo You have connections to more than one ISP or multiple connections to the
+  echo same ISP
+  echo
+  echo You run Squid as a transparent proxy on a host other than the firewall.
+  echo
+  echo You have other requirements for policy routing.
+  echo "Providers: how many providers do you have?"
+  echo "Those includes not only separate ISP connections ..."
+  echo "but separate policy routings as well (ADVANCED USER)"
+
+  prompt user if have_multiple_ISP_providers
+  if have_multiple_ISP_Providers
+    # pre-clear various providers arrays
+    for all_netdev_interfaces; do
+      allowed_to_use_proxyarp[$this_interface]=1
+      allowed_to_use_proxyndp[$this_interface]=1
+    done
+
+    prompt user for PRIMARY_provider_name[idx]
+      provider_options+=",primary"
+    prompt user for provider_name[idx]
+    if provider_name is in "local main default unspec", try again
+    provider_number=$idx
+    provider_fwmark="-"
+    if shorewall_conf_USE_DEFAULT_RT_yes
+      provider_duplicate="-"
+    provider_interface="<netdev>"
+    allowed_to_use_proxyarp[$provider_interface]=0
+    allowed_to_use_proxyndp[$provider_interface]=0
+    if $provider_interface starts with "ppp"
+      provider_gateway="-"
+    elseif $no_gateway_found
+      provider_gateway="none"
+    else
+      provider_gateway="detect"
+  fi
+  
+
+  prompt user if this_box_is_a_laptop  # UPnP
+
+  prompt user if this is_a_default_deny_firewall_model (N/y)
+
+  prompt user if all_interfaces_allowed_ARP_who_has_or_REQUEST (Y/n)
+
+  prompt user if MAC_filtering_is_desired
+#   maclist
+#     Connection requests from this interface are compared
+#     against the contents of shorewall-maclist(5). If this
+#     option is specified, the interface must be an Ethernet
+#     NIC and must be up before Shorewall is started.
+
+
+  if ipv4
+    proxy_arp_got_used_somewhere=0
+    scan all interfaces for /proc/sys/net/ipv4/conf/*/proxy_arp non-zero
+      store is_interface_a_Proxy_ARP_A[this_interface]=$(result)
+      if $result is non-zero
+        proxy_arp_got_used_somewhere=1
+    if proxy_arp_got_used_somehwere
+      use_shorewall_proxyarp_config_file=0  # no need to ask for it??
+      flex_rm /etc/shorewall/proxyarp
+      if is_package_parprouted_installed
+        prompt user is_any_interfaces_a_blanket_Proxy_ARP (N/y)   # is that even needed?
+    fi  # proxy_arp_got_used_somewhere=1
+    if NOT interface_is_a_multiple_zones
+      prompt user if blacklist_is_used
+
+
+  if ipv6
+    proxy_ndp_got_used_somewhere=0
+    scan all interfaces for /proc/sys/net/ipv4/conf/*/proxy_arp non-zero
+      store is_interface_a_Proxy_NDP_A[this_interface]=$(result)
+      if $result is non-zero
+        proxy_ndp_got_used_somewhere=1
+    if proxy_ndp_got_used_somehwere
+      use_shorewall_proxyndp_config_file=0  # no need to ask for it??
+      flex_rm /etc/shorewall/proxyndp
+      if is_package_ndppd_installed
+        prompt user is_any_interfaces_a_blanket_Proxy_NDP (N/y)   # is that even needed?
+
+
+  # ask about 'dbl=' interface option
+  Any blacklist-ing going on?
+    echo for dynamic blacklist support (mapping new IPs from domain names)
+    prompt user if blacklist_remapping_IP_from_domain is needed 
+
+  # DHCP
+  # DO NOT USE Shorewall 'dhcp' interface option
+  # We will selectively handle this under shorewall-rules-dhcp-*
+  # Shorewall 'dhcp' OPENS BOTH-WAY when
+  #   it should be 'dhcp-server' on one side and 'dhcp-client' on other
+  #   otherwise, my neighbor can send DHCP server packets in lieu of my ISP
+  #   and it won't be DENY-logged.  A DDoS potential
+
+  prompt user if all_interfaces_have_logmartian_interfaces_option 
+  if all_interfaces_have_logmartian_interfaces_option
+    shorewall.conf LOG_MARTIANS=Yes
+
+  prompt user boxwide_smurf_log_level  (default: info)
+  # (none,debug,info,notice,warning,err,crit,emerg)
+
+  # UPNP/UPnP/upnp
+  provide_upnp_option=0
+  if UPnP_package_is_installed
+    if UPnP_daemon_is_running
+      provide_upnp_option=1
+
+  if $#gateways_found_A[@] -ge 1
+    if this_box_is_a_laptop  # UPnP
+  #   upnpclient  (TODO: IGNORED)
+  #     This option is intended for laptop users who always
+  #     run Shorewall on their system yet need to run
+  #     UPnP-enabled client apps such as Transmission
+  #     (BitTorrent client). The option causes Shorewall to
+  #     detect the default gateway through the interface and
+  #     to accept UDP packets from that gateway. Note that,
+  #     like all aspects of UPnP, this is a security hole
+  #     so use this option at your own risk. Supported in
+  #     IPv4 and in IPv6.
+
+
+fi  # box-wide settings
+
+#######################################################################3
+  
+#  INTERFACE LOOP PROMPTING
+for this_interface in netdev_interfaces; do
+
+  INTF_OPTS="tcpflags=1"
+
+  # sourceroute forced off
+  if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+    INTF_OPTS+="sourceroute=0"
+
+  prompt user is_this_interface_fw_managed_A[this_interface] (N/y)
+  if NOT is_this_interface_fw_managed_A[this_interface]
+    INTF_OPTS+=",unmanaged"
+    zone_by_interfaces[this_interface]='-'
+
+  if is_this_interface_fw_managed_A[this_interface]
+    prompt user is_this_interface_required_to_be_always_up[this_interface] (Y/n)
+    if is_this_interface_required_to_be_always_up[this_interface]
+      INTF_OPTS+=",required"
+    else
+      INTF_OPTS+=",optional"
+
+  if is_this_interface_fw_managed_A[this_interface]
+    if is_a_non_internal_interfaces_A[this_interface]
+      if NOT is_a_default_deny_firewall_model
+        prompt user is_a_default_deny_firewall_by_intf_A[this_interface] (N/y)
+        if NOT is_a_default_deny_firewall_by_intf_A[this_interface]
+          INTF_OPTS+=",destonly"  # add interface 'destonly' option 
+
+  # Collect MSS/MTU for all interfaces
+  mtu_by_interfaces_A[this_interface]=$(ip link| grep mtu)
+  if 'ip -4 route | grep advmss' exist
+    # mere appearance of 'advmss' is non-default setting of 1460
+    mss_used_by_interfaces[this_interface]=$MSS
+    INTF_OPTS+=",mss=$MSS"
+  #else
+  #  mss_used_by_interfaces[this_interface]= \
+  #    ((mtu_by_interfaces_A[this_interface] - 40))
+
+  if provide_upnp_option
+    prompt user if UPnP option is desired
+    prompt user for upnp_by_interfaces_A[this_interface]  (N/y)
+    if upnp_by_interfaces_A[this_interface]
+      INTF_OPTS+=",upnp"
+
+  # Only for IPv4-related interfaces options
+  if ipv4
+
+    # always nosmurfs for IPv4
+    INTF_OPTS+=",nosmurfs"
+
+    if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+      if all_interfaces_allowed_ARP_who_has
+        INTF_OPTS+="arp_filter=1"  # (default)
+      else
+        if interface is already physically LINK UP before 'shorewall start'
+          # TODO: Should we also add the 'wait' interfaces option?
+          prompt user for allowing ARP who-has (ICMP-REQUEST)
+          if ARP-REQUEST allowed
+            INTF_OPTS+="arp_filter=1"  # (default)
+          else
+            INTF_OPTS+="arp_filter=0"
+        fi  # interface is already physically LINK UP before 'shorewall start'
+      fi  # all_interfaces_allowed_ARP_who_has
+    fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+
+    if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+      if NOT is_any_interface_a_Proxy_ARP  (TODO: investigate interfaces(5) again)
+        prompt user if ARP_REQUEST_no_scope_host (ping should not happen between
+                                                  IPs within the same box)
+        prompt user if  ARP_REQUEST_global_or_link (if pings are accepted from 
+                                                  outside the box)
+        if ARP_REQUEST_no_scope_host and ARP_REQUEST_global_or_link
+          INTF_OPTS+=",arp_ignore=3"
+        elseif ARP_REQUEST_global_or_link
+          INTF_OPTS+=",arp_ignore=1"
+        elseif ARP_REQUEST_no_scope_host
+          INTF_OPTS+=",arp_ignore=3"
+        else
+          INTF_OPTS+=",arp_ignore=8"
+      fi  # is_interface_a_Proxy_ARP
+    fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+
+    if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+      if $#gateways_found_A[@] -eq 0
+        if is_package_parprouted_installed
+          if is_interface_a_Proxy_ARP_A[this_interface]
+            INTF_OPTS+=",proxyarp=1"
+          fi  # is_interface_a_Proxy_ARP_A[this_interface]
+        fi  # is_package_parprouted_installed
+      fi  # no_gateway_found
+    fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+
+    if is_this_interface_fw_managed_A[this_interface]
+      if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+        if NOT all_interfaces_have_logmartians_interfaces_option
+          if this_interface_have_routefilter_interfaces_option
+            INTF_OPTS+=",logmartians"
+          else 
+            prompt user if this_interface_have_logmartians_interfaces_options
+            if this_interface_have_logmartians_interfaces_options
+              INTF_OPTS+=",logmartians"
+            fi
+          fi  # this_interface_have_routefilter_interfaces_option
+        fi  # NOT all_interfaces_have_logmartians_interfaces_option
+      #  NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+    #  is_this_interface_fw_managed_A[this_interface]
+
+    if is_this_interface_fw_managed_A[this_interface]
+      is_a_bridge[this_interface]=$(ip link show dev $this_interface type bridge)
+      if is_a_bridge[this_interface]
+        prompt user if this interface is_a_bport_firewall_A[this_interface]
+            OR
+        prompt user if this interface is_a_bridge_only_firewall[this_interface]
+      fi  # is_a_bridge[this_interface]
+
+      if is_a_wildcard_physical_name[this_interface] ("eth0.+")
+        INTF_OPTS+="routeback"
+      else
+        if is_a_bport_firewall[interface]  \
+           OR NOT is_a_bridge_only_firewall_A[interface]?
+          INTF_OPTS+="bridge,routeback"
+        else
+          INTF_OPTS+="routeback"
+      fi is_a_wildcard_physical_name[this_interface] ("eth0.+")
+    fi is_this_interface_fw_managed_A[this_interface]
+
+  fi  # ipv4
+
+  # Only for IPv6-related interfaces options
+  if ipv6
+
+    if is_this_interface_fw_managed_A[this_interface]
+      if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+        # $(ip link show | grep LOOPBACK)
+        if this_interface_has_LOOPBACK == 'lo'
+          INTF_OPTS+=",loopback"
+        elseif interface has NO [:port]
+          if router is a multi-hop and needs more IPv6 route assistance
+            if a forwarder router
+              accept_ra=2
+            else
+              accept_ra=1 (default)
+          else
+            accept_ra=0
+      fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+    fi  # is_this_interface_fw_managed_A[this_interface]
+
+    if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+      if $#gateways_found_A[@] -eq 0
+        if is_package_ndppd_installed
+          if is_interface_a_Proxy_NDP_A[this_interface]
+            INTF_OPTS+=",proxyndp=1"
+          fi  # is_interface_a_Proxy_NDP_A[this_interface]
+        fi  # package_ndppd_installed
+      fi  # no_gateway_found
+    fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+
+  fi  # IPv6
+
+  # forward=
+  if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+    if is_this_interface_fw_managed_A[this_interface]
+      if is_a_interface_forward_option[this_interface]
+        INTF_OPTS+="forward=1"
+      else
+        INTF_OPTS+="forward=0"
+      fi  # is_this_interface_fw_managed_A[this_interface]
+    fi  # is_this_interface_fw_managed_A[this_interface]
+  fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+
+  # dbl=
+  if is_this_interface_fw_managed_A[this_interface]
+    if blacklist_remapping_IP_from_domain
+      if is_a_non_internale_interfaces_A[this_interface]
+        if ipset package is NOT installed
+          echo "No ipset package; doing this by blacklist config file only."
+          shorewall.conf DYNAMIC_BLACKLIST=Yes
+          interfaces_dbl_suboption+="src"
+            OR
+          interfaces_dbl_suboption+="src-dst"
+        else
+          prompt user if blacklist_dynamic_by_config_file_or_ipset_or_both
+          switch blacklist_dynamic_by_config_file_or_ipset_or_both
+            'both':
+              shorewall.conf DYNAMIC_BLACKLIST=Yes
+              interfaces_dbl_suboption+="ipset,src"
+                OR
+              interfaces_dbl_suboption+="ipset,src-dst"
+            'ipset':
+              shorewall.conf DYNAMIC_BLACKLIST=Yes
+              interface_interfaces_dbl_suboption+="ipset-only"
+            'config_file':
+              shorewall.conf DYNAMIC_BLACKLIST=Yes
+              interfaces_dbl_suboption+="src"
+                OR
+              interfaces_dbl_suboption+="src-dst"
+        fi  # ipset package is installed
+        INTF_OPTS+="dbl=$interfaces_dbl_suboption"
+      fi  # if is_a_non_internale_interfaces_A[this_interface]
+    else
+      INTF_OPTS+=",nodbl"
+    fi  # blacklist_remapping_IP_from_domain
+  fi  # is_this_interface_fw_managed_A[this_interface]
+
+  # proxyudp
+  if NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+    if $#gateways_found_A[@] -eq 0
+      if is_package_pudprouted_installed
+        if is_interface_a_Proxy_UDP_A[this_interface]
+          INTF_OPTS+=",proxyudp=1"
+        fi  # is_interface_a_Proxy_UDP_A[this_interface]
+      fi  # is_package_pudprouted_installed
+    fi  # no_gateway_found
+  fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
+
+done  # netdev_interfaces loop
+
+#---------------------------
+
+for every zone line config
+
+  # Determine if zone has multiple-interfaces (encompassing)
+  if zone_name_defined_before
+    zone_is_a_multiple_interfaces_A[zone]=1
+
+  if interface_seen_before
+    interface_is_a_multiple_zones_A[interface]=1
+
+
+  # if [:port] then
+  #   if interface NOT previously defined as a 'bridge' interface option
+  #     error
+  #   else
+  #     # allow following options
+  #     arp_filter
+  #     arp_ignore
+  #     bridge
+  #     log_martians
+  #     mss
+  #     optional
+  #     proxyarp
+  #     required
+  #     routefilter
+  #     sourceroute
+  #     upnp
+  #     wait
+  #  fi
+  # else
+  #   allow following interface options:
+#     arp_filter
+#     arp_ignore
+#     bridge
+#     log_martians
+#     mss
+#     optional
+#     proxyarp
+#     required
+#     routefilter
+#     sourceroute
+#     upnp
+#     wait
+#
+#  if ipv6
+#    if interface is 'lo' loopback
+#      zone must contain 'type local' in 'zones' config file
+#    
+#        
+      
+
+
+#
+#   nets=(net[,...])
+#     Limit the zone named in the ZONE column to only the
+#     listed networks. The parentheses may be omitted if only
+#     a single net is given (e.g., nets=192.168.1.0/24).
+#     Limited broadcast to the zone is supported.
+#     Multicast traffic to the zone is also supported.
+#
+#   nets=dynamic
+#     Defines the zone as dynamic. Requires ipset match support
+#     in your iptables and kernel. See
+#     https://shorewall.org/Dynamic.html for further information.
+#
+#   omitanycast
+#     IPv6 only.  Shorewall6 has traditionally generated rules
+#     for IPv6 anycast addresses. These rules include:
+#
+#     - Packets with these destination IP addresses are dropped by REJECT rules.
+#
+#     - Packets with these source IP addresses are dropped by
+#       the 'nosmurfs' interface option and by the 'dropSmurfs' action.
+#
+#     - Packets with these destination IP addresses are not
+#       logged during policy enforcement.
+#
+#     - Packets with these destination IP addresses are processes
+#       by the 'Broadcast' action.
+#
+#     This can be inhibited for individual interfaces by
+#     specifying noanycast for those interfaces.
+#     Note
+#
+#    RFC 2526 describes IPv6 subnet anycast addresses.
+#    The RFC makes a distinction between subnets with
+#    "IPv6 address types required to have 64-bit interface
+#    identifiers in EUI-64 format" and all other subnets.
+#    When generating these anycast addresses, the Shorewall
+#    compiler does not make this distinction and unconditionally
+#    assumes that the last 128 addresses in the subnet
+#    are reserved as anycast addresses.
+#
+#   routefilter[={0|1|2}]
+#
+#     IPv4 only. Turn on kernel route filtering for this
+#     interface (anti-spoofing measure).
+#
+#     Only those interfaces with the routefilter option will
+#     have their setting changes; the value assigned to the
+#     setting will be the value specified (if any) or 1 if
+#     no value is given.
+#
+#     The value 2 is only available with Shorewall 4.4.5.1 and
+#     later when the kernel version is 2.6.31 or later.
+#     It specifies a loose form of reverse path filtering.
+#
+#     Note
+#       This option does not work with a wild-card physical
+#       name (e.g., eth0.+). If this option is specified, a
+#       warning is issued and the option is ignored.
+#
+#     This option can also be enabled globally via the ROUTE_FILTER
+#     option in the shorewall.conf(5) file.
+#
+#     Important
+#
+#     If ROUTE_FILTER=Yes in shorewall.conf(5), or if your
+#     distribution sets net.ipv4.conf.all.rp_filter=1 in
+#     /etc/sysctl.conf, then setting routefilter=0 in an
+#     interface entry will not disable route filtering on
+#     that interface! The effective setting for an
+#     interface is the maximum of the contents of
+#     /proc/sys/net/ipv4/conf/all/rp_filter and the
+#     routefilter setting specified in this file
+#     (/proc/sys/net/ipv4/conf/interface/rp_filter).
+#
+#     Note
+#       There are certain cases where routefilter cannot be
+#       used on an interface:
+#
+#       - If USE_DEFAULT_RT=Yes in shorewall.conf(5) and the
+#         interface is listed in shorewall-providers(5).
+#
+#       - If there is an entry for the interface in
+#         shorewall-providers(5) that doesn't specify the
+#         balance option.
+#
+#       - If IPSEC is used to allow a road-warrior to have a
+#         local address, then any interface through which the
+#         road-warrior might connect cannot specify routefilter.
+#
+#     When routefilter is set to a non-zero value, the logmartians
+#     option is also implicitly set. If you actually want route
+#     filtering without logging, then you must also specify
+#     logmartians=0 after routefilter.
+#
+#   rpfilter
+#
+#     This is an anti-spoofing measure that requires the
+#     'RPFilter Match' capability in your iptables and
+#     kernel. It provides a more efficient alternative
+#     to the sfilter option below. It performs a function
+#     similar to routefilter (see above) but works with
+#     Multi-ISP configurations that do not use balanced
+#     routes.
+#
+#   sfilter=(net[,...])
+#     This option provides an anti-spoofing alternative
+#     to routefilter on interfaces where that option cannot
+#     be used, but where the routeback option is required
+#     (on a bridge, for example). On these interfaces,
+#     sfilter should list those local networks that are
+#     connected to the firewall through other interfaces.
+#
+#   wait=seconds
+#     Causes the generated script to wait up to seconds
+#     seconds for the interface to become usable before applying
+#     the required or optional options.
