@@ -18,7 +18,7 @@ default_gateways_A==$(ip route show default)
 no_gateway_found=($#default_gateways_A[@] -eq 0)
 
 bridge_interfaces_list=""
-for this_interface in netdev_interfaces
+for this_interface in netdev_interfaces_list
   interfaces_name_A[this_interface]=$(echo $this_interface | remove [:port])
   if $this_interface is in default_gateways_A[@]
     is_a_non_internal_interfaces_A[this_interface]=1
@@ -48,7 +48,7 @@ done
 
 # second-pass box-wide INTER-interface-specific settings
 # (correlating br0:1 bridge port with br0 interface)
-for this_interface in netdev_interfaces
+for this_interface in netdev_interfaces_list
   if [:port] is in $this_interface
     if $this_interface-"[:port]" is in $bridge_interfaces_list
       is_a_bport_firewall_A[this_interface]=1
@@ -81,7 +81,7 @@ done
   prompt user if have_multiple_ISP_providers
   if have_multiple_ISP_Providers
     # pre-clear various providers arrays
-    for all_netdev_interfaces; do
+    for all_netdev_interfaces_list; do
       allowed_to_use_proxyarp[$this_interface]=1
       allowed_to_use_proxyndp[$this_interface]=1
     done
@@ -194,7 +194,7 @@ fi  # box-wide settings
 #######################################################################3
   
 #  INTERFACE LOOP PROMPTING
-for this_interface in netdev_interfaces; do
+for this_interface in netdev_interfaces_list; do
 
   INTF_OPTS="tcpflags=1"
 
@@ -408,7 +408,7 @@ for this_interface in netdev_interfaces; do
     fi  # no_gateway_found
   fi  # NOT is_a_wildcard_physical_name[this_interface] ("eth0.+")
 
-done  # netdev_interfaces loop
+done  # netdev_interfaces_list loop
 
 #---------------------------
 

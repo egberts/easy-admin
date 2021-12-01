@@ -1,0 +1,7 @@
+
+Ordering of setting up configuration files for Shorewall.
+
+'zones'
+  interfaces
+  hosts
+
