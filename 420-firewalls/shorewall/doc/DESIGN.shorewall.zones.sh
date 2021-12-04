@@ -22,7 +22,9 @@ echo "- red green yellow white blue black orange purple"
 user prompt list_of_labels (NAME/color)?
 
 zone_names_A=()
+zone_types_A=()
 interfaces_by_zone_A=()
+zone_optionsy_zone_A=()
 # null - error if undefined
 # 0 - 'unmanaged' interface option
 # 1 - 'required/optional' interface option
@@ -104,6 +106,25 @@ else
   error "MUST either zoneify an interface or mark it unmanaged"
 fi
 
+# Got any guest servers or VMs on this box?
+# these guest servers and VMs have their own subnet?
+zone_idx=0
+for this_zone in ${zone_names[@]}; do
+  # ignore 'loopback', we always declare 'loopback'
+  valid_zone_types="ip local bport ipsec vserver ip4 bport4 ip6 bport6"
+  select this_zone_type in $valid_zone_types; do
+    if [ "$REPLY" == "0" ];
+      break
+    fi
+    zone_types_A[zone_idx]="$this_zone_type"
+    ((zone_idx++))
+  done
+done
+
+is_policy_subinterfaced?
+
+
+
 
 # Output /etc/shorewall/zones config file
 OUTPUT_FILE="/etc/shorewall/zones"
@@ -183,7 +204,7 @@ cat << ZONE_CONFIG_EOF | tee "${BUILDROOT}${CHROOT_DIR}$OUTPUT_FILE" >/dev/null
 #
 #   In the future, Shorewall may make additional use of nesting
 #   information.
-#YPE
+# TYPE
 #
 #   ip
 #
@@ -321,6 +342,7 @@ ZONE_CONFIG_EOF
 
 # Default entry for required 'firewall' zone
 printf "%s\t%s\t%s" 'fw', 'firewall', '-'
+printf "%s\t%s\t%s" 'lo', 'loopback', '-'
 
 # Loop print out all zones and its settings
 zone_idx=0

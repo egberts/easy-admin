@@ -265,11 +265,11 @@ for this_interface in netdev_interfaces_list; do
         prompt user if  ARP_REQUEST_global_or_link (if pings are accepted from 
                                                   outside the box)
         if ARP_REQUEST_no_scope_host and ARP_REQUEST_global_or_link
-          INTF_OPTS+=",arp_ignore=3"
+          INTF_OPTS+=",arp_ignore=3"  # TODO: or 2?
         elseif ARP_REQUEST_global_or_link
           INTF_OPTS+=",arp_ignore=1"
         elseif ARP_REQUEST_no_scope_host
-          INTF_OPTS+=",arp_ignore=3"
+          INTF_OPTS+=",arp_ignore=2"  # TODO: or 3?
         else
           INTF_OPTS+=",arp_ignore=8"
       fi  # is_interface_a_Proxy_ARP
