@@ -1,0 +1,42 @@
+
+
+'hosts' file is most useful for splitting netfilter/ipfilter CHAINS.
+
+Also helpful in narrowing down IP subnets before going down the filter 
+pathways and its linkage of iptables/netfilter trees/chains/rules.
+
+Only used with in this 'hosts' config file here if needing to 
+introduce additional but SEPARATE filter pathways WITHIN the same subnet of a 
+single netdev interface, such as this actual Shorewall 'hosts' config file.
+
+As such, 'white' zone for developers and head-of-household (minimal filtering)
+'cable' for ISP providers' set-top boxes and router/gateway.
+'green' for general adult household members
+'blue' for under-18 folks
+'dmz' for internet of things (IoT), smart appliances, Ethernet-over-Power, 
+    home assistance devices. 
+
+  # File: hosts
+  # Path: /etc/shorewall
+  #
+  # Description
+  #   eth1 is 'red' (public) zone 
+  #   br0 is 'green' (private) zone 
+  #   eth0 is 'IoT' zone 
+
+  # Keep cable ISP subnet as-is (if situated behind ISP cablemodem)
+  cable   eth0:192.168.1.0/24      -
+
+  # Split up 'green' zone into 'dmz, blue, grn. white'
+  dmz     br0:192.168.128.0/24     -
+  blue    br0:192.168.129.0/24     -
+  grn     br0:192.168.130.0/24     -
+  white   br0:192.168.131.0/24     -
+  green   br0:192.168.128.0/22     -
+
+  # Tunneling efforts (self-hosted VPN)
+  sh_vpn  tun0:192.168.200.0/16    -
+
+
+Otherwise, very little use for this 'hosts' file that 'zones' and 'interfaces'
+can cover adequately.
