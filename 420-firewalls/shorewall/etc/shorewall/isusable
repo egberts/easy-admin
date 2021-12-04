@@ -38,3 +38,5 @@
 #
 # State: run-time
 # Action: done at shorewall 'refresh, restart, restore, start'
+# Allowable pragma: '?INCLUDE' statement
+

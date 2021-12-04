@@ -1,0 +1,17 @@
+
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# green-red (NEW Connection section)
+#
+# TBS Not sure if we need this but it blocks packets coming from a DNS server
+?COMMENT green-red audit and catch errant DNS query
+A_DropDNSrep	green	red
+

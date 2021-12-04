@@ -18,5 +18,6 @@ sudo mv /etc/shorewall/* /etc/shorewall/.orig
 # Copy everything
 sudo cp -rpf etc/shorewall/* /etc/shorewall/
 
+# DO it again
 sudo systemctl disable iptables.service
 sudo systemctl disable iptables6.service

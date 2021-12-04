@@ -185,7 +185,6 @@ rm "${TEMP_THROWAWAY_KEY}.pub"
 # Check if non-root user has 'ssh' supplementary group membership
 
 FOUND=0
-<<<<<<< Updated upstream
 USERS_IN_SSH_GROUP="$(grep $SSH_GROUP /etc/group | awk -F: '{ print $4 }')"
 for THIS_USERS in $USERS_IN_SSH_GROUP; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
@@ -194,21 +193,6 @@ for THIS_USERS in $USERS_IN_SSH_GROUP; do
       FOUND=1
     fi
   done
-||||||| constructed merge base
-USERS_IN_SSH_GROUP="$(grep ssh /etc/group | awk -F: '{ print $4 }')"
-for THIS_USER in $USERS_IN_SSH_GROUP; do
-  if [ "${THIS_USER}" == "${USER}" ]; then
-    echo "User ${USER} has access to this hosts SSH server"
-    FOUND=1
-  fi
-=======
-USERS_IN_SSH_GROUP="$(grep ssh /etc/group | awk -F: '{ print $4 }')"
-for THIS_USER in $USERS_IN_SSH_GROUP; do
-  if [ "${THIS_USER}" == "${USER}" ]; then
-    echo "User '${USER}' has access to this hosts SSH server"
-    FOUND=1
-  fi
->>>>>>> Stashed changes
 done
 
 if [ $FOUND -eq 0 ]; then

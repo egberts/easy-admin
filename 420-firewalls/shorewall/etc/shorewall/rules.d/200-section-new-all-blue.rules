@@ -1,0 +1,13 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+
+?COMMENT all-blue multicast
+ACCEPT		all		  blue:224.0.0.0/4
+

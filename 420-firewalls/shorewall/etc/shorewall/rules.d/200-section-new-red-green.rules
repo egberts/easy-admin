@@ -1,0 +1,17 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+?COMMENT red-green: forwarding UPnP
+forwardUPnP     red		green
+?COMMENT red-green: BitTorrent
+BitTorrent(ACCEPT)	red	green
+ACCEPT	red	green	tcp 6969  # BitTorrent (unofficial)
+ACCEPT	red	green	udp 6969  # BitTorrent (unofficial)
+

@@ -2,5 +2,8 @@
 # stopped
 #
 # Description: invoked after the firewall has been stopped.
+#
 # State: run-time
 # Action: done at shorewall 'stop, clear'
+# Allowable pragma: 'include' statement
+
