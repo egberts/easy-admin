@@ -8,6 +8,9 @@
 #
 #   Part of the hardened security stance
 
+echo "Set up hardened Shorewall (shorewall-init) during boot-up"
+echo ""
+
 if [ ! -f /etc/shorewall/shorewall.conf ]; then
   echo "Must install shorewall firstly."
   echo "Execute:"
@@ -16,18 +19,21 @@ if [ ! -f /etc/shorewall/shorewall.conf ]; then
   exit 1
 fi
 
-# sudo apt install shorewall-init ipset
-
 # Edit any PRODUCTS= in /etc/default/shorewall-init
 # Change to PRODUCTS="shorewall"
+shorewall_init_conf="/etc/default/shorewall-init"
 sudo sed -i.backup \
     's/^PRODUCTS.*=.*$/PRODUCTS="shorewall"/' \
-    /etc/default/shorewall-init
-
-RETSTS=$?
+    "$shorewall_init_conf"
+retsts=$?
+if [ $retsts -ne 0 ]; then
+  echo "Unable to modify $shorewall_init_conf file; aborted."
+  exit 3
+fi
 
 systemctl enable shorewall-init.service
 systemctl start shorewall-init.service
 systemctl try-restart shorewall.service
+echo ""
 
-echo "Error: $RETSTS"
+echo "Done."

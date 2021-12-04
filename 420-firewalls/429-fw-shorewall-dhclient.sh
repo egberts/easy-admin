@@ -17,16 +17,29 @@
 DHCLIENT_ENTER_HOOK_SHOREWALL=/etc/dhcp/dhclient-exit-hooks.d/shorewall
 
 echo "Installing Shorewall-dhclient settings (may ask for sudo password)..."
+echo ""
+
+# check for existing dynamic IP interface (as a DHCP client)
+# if no dynamic IP interface, error and exit
+ANY_DYN_IP="$(ip -o addr | grep dynamic | awk '{print $8}')"
+if [ "$ANY_DYN_IP" != "dynamic" ]; then
+  echo "No dynamic IP netdev found.  Aborted."
+  exit 3
+fi
+exit 0
 
 # Checking if Shorewall is installed
-SHOREWALL_EXIST="$(sudo which shorewall)"
+# 'which' is too-Debian-specific
+# 'command -v' doesn't work if binary has restricted file permissions
+# 'whereis -b' is our cup-of-tea.
+SHOREWALL_EXIST="$(whereis -b shorewall 2>/dev/null | awk '{ print $2 }')"
 if [ -z "${SHOREWALL_EXIST}" ]; then
   echo "Shorewall does not exist"
   exit 9
 fi
 
 # check if dhclient is installed
-DHCLIENT_EXIST="$(sudo which dhclient)"
+DHCLIENT_EXIST="$(sudo whereis -b dhclient | awk '{ print $2 }')"
 if [ -z "${DHCLIENT_EXIST}" ]; then
   echo "dhclient does not exist"
   exit 9

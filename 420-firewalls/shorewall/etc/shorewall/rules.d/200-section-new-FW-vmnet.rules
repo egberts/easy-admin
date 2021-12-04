@@ -1,0 +1,20 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# fw-vmnet (NEW Connection section)
+?COMMENT fw-vmnet ping
+ACCEPT		$FW		vmnet		icmp
+?COMMENT fw-vmnet ping
+Ping(ACCEPT)	$FW             vmnet
+?COMMENT fw-vmnet traceroute
+Trcrt(ACCEPT)	$FW             vmnet
+?COMMENT fw-vmnet SSH server
+SSH(ACCEPT)	$FW             vmnet
+

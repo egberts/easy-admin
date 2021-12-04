@@ -3,41 +3,46 @@
 # File: 490-net-ssh.sh
 # Title: Setup and harden SSH server
 #
+echo "OpenSSH Moduli File Creator"
+echo ""
 
-sudo apt install openssh-server
-
-echo "We are blowing away the old SSH settings"
-
-# Only the first copy is saved as the backup
-if [ ! -f /etc/ssh/sshd_config.backup ]; then
-  sudo mv /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
-fi
-if [ ! -f /etc/ssh/ssh_config.backup ]; then
-  sudo mv /etc/ssh/ssh_config /etc/ssh/ssh_config.backup
-fi
-
-# Update the SSH server settings
-#
-
+source ssh-openssh-common.sh
 
 SSH_MODULI_BITS=4096
+
+SSH_MODULI_FILENAME="moduli"
+SSH_MODULI_FILESPEC="${sysconfdir}/$SSH_MODULI_FILENAME"
+
+TEMP_MODULI_FILESPEC="/tmp/${SSH_MODULI_FILENAME}-${SSH_MODULI_BITS}"
+TEMP_MODULI_CANDIDATES_FILESPEC="${TEMP_MODULI_FILESPEC}.candidates"
+TEMP_MODULI_SAFE_FILESPEC="${TEMP_MODULI_FILESPEC}.safe"
+
+echo "Generating ${SSH_MODULI_BITS}-bit moduli candidates ..."
+echo "... in ${TEMP_MODULI_CANDIDATES_FILESPEC} ..."
 ssh-keygen -M generate \
     -O bits=${SSH_MODULI_BITS} \
-    /tmp/moduli-${SSH_MODULI_BITS}.candidates
+    "${TEMP_MODULI_CANDIDATES_FILESPEC}"
 
+echo "Screening moduli of ${SSH_MODULI_BITS} bits..."
 ssh-keygen -M screen \
-        -f /tmp/moduli-${SSH_MODULI_BITS}.candidates \
-        /tmp/moduli.safe
+        -f "${TEMP_MODULI_CANDIDATES_FILESPEC}" \
+        "${TEMP_MODULI_SAFE_FILESPEC}"
 
-# awk '$5 > 3071' \
-    # /tmp/moduli-${SSH_MODULI_BITS}.candidates \
-    # | tee /tmp/moduli-${SSH_MODULI_BITS}
-sudo cp /tmp/moduli.safe /etc/ssh/moduli
+if [ false ]; then
+  awk '$5 > 3071' \
+    ${TEMP_MODULI_CANDIDATES_FILESPEC} \
+    | tee ${TEMP_MODULI_FILESPEC}
+else
+  cp "${TEMP_MODULI_SAFE_FILESPEC}" "${BUILDROOT}$SSH_MODULI_FILESPEC"
+fi
+echo "Completed the Moduli Generation."
 
-sudo chmod 640 /etc/ssh/moduli
-sudo chown root:ssh /etc/ssh/moduli
+flex_chmod 640 "$SSH_MODULI_FILESPEC"
+flex_chown root:ssh "$SSH_MODULI_FILESPEC"
 
-rm /tmp/moduli-${SSH_MODULI_BITS}.candidates
-rm /tmp/moduli-${SSH_MODULI_BITS}
-rm /tmp/moduli.safe
-#
+rm "$TEMP_MODULI_CANDIDATES_FILESPEC"
+rm "$TEMP_MODULI_SAFE_FILESPEC"
+rm "$TEMP_MODULI_FILESPEC"
+
+echo "Done."
+

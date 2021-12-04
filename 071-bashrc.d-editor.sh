@@ -28,7 +28,12 @@ fi
 # Find installed editors
 FOUND_EDITORS=
 for this_editor in $TRY_EDITORS; do
-  editor_bin="$(which "$this_editor")"
+  # Checking if Shorewall is installed
+
+  # 'which' is too-Debian-specific
+  # 'command -v' doesn't work if binary has restricted file permissions
+  # 'whereis -b' is our cup-of-tea.
+  editor_bin="$(whereis -b "$this_editor" | awk '{ print $2 }')"
   if [ -n "$editor_bin" ]; then
     FOUND_EDITORS+="$editor_bin "
   fi
@@ -70,7 +75,7 @@ echo "Writing for $EDITOR_BASHRC_DROPIN_FILESPEC script file..."
 cat << BASHRC_DROPIN_EOF | tee "$EDITOR_BASHRC_DROPIN_FILESPEC" >/dev/null 2>&1
 #
 # File: $(basename "$EDITOR_BASHRC_DROPIN_FILESPEC")
-# Path: $(dir "$EDITOR_BASHRC_DROPIN_FILESPEC")
+# Path: $(dirname "$EDITOR_BASHRC_DROPIN_FILESPEC")
 # Title: Default EDITOR for this user
 # Creator: $(basename "$0")
 # Date: $(date)

@@ -1,0 +1,84 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# grn-red
+?COMMENT grn->red drop badstuff
+# Silent reject of Singapore/Russia
+DROP		grn		red:92.242.0.0/16	tcp	8192
+DROP		grn		red:111.221.77.0/24	tcp	8192
+?COMMENT grn->red Sophos Management Server
+# Sophos Management Server (pinhole open)
+ACCEPT		grn		red:134.223.168.178	tcp	8192
+?COMMENT grn->red 3DS connection test
+# kyle's 3ds crap
+# Nintendo connection test (conntest)
+ACCEPT		grn		red:69.25.139.140	tcp	80
+# Nintendo connection test (speedtrace) to nncs1.app.nintendowifi.net
+ACCEPT		grn		red:202.32.117.142	udp	33334
+ACCEPT		grn		red:202.32.117.142	udp	10025
+ACCEPT		grn		red:202.32.117.143	udp	10025
+# Connor's PC laptop 802.11
+?COMMENT grn->red Connor's PC laptop 802.11
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	- 6969
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	53
+# ACCEPT		grn:$BATTLENET_CLIENT	red	tcp	53
+# ACCEPT		grn:$BATTLENET_CLIENT	red	tcp	843
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	5351
+# ACCEPT		grn:$BATTLENET_CLIENT	red	tcp	1119
+# ACCEPT		grn:$BATTLENET_CLIENT	red	udp	1119
+# BitTorrent(ACCEPT)	grn:$BITTORRENT_CLIENT	red
+# DNAT red grn:$BITTORRENT_CLIENT tcp 6969
+# DNAT red grn:$BITTORRENT_CLIENT tcp 6881:6889
+# ACCEPT	grn:$BITTORRENT_CLIENT	red	udp	- 80
+# Gnutella(ACCEPT)	grn:$GNUTELLA_CLIENT	red
+# ACCEPT		grn:$BATTLENET_CLIENT red
+# safe DNS
+DNS(ACCEPT)	grn		red:8.8.8.8,8.8.4.4	  # Google DNS
+DNS(ACCEPT)	grn		red:208.67.222.123,208.67.220.123  # OpenDNS FamilyShield
+DNS(ACCEPT)	grn		red:208.67.222.222,208.67.220.220  # OpenDNS
+DNS(ACCEPT)	grn		red:199.85.126.10,199.85.127.10	  # Norton S
+DNS(ACCEPT)	grn		red:199.85.126.20,199.85.127.20	  # Norton S+P
+DNS(ACCEPT)	grn		red:199.85.126.30,199.85.127.30	  # Norton S+P+O
+# DNS(ACCEPT)	grn		red
+Webcache(ACCEPT)	grn		red
+HTTP(ACCEPT)	grn		red
+HTTPS(ACCEPT)	grn		red
+Ping(ACCEPT)	grn		red
+Trcrt(ACCEPT)	grn		red
+SSH(ACCEPT)	grn		red
+# SMTP(ACCEPT)	grn		red
+JabberSecure(ACCEPT) grn	red
+?COMMENT grn-red SMTPS
+SMTPS(ACCEPT)	grn		red
+IMAP(ACCEPT)	grn		red
+# HTTP video using applicaiton/x-sdp video streaming via igmpv3lite/udp
+Submission(ACCEPT)	grn	red
+OpenVPN(ACCEPT)	grn		red
+IMAPS(ACCEPT)	grn		red
+Git(ACCEPT)     grn		red
+HKP(ACCEPT)	grn		red
+Rsync(ACCEPT)	grn		red
+Finger(ACCEPT)	grn		red
+NTP(ACCEPT)	grn		red
+PCA(ACCEPT)	grn		red	# PCAnywhere
+MySQL(ACCEPT)	grn		red
+# no unsecured POP3 allowed, only secured POP3
+POP3S(ACCEPT)	grn		red
+Rsync(ACCEPT)	grn		red
+Telnet(ACCEPT)	grn		red
+NNTP(ACCEPT)	grn		red
+NNTPS(ACCEPT)	grn		red
+VNC(ACCEPT)	grn		red
+Whois(ACCEPT)	grn		red
+IPsec(ACCEPT)	grn		red
+# REJECT:$LOG	grn		red		tcp	25	#Stop direct loc->net SMTP (Comcast uses submission).
+SMTP(REJECT)	grn		red	#Stop direct loc->net SMTP (Comcast uses submission).
+# REJECT:$LOG	grn		red		udp	1025:1031	#MS Messaging
+

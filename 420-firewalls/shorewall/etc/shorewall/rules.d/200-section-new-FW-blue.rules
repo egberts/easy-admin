@@ -1,0 +1,20 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# fw-blue (NEW Connection section)
+?COMMENT fw-blue icmp
+ACCEPT		$FW		blue		icmp
+?COMMENT fw-blue ping
+Ping(ACCEPT)	$FW             blue
+?COMMENT fw-blue DLNA
+ACCEPT		$FW		blue	udp	-	1900 # DLNA server
+?COMMENT fw-blue SSH
+SSH(ACCEPT)	$FW		blue
+

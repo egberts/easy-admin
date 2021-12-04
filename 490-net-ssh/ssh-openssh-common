@@ -1,0 +1,250 @@
+#
+# ^^^ (intentional empty hash bang) ^^^
+# File: ssh-openssh-common.sh
+# Title: Common settings for OpenSSH  
+# Description:
+#   - non-root user only
+#   - writes only into /tmp/named.conf (controlled by BUILDROOT)
+#   - sets file permissions and file ownerships
+#
+#   Variable name suffix notations for autoconf are:
+#     OPENSSH_ = OpenSSH defineded
+#     MAINT_ = maintainer-set
+#     (lowercase) = Autotool/Automake/configure defined
+#
+# Environment variable settings:
+#   - BUILDROOT - where to output the files into (default /tmp/named.conf/)
+#   - CHROOT_DIR - where output files gets installed into
+#   - SSH_CONF - user-defined ssh_config filespec
+#   - SSHD_CONF - user-defined sshd_config filespec
+#
+# Modify: None
+# Reads: None
+# Create: None
+
+
+# The followings 2 vars are never used within this common file
+DEFAULT_BUILDROOT="build"  # $CWD/build
+CHROOT_DIR="${CHROOT_DIR:-}"  # used only during installing in root session
+BUILDROOT="${BUILDROOT:-${DEFAULT_BUILDROOT}${CHROOT_DIR}}"   # where output files go
+DEFAULT_SSH_GROUP="ssh"
+
+#####################################################################
+# OpenSSH source defined
+#####################################################################
+OPENSSH_CONF_FILETYPE="_config"
+OPENSSH_SSHD_CONF_FILEPART="sshd"
+OPENSSH_SSHD_CONF_FILESPEC="${OPENSSH_SSHD_CONF_FILEPART}$OPENSSH_CONF_FILETYPE"
+
+OPENSSH_SSH_CONF_FILEPART="ssh"
+OPENSSH_SSH_CONF_FILESPEC="${OPENSSH_SSH_CONF_FILEPART}$OPENSSH_CONF_FILETYPE"
+
+package_tarname="ssh"
+
+DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
+if [ "$DISTRO_MANUF" == "Debian" ]; then
+  DEFAULT_PREFIX="/usr"  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR=""  # '/'
+  DEFAULT_SYSCONFDIR="/etc"
+  EXTENDED_SYSCONFDIR_DIRNAME="ssh"
+elif [ "$DISTRO_MANUF" == "Redhat" ]; then
+  DEFAULT_PREFIX=""  # '/'
+  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
+  DEFAULT_LOCALSTATEDIR="/var"
+  DEFAULT_SYSCONFDIR="/etc"
+  EXTENDED_SYSCONFDIR_DIRNAME="ssh"  # change this often
+else
+  DEFAULT_PREFIX="/usr"
+  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
+  DEFAULT_SYSCONFDIR="/etc"
+  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
+fi
+prefix="${prefix:-${DEFAULT_PREFIX:-/usr}}"
+exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
+localstatedir="${localstatedir:-${DEFAULT_LOCALSTATEDIR:-/var}}"
+sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR:-${prefix}/etc}}"
+
+libdir="${libdir:-$exec_prefix/lib}"
+libexecdir=${libexecdir:-$exec_prefix/libexec}
+datarootdir=${datarootdir:-$prefix/share}
+sharedstatedir=${prefix:-${prefix}/com}
+bindir="$exec_prefix/bin"
+sbindir="$exec_prefix/sbin"
+### runstatedir="$(realpath -m "$localstatedir/run")"
+runstatedir="$localstatedir/run"
+
+# bind9 maintainer tweaks
+expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
+
+SSH_GROUP="${DEFAULT_SSH_GROUP}"
+
+OPENSSH_SSHD_BIN_FILESPEC="$sbindir/$OPENSSH_SSHD_CONF_FILEPART"
+OPENSSH_SSH_BIN_FILESPEC="$bindir/$OPENSSH_SSH_CONF_FILEPART"
+
+#####################################################################
+# Distro-maintainers related
+#####################################################################
+MAINT_SSH_DIR_NAME="openssh"  # directory name, as chosen by OpenSSH
+MAINT_SSH_PKG_NAME="ssh"  # package name (not the same as package-specific directory name)
+
+
+#####################################################################
+# Autotool/configure/autoreconf/automake, OpenSSH-specific
+#####################################################################
+
+mytool_bindir="/usr/local/bin"  # always /usr/local/bin (regardless of $prefix)
+
+# ssh
+ext_sysconf_dirname="$MAINT_SSH_PKG_NAME"
+# /etc/ssh
+ext_ssh_dirspec="${sysconfdir}/$ext_sysconf_dirname"
+# /var/lib/ssh
+var_lib_ssh_dirpath="${localstatedir}/lib/ssh"  # No, not same as ssh $HOME
+# /run/ssh
+run_sshd_dir="${runstatedir}/sshd"
+
+OPENSSH_SSHD_CONF_FILESPEC="${ext_ssh_dirspec}/$OPENSSH_SSHD_CONF_FILESPEC"
+OPENSSH_SSH_CONF_FILESPEC="${ext_ssh_dirspec}/$OPENSSH_SSH_CONF_FILESPEC"
+
+#####################################################################
+# This OpenSSH argument setting (after having its defaults
+# pre-constructed by prior distro maintainers and Autotool)
+#####################################################################
+
+
+ETC_LOGROTATED_DIRSPEC="${sysconfdir}/logrotate.d"
+# /etc/logrotate.d/openssh
+ETC_LOGROTATED_FILESPEC="${ETC_LOGROTATED_DIRSPEC}/$MAINT_SSH_PKG_NAME"
+
+####### Beyond this point, OpenSSH/Autotool/Maintainer has no control ############
+####### Beyond this point, distro maintainer has control ############
+
+#####################################################################
+# Service startup init file (/etc/default)
+#####################################################################
+# SERVICE_DEFAULT_DIRNAME="default"  # SysV/systemd startup config directory name
+INIT_DEFAULT_DIRNAME="default"  # SysV/systemd startup config directory name
+# /etc/ssh
+#  SERVICE_DEFAULT_DIRSPEC="${sysconfdir}/$SERVICE_DEFAULT_DIRNAME"
+INIT_DEFAULT_DIRSPEC="${sysconfdir}/$INIT_DEFAULT_DIRNAME"
+
+
+#####################################################################
+# systemd-related
+#####################################################################
+SERVICE_FILETYPE="service"
+
+# /etc/systemd/system
+SYSTEMD_SYSTEM_DIRSPEC="${sysconfdir}/systemd/system"
+
+# Both OpenSSH services are alias to each other,  Read-only
+# openssh.service
+SYSD_SSH_SVCNAME="${MAINT_SSH_PKG_NAME}.$SERVICE_FILETYPE"
+
+# openssh
+SYSV_INIT_DEFAULT_FILEPART="$MAINT_SSH_PKG_NAME"
+SYSV_INIT_DEFAULT_FILESPEC="${SYSV_INIT_DEFAULT_FILEPART}"
+
+# /etc/default/openssh
+SYSV_INIT_DEFAULT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$SYSV_INIT_DEFAULT_FILESPEC"
+
+# ssh_conf
+CORE_SSH_CONF_FILESPEC="${OPENSSH_SSH_CONF_FILEPART}$OPENSSH_CONF_FILETYPE"
+# /etc/ssh
+CORE_SSH_CONF_DIRSPEC="$ext_ssh_dirspec"
+
+# Supply user-setting of ssh_config, if not, use OpenSSH-default
+SSH_CONF_FILESPEC="${SSH_CONF:-$OPENSSH_SSH_CONF_FILESPEC}"  # OpenSSH-default filespec
+SSHD_CONF_FILESPEC="${SSHD_CONF:-$OPENSSH_SSHD_CONF_FILESPEC}"  # OpenSSH-default filespec
+
+# configuration subdirectory approach (Debian-mostly)
+SSH_CONFD_DIRSPEC="${OPENSSH_SSH_CONF_FILESPEC}.d"  # Debian-default filespec
+SSHD_CONFD_DIRSPEC="${OPENSSH_SSHD_CONF_FILESPEC}.d"  # Debian-default filespec
+
+#####################################################################
+# Partial config file construction area
+#####################################################################
+
+function flex_mkdir() {
+  if [ $UID -eq 0 ]; then
+    # NO '-p' option in root-mode, gotta make each subdir manually
+    mkdir "${BUILDROOT}${1}"
+  else
+    # It is probably the user's build area, make all parent directories
+    # Do nothing with build area, this is portable script building
+    mkdir -p "${BUILDROOT}${1}"
+    DESTDIR_FILESPEC="${CHROOT_DIR}${1}"
+    if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+      echo "mkdir -p $DESTDIR_FILESPEC" >> "$FILE_SETTINGS_FILESPEC"
+    else
+      echo "\$dry-run: mkdir $DESTDIR_FILESPEC"
+    fi
+  fi
+}
+
+function flex_chown() {
+  if [ $UID -eq 0 ]; then
+    chown "$1" "${BUILDROOT}$2"
+  else
+    # Do nothing with build area, this is portable script building
+    DESTDIR_FILESPEC="${CHROOT_DIR}${2}"
+    if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+      echo "chown $1 $DESTDIR_FILESPEC" >> "$FILE_SETTINGS_FILESPEC"
+    else
+      echo "\$dry-run: chown $1 $DESTDIR_FILESPEC"
+    fi
+  fi
+}
+
+function flex_chmod() {
+  if [ $UID -eq 0 ]; then
+    chmod "$1" "${BUILDROOT}$2"
+  else
+    # Do nothing with build area, this is portable script building
+    DESTDIR_FILESPEC="${CHROOT_DIR}${2}"
+    if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+      echo "chown $1 $DESTDIR_FILESPEC" >> "$FILE_SETTINGS_FILESPEC"
+    else
+      echo "\$dry-run chown $1 $DESTDIR_FILESPEC"
+    fi
+  fi
+}
+
+function flex_touch() {
+  if [ $UID -eq 0 ]; then
+    touch "$1"
+  fi
+    # Do nothing with build area, this is portable script building
+}
+
+# create_script_header
+#  requires FILESPEC (do not include BUILDROOT/CHROOT_DIR)
+function create_script_header() {
+  FILENAME="$(basename "$1")"
+  FILEPATH="$(dirname "$1")"
+  TITLE="$2"
+  cat << EOF | tee "${BUILDROOT}$1" >/dev/null
+#
+# File: ${FILENAME}
+# Path: ${FILEPATH}
+# Title: $2
+# Description:
+#
+
+EOF
+}
+
+# Write a line
+#   usage:  write_line "$filespec" "text line"
+#   usage:  write_line "$filespec" "# comment line"
+function write_line() {
+  echo "$2" >> "$1"
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error writing to $1: errcode $retsts"
+    exit $retsts
+  fi
+}
+
+# no exit here; common 'source'able shell script

@@ -1,0 +1,101 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+A_AllowICMPs	red	$FW
+
+ACCEPT		red:172.28.130.0/22    $FW     udp 68 67
+
+?COMMENT red-fw Ping
+ACCEPT		red		$FW		icmp
+
+?COMMENT red-fw Ping
+Ping(ACCEPT)	red             $FW
+
+?COMMENT red-fw SSH login
+ACCEPT		red		$FW	tcp	2224
+
+?COMMENT red-fw traceroute
+Trcrt(ACCEPT)	red             $FW
+
+?COMMENT red-fw Hidden Master DNS
+ACCEPT		red		$FW	tcp	345
+ACCEPT		red		$FW	udp	345
+
+?COMMENT red-fw NTP
+NTP(ACCEPT)	red		$FW
+
+?COMMENT red-fw Submission
+Submission(ACCEPT)	red	$FW
+
+#ACCEPT:info	red:^[US,A2]	$FW	tcp	2224 # Geo rejected ATT MiFi
+# ?COMMENT red-fw portknocked SSH
+# PortKnock:info  red             $FW     tcp     2224,2134,2799,2245
+
+# IMAPS(ACCEPT)	red		$FW
+?COMMENT red-fw OpenVPN
+OpenVPN(ACCEPT)	red		$FW
+
+# Drop 465/tcp smtps from Anonymous Proxy (A1) & satellite provider network (A2)
+?COMMENT red-fw drop SMTPS from foreign countries
+###DROP:info	red:^[A1,A2,CN]	$FW	tcp	465
+?COMMENT red-fw SMTPS
+SMTPS(ACCEPT)	red		$FW
+
+?COMMENT red-fw Nintendo ConnTest
+ACCEPT		red		$FW	udp	- 50920 # Nintendo ConnTest
+
+# Web() is 80/tcp, 443/tcp
+?COMMENT red-fw Inbound webservers
+Web(ACCEPT)	red		$FW
+
+?COMMENT red-fw inbound Rsync server
+Rsync(ACCEPT)	red		$FW
+
+# ?COMMENT red-fw HTTPS(8443)
+# ACCEPT          red             $FW     tcp     8443
+
+# ?COMMENT red-fw Mail submission
+# Submission(ACCEPT)	red	$FW
+
+
+# DROP section
+#
+?COMMENT red-fw Dropping DNS request to this server here.
+DNS(DROP)	red	$FW
+
+?COMMENT red-fw LifX Lightbulb Discovery Protocol (LG-TV is the offender)
+DROP	red	$FW	udp	56700
+
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-request
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-reply
+
+?COMMENT red-fw traceroute (ICMP:8/UDP:33434:33524)
+Trcrt(DROP)	red	$FW
+
+?COMMENT red-fw drop uPnP/NAT-PMP
+DROP	red	$FW	udp	5351
+
+?COMMENT red-fw drop IRC from Y!Home webcams
+# DROP    red     $FW     udp 6667
+# DROP    red     $FW     tcp 6667
+
+?COMMENT red-fw drop dhclient from T-Link EtherOverPower hub (we're not DHCP server here)
+DROP    red:192.168.0.0/16	$FW	udp	67	68
+DROP    red	$FW     udp	67	68
+
+?COMMENT red-fw drop Lisalee work mac SAMBA client - UDP
+DROP	red:172.28.131.155	$FW	udp	137	137
+?COMMENT red-fw drop Lisalee work mac SAMBA client - TCP
+DROP	red:172.28.131.155	$FW	tcp	137	137
+
+?COMMENT red-fw drop counter
+DROP:info	red		$FW

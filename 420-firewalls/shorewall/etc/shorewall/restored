@@ -3,5 +3,8 @@
 #
 # Description: This script is invoked at the completion of a 
 #    successful shorewall restore and shorewall-lite restore.
+#
 # State: run-time
 # Action: done at 'shorewall restore'
+# Allowable pragma: '?INCLUDE' statement
+

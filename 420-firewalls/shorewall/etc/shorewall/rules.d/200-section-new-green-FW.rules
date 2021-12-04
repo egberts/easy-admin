@@ -1,0 +1,71 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# green-fw (NEW Connection section)
+?COMMENT green-fw icmp
+ACCEPT		green		$FW		icmp
+
+?COMMENT green-fw ping
+Ping(ACCEPT)	green		$FW
+
+?COMMENT green-fw traceroute
+Trcrt(ACCEPT)	green		$FW
+
+?COMMENT green-fw SSH
+SSH(ACCEPT)	green		$FW
+
+?COMMENT green-fw DNS
+DNS(ACCEPT)	green		$FW
+
+?COMMENT green-fw DNSAmp
+DNSAmp(ACCEPT)	green		$FW
+
+?COMMENT green-fw DAAP
+DAAP(ACCEPT)	green		$FW
+ACCEPT		green		$FW	udp	48856  # DAAP
+ACCEPT		green		$FW	udp	52178  # DAAP
+
+?COMMENT green-fw NTP
+NTP(ACCEPT)	green		$FW
+
+?COMMENT green-fw HTTP/HTTPS
+Web(ACCEPT)	green		$FW
+
+?COMMENT green-fw HTTPS(8443)
+ACCEPT          green		$FW	tcp	8443
+
+?COMMENT green-fw SMTPS
+SMTPS(ACCEPT)	green		$FW
+
+?COMMENT green-fw IMAP
+IMAP(ACCEPT)	green		$FW
+
+?COMMENT green-fw secured SMTP submission
+Submission(ACCEPT)	green	$FW
+
+?COMMENT green-fw secured IMAPS
+IMAPS(ACCEPT)	green		$FW
+
+?COMMENT green-fw webmin
+ACCEPT		green		$FW	tcp	12137
+
+# chains go at the end of a subsection
+?COMMENT green-fw UPnP + NAT-PMP
+ACCEPT		green		$FW	udp	5351
+allowinUPnP	green		$FW	# if green->fw is default DENY for uPnP
+ACCEPT		green		$FW	tcp	4767  # GP
+
+# There may be a requirement to exclude additional destination 
+# hosts or networks from being redirected. For example, you 
+# might also want requests destined for 8.8.8.0/24 to 
+# not be routed to Squid.
+# REDIRECT  green	        3128     tcp      www          -          !192.168.1.7,8.8.8.0/24
+# Squid(ACCEPT)	green			$FW
+

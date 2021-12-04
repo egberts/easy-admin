@@ -3,5 +3,8 @@
 #
 # Description: called in place of init when the firewall is being 
 #    refreshed rather than started or restarted.
+#
 # State: run-time
 # Action: done at shorewall 'refresh'
+# Allowable pragma: '?INCLUDE' statement
+

@@ -2,5 +2,8 @@
 # started
 #
 # Description: invoked after the firewall has been marked as 'running'.
+#
 # State: run-time
 # Action: done at shorewall 'load, reload, restart, start'
+# Allowable pragma: '?INCLUDE' statement
+

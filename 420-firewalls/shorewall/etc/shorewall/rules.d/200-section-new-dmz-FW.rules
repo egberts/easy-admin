@@ -1,0 +1,23 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# dmz-fw (NEW Connection section)
+?COMMENT dmz-fw icmp
+ACCEPT		dmz		$FW		icmp
+?COMMENT dmz-fw ping
+Ping(ACCEPT)	dmz             $FW
+?COMMENT dmz-fw traceroute
+Trcrt(ACCEPT)	dmz		$FW
+?COMMENT dmz-fw DNS
+DNS(ACCEPT)	dmz		$FW
+?COMMENT dmz-fw UPnP + NAT-PMP
+ACCEPT		dmz		$FW	udp	5351
+allowinUPnP	dmz		$FW	# if dmz->fw is default DENY for uPnP
+
