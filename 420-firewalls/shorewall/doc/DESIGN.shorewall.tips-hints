@@ -1,0 +1,20 @@
+Shorewall firewall design guide
+
+
+TIPS
+====
+
+Return Pathway/Corresponding Rules
+----------------------------------
+Return path of a packet usually does not need an extra FW rule, with exception of
+ICMP and UDP.
+
+Furthermore, the return path of a "TCP" packet are covered by OS network connection 
+tracking (CT) table and does not need an accompany but corresponding firewall 
+rule UNLESS the CT TCP timeout is set too short for your required 
+connection duration:
+
+   `/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established`
+
+With some HTTP2/QUIC, TCP-established connection longevity of weeks or more is 
+becoming an issue.

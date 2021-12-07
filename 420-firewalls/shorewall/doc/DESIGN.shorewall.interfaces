@@ -9,6 +9,44 @@ Recap of user prompting:
     2. /etc/shorewall/interfaces
     4. /etc/shorewall/rules
 
+# Zone Definition Zone
+# Need a bit of pre-planning here
+# Some interfaces may span multiple zones (through sub-subnetting)
+# (Rare) Some zone may span multiple interfaces (through physical bridge spanning)
+
+# Do the rare part of UI
+# (Rare) Some zone may span multiple interfaces (through physical bridge spanning)
+# new 'bridge' summary analysis of CLI and its options (replaces 'brctl')
+# 'bridge'  (in /usr/sbin) replaced 'brctl'
+# 'bridge' requires NETLINK privilege (no open()s)
+# 'bridge -d link' gets your OFFLINE interfaces (only occurs with 'link' suboption)
+# 'bridge  link' does NOT get your OFFLINE interfaces
+
+# Determine if each bridge has at least one physical netdev interface
+`/usr/sbin/bridge -d link`
+for each bridge_found; do
+  for this_netdev in encountered_netdevs_list; do
+    bridge_slave_port_by_netdev[this_netdev]=$(bridge -o -d link show this_netdev | grep master | awk '{ print $7 }')
+    if bridge_slave_port_by_netdev[this_netdev]
+  
+    if bridge_spans_multiple_physical_netdevs
+      error if IP_address_found_on_a_slave_bridge_port
+      display list_of_bridged_netdevs_encountered
+      have_bridged_physical_netdevs=1
+    fi
+  fi
+done
+
+display list_of_IP_subnets_encountered
+prompt user splitting_IP_subnets_into_multiple_zones?
+multiple_zones_by_IP_subnet_A=()
+if splitting_IP_subnets_into_multiple_zones
+  prompt user which_IP_subnets_are_multiple_zones?
+  multiple_zones_by_IP_subnet_A[this_zone]=1
+
+prompt user does interface XXX provide a sub-subnet of interface XXX subnet?
+
+
 
 # Determine if interface spans multiple zones (subsetting)
 
