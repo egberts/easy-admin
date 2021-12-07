@@ -1,0 +1,5 @@
+DESIGN
+- 420-firewall/shorewall/doc/DESIGN.interfaces
+
+CODING
+- Working on 423-fw-shorewall-params.sh
