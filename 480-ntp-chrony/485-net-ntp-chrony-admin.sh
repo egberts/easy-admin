@@ -583,7 +583,7 @@ if [ "$NEED_GROUP_SUPP_FOR_USERS" -ge 1 ]; then
   # Prompt for user's username that is to gain chrony group privilege
   echo ""
   REPLY="(keep going)"
-  PROMPT_USER="-i $USER"
+  PROMPT_USER="$USER"
   while [ -n "$REPLY" ]; do
     echo "Enter in username to gain this '$GROUPNAME' group privilege."
     if [ -n "$PROMPT_USER" ]; then
