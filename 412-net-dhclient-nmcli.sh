@@ -1,6 +1,6 @@
 #!/bin/bash
 # File: 412-net-dhclient-nmcli.sh
-# Title: Configures NetworkManager to use DHCLIENT
+# Title: Configures systemd to use DHCLIENT
 #
 
 SYSTEMD_UNIT_NAME="dhclient"
@@ -24,8 +24,6 @@ echo "Tweaking NetworkManager for use with ISC DHCP (dhclient) client"
 # Update the NetworkManager.conf, 'main.dhcp=' to 'dhclient'
 
 # Write
-
-exit 0
 
 NETDEV_LIST="$(ip -brief -o link list | awk '{print $1}' | xargs)"
 NETDEV_IGNORE_WG="$(ip -brief -o link list type wireguard | awk '{print $1}' | xargs)"
@@ -264,5 +262,7 @@ if [ "$UNIT_ACTIVE" != "active" ]; then
   sudo systemctl stop "$SYSTEMD_SERVICE_NAME_BY_INTF"
   sudo systemctl start "$SYSTEMD_SERVICE_NAME_BY_INTF"
 fi
-exit 0
+echo ""
+
+echo "Done."
 
