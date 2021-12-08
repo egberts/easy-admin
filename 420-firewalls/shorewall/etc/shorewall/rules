@@ -112,8 +112,8 @@ INCLUDE /etc/shorewall/rules.d/200-section-new-red-blue.rules
 INCLUDE /etc/shorewall/rules.d/200-section-new-red-green.rules
 INCLUDE /etc/shorewall/rules.d/200-section-new-red-vmnet.rules
 
-INCLUDE /etc/shorewall/rules.d/200-section-new-FW-red.rules
 INCLUDE /etc/shorewall/rules.d/200-section-new-FW-FW.rules
+INCLUDE /etc/shorewall/rules.d/200-section-new-FW-red.rules
 # INCLUDE /etc/shorewall/rules.d/200-section-new-FW-dmz.rules
 INCLUDE /etc/shorewall/rules.d/200-section-new-FW-blue.rules
 # INCLUDE /etc/shorewall/rules.d/200-section-new-FW-grn.rules

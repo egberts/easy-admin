@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # File: 484-net-ntp-chrony-admin.sh
 # Title: Which administrator can use Chrony CLI utility?
 # Description:
@@ -583,7 +583,7 @@ if [ "$NEED_GROUP_SUPP_FOR_USERS" -ge 1 ]; then
   # Prompt for user's username that is to gain chrony group privilege
   echo ""
   REPLY="(keep going)"
-  PROMPT_USER="-i $USER"
+  PROMPT_USER="$USER"
   while [ -n "$REPLY" ]; do
     echo "Enter in username to gain this '$GROUPNAME' group privilege."
     if [ -n "$PROMPT_USER" ]; then
@@ -611,7 +611,7 @@ fi
 if [ "$NEED_GROUP_SUPP_FOR_USERS" -ge 1 ] && \
      {
        [ "$NEED_CMD_ACL_NET_REMOTE" -ge 1 ] || \
-       [ "$NEED_CMD_ACL_NET_LOOPBACK" ] \
+       [ "$NEED_CMD_ACL_NET_LOOPBACK" -ge 1 ] \
      ;}; \
    then
   echo ""
@@ -762,11 +762,11 @@ fi
 echo ""
 echo "Verifying syntax of Chrony config files..."
 # Verify the configuration files to be correct, syntax-wise.
-$CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
+$SUDO_BIN $CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # do it again but verbosely
-  $CHRONYD_BIN -p -f "$FILESPEC"
+  $SUDO_BIN $CHRONYD_BIN -p -f "$FILESPEC"
   echo "ERROR: $FILESPEC failed syntax check."
   exit 13
 fi
