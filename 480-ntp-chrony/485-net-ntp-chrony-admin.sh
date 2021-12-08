@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # File: 484-net-ntp-chrony-admin.sh
 # Title: Which administrator can use Chrony CLI utility?
 # Description:
@@ -611,7 +611,7 @@ fi
 if [ "$NEED_GROUP_SUPP_FOR_USERS" -ge 1 ] && \
      {
        [ "$NEED_CMD_ACL_NET_REMOTE" -ge 1 ] || \
-       [ "$NEED_CMD_ACL_NET_LOOPBACK" ] \
+       [ "$NEED_CMD_ACL_NET_LOOPBACK" -ge 1 ] \
      ;}; \
    then
   echo ""
