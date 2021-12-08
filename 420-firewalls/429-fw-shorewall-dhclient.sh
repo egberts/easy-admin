@@ -21,12 +21,16 @@ echo ""
 
 # check for existing dynamic IP interface (as a DHCP client)
 # if no dynamic IP interface, error and exit
-ANY_DYN_IP="$(ip -o addr | grep dynamic | awk '{print $8}')"
+ANY_DYN_IP="$(ip -o addr show | grep dynamic | awk '{print $9}')"
 if [ "$ANY_DYN_IP" != "dynamic" ]; then
   echo "No dynamic IP netdev found.  Aborted."
   exit 3
 fi
-exit 0
+DYN_NETDEV="$(ip -o addr show | grep dynamic | awk '{print $2}')"
+if [ "$(echo "$DYN_NETDEV" | wc -w)" -gt 1 ]; then
+  echo "This script does not work on multiple dynamic netdev interfaces."
+  exit 3
+fi
 
 # Checking if Shorewall is installed
 # 'which' is too-Debian-specific
@@ -46,6 +50,7 @@ if [ -z "${DHCLIENT_EXIST}" ]; then
 fi
 
 DATE="$(date)"
+echo "Creating ${DHCLIENT_ENTER_HOOK_SHOREWALL} file ..."
 cat << SH_EOF > "/tmp/$0.tmp"
 #
 # File: ${DHCLIENT_ENTER_HOOK_SHOREWALL}
@@ -61,7 +66,7 @@ cat << SH_EOF > "/tmp/$0.tmp"
 #   Does not cover scenarios where Ethernet cabling got disconnected
 #   from its RG-45 connector or remote side goes down.
 
-DHCLIENT_PHY_INTF=enp5s0
+DHCLIENT_PHY_INTF=$DYN_NETDEV
 
 # Dynamic settings that ISC DHCP server will pass on to this
 # script via shell environment variables
@@ -119,3 +124,6 @@ SH_EOF
 sudo cp "/tmp/${0}.tmp" $DHCLIENT_ENTER_HOOK_SHOREWALL
 sudo chown root:root $DHCLIENT_ENTER_HOOK_SHOREWALL
 sudo chmod 0640 $DHCLIENT_ENTER_HOOK_SHOREWALL
+echo "File permission/ownership set for $DHCLIENT_ENTER_HOOK_SHOREWALL"
+echo ""
+echo "Done."
