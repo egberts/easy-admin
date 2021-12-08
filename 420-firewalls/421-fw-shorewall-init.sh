@@ -10,6 +10,11 @@
 
 echo "Set up hardened Shorewall (shorewall-init) during boot-up"
 echo ""
+if [ "$USER" != "root" ]; then
+  echo "This script runs best as 'root' user."
+  echo "Aborted."
+  exit 11
+fi
 
 if [ ! -f /etc/shorewall/shorewall.conf ]; then
   echo "Must install shorewall firstly."
