@@ -8,18 +8,36 @@
 #ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
 #    							PORT	PORT(S)		DEST		LIMIT		GROUP
 
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-request
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-reply
+?COMMENT red-fw Ping
+Ping(ACCEPT)	red             $FW
 A_AllowICMPs	red	$FW
-
-ACCEPT		red:172.28.130.0/22    $FW     udp 68 67
-
 ?COMMENT red-fw Ping
 ACCEPT		red		$FW		icmp
 
-?COMMENT red-fw Ping
-Ping(ACCEPT)	red             $FW
 
-?COMMENT red-fw SSH login
+?COMMENT red-fw to our DHCP-client inbound from their DHCP server (TBD)
+ACCEPT		red:172.28.130.0/22    $FW     udp 68 67
+
+?COMMENT red-fw to our authoritative DNS server TCP inbound from their DNS resolver
+ACCEPT		red		$FW	tcp	53
+?COMMENT red-fw to our authoritative DNS server UDP inbound from their DNS resolver
+ACCEPT		red		$FW	udp	53
+
+?COMMENT red-fw to our DNS resolver TCP inbound from their DNS server
+ACCEPT		red		$FW	tcp	-	53
+?COMMENT red-fw to our DNS resolver UDP inbound from their DNS server
+ACCEPT		red		$FW	udp	-	53
+
+?COMMENT red-fw to our elusive SSH server inbound from their SSH-client 
 ACCEPT		red		$FW	tcp	2224
+
+?COMMENT red-fw to our SSH client inbound from their elusive SSH-server 
+ACCEPT		red		$FW	tcp	-	2224
+
 
 ?COMMENT red-fw traceroute
 Trcrt(ACCEPT)	red             $FW
@@ -28,7 +46,7 @@ Trcrt(ACCEPT)	red             $FW
 ACCEPT		red		$FW	tcp	345
 ACCEPT		red		$FW	udp	345
 
-?COMMENT red-fw NTP
+?COMMENT red-fw inbound to NTP-client
 NTP(ACCEPT)	red		$FW
 
 ?COMMENT red-fw Submission
@@ -67,16 +85,9 @@ Rsync(ACCEPT)	red		$FW
 
 # DROP section
 #
-?COMMENT red-fw Dropping DNS request to this server here.
-DNS(DROP)	red	$FW
 
 ?COMMENT red-fw LifX Lightbulb Discovery Protocol (LG-TV is the offender)
 DROP	red	$FW	udp	56700
-
-?COMMENT red-fw ICMP Timestamp 
-DROP	red	$FW	icmp	timestamp-request
-?COMMENT red-fw ICMP Timestamp 
-DROP	red	$FW	icmp	timestamp-reply
 
 ?COMMENT red-fw traceroute (ICMP:8/UDP:33434:33524)
 Trcrt(DROP)	red	$FW
@@ -92,10 +103,14 @@ DROP	red	$FW	udp	5351
 DROP    red:192.168.0.0/16	$FW	udp	67	68
 DROP    red	$FW     udp	67	68
 
-?COMMENT red-fw drop Lisalee work mac SAMBA client - UDP
+?COMMENT red-fw silently drop Lisalee work mac SAMBA client - UDP
 DROP	red:172.28.131.155	$FW	udp	137	137
-?COMMENT red-fw drop Lisalee work mac SAMBA client - TCP
+
+?COMMENT red-fw silently drop Lisalee work mac SAMBA client - TCP
 DROP	red:172.28.131.155	$FW	tcp	137	137
+
+?COMMENT red-fw silently drop Kyle Surface SAMBA client - TCP
+DROP	red:172.28.129.97 	$FW	tcp	137	137
 
 ?COMMENT red-fw drop counter
 DROP:info	red		$FW
