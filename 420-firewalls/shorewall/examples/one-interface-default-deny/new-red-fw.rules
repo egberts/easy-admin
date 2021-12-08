@@ -230,14 +230,17 @@ ACCEPT	red	$FW	udp	-	33434:33524
 # Silent DROP section
 #
 
+?COMMENT red-fw silent drop Spotify client - UDP
+DROP	red:172.28.129.97	$FW	udp	57621	57621
 
-?COMMENT red-fw silently drop Lisalee work mac SAMBA client - UDP
+?COMMENT red-fw silently drop work mac SAMBA client - UDP
 DROP	red:172.28.131.155	$FW	udp	137	137
-
-?COMMENT red-fw silently drop Lisalee work mac SAMBA client - TCP
+?COMMENT red-fw silently drop work mac SAMBA client - TCP
 DROP	red:172.28.131.155	$FW	tcp	137	137
 
-?COMMENT red-fw silently drop Kyle Surface SAMBA client - TCP
+?COMMENT red-fw silently drop Surface SAMBA client - UDP
+DROP	red:172.28.129.97 	$FW	udp	137	137
+?COMMENT red-fw silently drop Surface SAMBA client - TCP
 DROP	red:172.28.129.97 	$FW	tcp	137	137
 
 # ?COMMENT red-fw drop IRC from Y!Home webcams
