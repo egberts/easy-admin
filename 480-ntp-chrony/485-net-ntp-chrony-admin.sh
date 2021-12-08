@@ -762,11 +762,11 @@ fi
 echo ""
 echo "Verifying syntax of Chrony config files..."
 # Verify the configuration files to be correct, syntax-wise.
-$CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
+$SUDO_BIN $CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # do it again but verbosely
-  $CHRONYD_BIN -p -f "$FILESPEC"
+  $SUDO_BIN $CHRONYD_BIN -p -f "$FILESPEC"
   echo "ERROR: $FILESPEC failed syntax check."
   exit 13
 fi
