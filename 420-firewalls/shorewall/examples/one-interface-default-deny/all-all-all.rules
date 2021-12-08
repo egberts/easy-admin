@@ -1,0 +1,22 @@
+#
+# File: all-all-all.rules
+# Path: /etc/shorewall
+# Title: Shorewall Rules File for ALL zones
+# Description:
+#
+# All-zone rule-set goes here.
+#
+# Useful for system-wide logging or blocking due to
+# malicious intruders, command and control center,
+# or unexplained 5-tuples.
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# Part of ?SECTION ALL
+
+# this DROP occurs before any connection states, not a good idea
+# That is, before ESTABLISHED, RELATED, NEW, INVALID, UNTRACKED connection states.
+# ?COMMENT all-all-all ALL DROP
+# DROP		all		all

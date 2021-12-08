@@ -9,10 +9,29 @@ Recap of user prompting:
     2. /etc/shorewall/interfaces
     4. /etc/shorewall/rules
 
+# ZONE
 # Zone Definition Zone
-# Need a bit of pre-planning here
-# Some interfaces may span multiple zones (through sub-subnetting)
-# (Rare) Some zone may span multiple interfaces (through physical bridge spanning)
+# - Need a bit of pre-planning here
+# - - Some interfaces may span multiple zones (through sub-subnetting)
+# - - (Rare) Some zone may span multiple interfaces (through physical bridge spanning)
+
+# ZONE - DMZ
+#   host would not be able to need zone DMZ if they only have one public IP address
+#    and one netdev interface.  
+#    - but 2-PubIP-1-netdev DMZ is so rare as it would require `iproute2` sorcery 
+#      of ip route tables.
+#   host may have one public IP address but a virtual bridge on the side for 
+#     a subnetted-NAT'd intra-cloud communication needs, then a DMZ 
+#     zone is required if those NAT'd clouds wanted Internet access.
+#     (For simple standalone host, DMZ is not just about a second (or more) public 
+#      IP address of same subnet of a same-side-subnet-facing-interfaces or 
+#      single-interface standalone host, 
+#      but more about services being corraled apart from any Public/Private WANs/LANs)
+#     (For standalone workstation host, DMZ is not just about a second (or more) public 
+#      IP address of same subnet of a same-side-subnet-facing-interfaces or 
+#      single-interface standalone host, 
+#      but more about services being corraled apart from any Public/Private WANs/LANs)
+#   A virtual bridge desiring Internet-access must attach to a DMZ zone 
 
 # Do the rare part of UI
 # (Rare) Some zone may span multiple interfaces (through physical bridge spanning)
@@ -22,6 +41,7 @@ Recap of user prompting:
 # 'bridge -d link' gets your OFFLINE interfaces (only occurs with 'link' suboption)
 # 'bridge  link' does NOT get your OFFLINE interfaces
 
+# Determine if there are any (virtual or not) bridges that are a standalone bridge
 # Determine if each bridge has at least one physical netdev interface
 `/usr/sbin/bridge -d link`
 for each bridge_found; do
@@ -56,6 +76,8 @@ default_gateways_A==$(ip route show default)
 no_gateway_found=($#default_gateways_A[@] -eq 0)
 
 bridge_interfaces_list=""
+
+# Iterate the actual list of netdevs, regardless of types
 for this_interface in netdev_interfaces_list
   interfaces_name_A[this_interface]=$(echo $this_interface | remove [:port])
   if $this_interface is in default_gateways_A[@]
@@ -76,7 +98,12 @@ for this_interface in netdev_interfaces_list
     is_a_wildcard_interface_name[this_interface]=0
     is_a_wildcard_physical_name[this_interface]=0
     
-done
+  # pre-clear various providers arrays related to ProxyARP and ProxyNDP
+  allowed_to_use_proxyarp[$this_interface]=1
+  allowed_to_use_proxyndp[$this_interface]=1
+
+done  # netdev_interfaces_list[]
+
 # constructed is_a_non_internal_interfaces_A[]
 # constructed interfaces_name_A[]
 # constructed interfaces_type_bridge_A[]
@@ -84,7 +111,9 @@ done
 # constructed is_a_wildcard_physical_name[this_interface]
 # constructed is_a_wildcard_interface_name[this_interface]
 
-# second-pass box-wide INTER-interface-specific settings
+# SECOND-PASS box-wide INTER-interface-specific settings
+# SECOND-PASS box-wide INTER-interface-specific settings
+# SECOND-PASS box-wide INTER-interface-specific settings
 # (correlating br0:1 bridge port with br0 interface)
 for this_interface in netdev_interfaces_list
   if [:port] is in $this_interface
@@ -97,6 +126,11 @@ done
 
 #  BOX-WIDE PROMPTING
 
+if NOT have_bridged_with_phy_netdevs AND NOT public_virtual_interfaces
+  zones_count=1
+  zones_name[0]='red'
+
+else   # if have_bridged_with_phy_netdevs OR public_virtual_interfaces
   ######################################3
   # Zones, how many?
   ######################################
@@ -118,12 +152,6 @@ done
 
   prompt user if have_multiple_ISP_providers
   if have_multiple_ISP_Providers
-    # pre-clear various providers arrays
-    for all_netdev_interfaces_list; do
-      allowed_to_use_proxyarp[$this_interface]=1
-      allowed_to_use_proxyndp[$this_interface]=1
-    done
-
     prompt user for PRIMARY_provider_name[idx]
       provider_options+=",primary"
     prompt user for provider_name[idx]

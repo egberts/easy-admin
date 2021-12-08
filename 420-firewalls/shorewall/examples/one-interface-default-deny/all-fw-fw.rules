@@ -1,0 +1,87 @@
+#
+# File: all-fw-fw.rules
+# Path: /etc/shorewall
+# Title: Rules file for state-less firewall-to-firewall communication
+# Description:
+#
+#   in ?SECTION ALL, this is the first set of rule encountered in a firewall chain
+#   before any connection tracking state.
+#
+#   Before ESTABLISHED, NEW, INVALID, RELATED, UNTRACKED states, this
+#   file covers the firewall-to-firewall (loopback to loopback) network traffic.
+#
+#   Useful for blocking some admin tools made easily available to end-users
+#   such as 'chronyc' or ISC Bind 'rndc'.
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# Some example of blocking admin tools to general local end-users are:
+#
+?COMMENT fw-fw state:ALL SSH
+SSH(ACCEPT)	$FW	$FW
+
+?COMMENT fw-fw state:ALL DNS
+DNS(ACCEPT)	$FW	$FW
+
+?COMMENT fw-fw state:ALL HTTP web 
+ACCEPT		$FW	$FW	tcp	80
+?COMMENT fw-fw state:ALL HTTP/QUIC web 
+DROP		$FW	$FW	udp	80
+
+?COMMENT fw-fw state:ALL HTTPS web 
+ACCEPT		$FW	$FW	tcp	443
+?COMMENT fw-fw state:ALL HTTPS/QUIC/TLS web 
+DROP		$FW	$FW	udp	443
+
+?COMMENT fw-fw state:ALL chronyc to chronyd
+ACCEPT		$FW	$FW	udp	323
+
+# ISC Bind9 named 596/udp control port
+?COMMENT fw-fw state:ALL rndc to ISC Bind9 named control port
+RNDC(ACCEPT)	$FW	$FW
+
+# SMTP/STARTTLS 465/tcp
+?COMMENT fw-fw state:ALL SMTPS/STARTTLS
+SMTPS(ACCEPT)	$FW	$FW
+
+?COMMENT fw-fw state:ALL Mail submission 587/udp
+Submission(ACCEPT)	$FW	$FW
+
+?COMMENT fw-fw state:ALL KDEconnect
+ACCEPT		$FW	$FW	tcp	1716
+ACCEPT		$FW	$FW	udp	1716
+
+# Squid Web HTTP/HTTPS proxy; 3128/tcp
+?COMMENT fw-fw state:ALL WWW proxy
+Squid(ACCEPT)	$FW	$FW
+
+# Microsoft Remote Desktop; 3389/udp/tcp
+?COMMENT fw-fw state:ALL RDP (Microsoft Remote Desktop)
+RDP(ACCEPT)	$FW	$FW
+
+?COMMENT fw-fw state:ALL Nagio NPRE
+ACCEPT		$FW	$FW	tcp	5666   # nagio npre
+
+# Virtual Network Connection (VNC) display 0-9; tcp 5900:5909
+?COMMENT fw-fw state:ALL VNC display 0-9
+VNC(ACCEPT)	$FW	$FW
+
+?COMMENT fw-fw state:ALL memcached
+ACCEPT		$FW	$FW	tcp	11211
+
+?COMMENT fw-fw state:ALL webmin miniserv
+ACCEPT		$FW	$FW	tcp	12137
+ACCEPT		$FW	$FW	udp	12137
+
+?COMMENT fw-fw state:ALL opendkim
+ACCEPT		$FW	$FW	tcp	12301
+
+?COMMENT fw-fw state:ALL Ping
+Ping(ACCEPT)	$FW             $FW
+
+# Ideally you want the /etc/shorewall/policy to cover this fw-fw default action
+# But it is useful to log in this file, here.
+# ?COMMENT fw-fw DROP all localhost/loopback traffic
+# DROP:info	$FW	$FW
+

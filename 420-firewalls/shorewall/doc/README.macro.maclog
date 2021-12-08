@@ -1,0 +1,7 @@
+#
+Do we even know the following files ever gets called 
+or used by Shorewall anymore?
+
+  /etc/shorewall/maclog
+
+

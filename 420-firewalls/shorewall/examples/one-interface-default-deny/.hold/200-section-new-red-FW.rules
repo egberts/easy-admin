@@ -1,0 +1,131 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-request
+?COMMENT red-fw ICMP Timestamp 
+DROP	red	$FW	icmp	timestamp-reply
+
+?COMMENT red-fw Ping
+Ping(ACCEPT)	red             $FW
+A_AllowICMPs	red	$FW
+?COMMENT red-fw Ping
+ACCEPT		red		$FW		icmp
+
+###########################################################################
+# INBOUND to our local (or port-forwarded) SERVERS
+
+?COMMENT red-fw to our authoritative DNS server TCP inbound from their DNS resolver
+ACCEPT		red		$FW	tcp	53
+?COMMENT red-fw to our authoritative DNS server UDP inbound from their DNS resolver
+ACCEPT		red		$FW	udp	53
+
+?COMMENT red-fw to our elusive SSH server inbound from their SSH-client 
+ACCEPT		red		$FW	tcp	2224
+
+?COMMENT red-fw traceroute
+Trcrt(ACCEPT)	red             $FW
+
+?COMMENT red-fw Hidden Master DNS
+ACCEPT		red		$FW	tcp	345
+ACCEPT		red		$FW	udp	345
+
+?COMMENT red-fw inbound to NTP-client
+NTP(ACCEPT)	red		$FW
+
+?COMMENT red-fw Submission
+Submission(ACCEPT)	red	$FW
+
+#ACCEPT:info	red:^[US,A2]	$FW	tcp	2224 # Geo rejected ATT MiFi
+# ?COMMENT red-fw portknocked SSH
+# PortKnock:info  red             $FW     tcp     2224,2134,2799,2245
+
+# IMAPS(ACCEPT)	red		$FW
+?COMMENT red-fw OpenVPN
+OpenVPN(ACCEPT)	red		$FW
+
+# Drop 465/tcp smtps from Anonymous Proxy (A1) & satellite provider network (A2)
+?COMMENT red-fw drop SMTPS from foreign countries
+###DROP:info	red:^[A1,A2,CN]	$FW	tcp	465
+?COMMENT red-fw SMTPS
+SMTPS(ACCEPT)	red		$FW
+
+?COMMENT red-fw Nintendo ConnTest
+ACCEPT		red		$FW	udp	- 50920 # Nintendo ConnTest
+
+# Web() is 80/tcp, 443/tcp
+?COMMENT red-fw to our HTTP server inbound from their web browser
+ACCEPT		red		$FW	tcp	80
+?COMMENT red-fw to our HTTPS server inbound from their web browser
+ACCEPT		red		$FW	tcp	443
+
+# ?COMMENT red-fw to our rsync server inbound from their rsync clients
+# Rsync(ACCEPT)	red		$FW
+
+# ?COMMENT red-fw HTTPS(8443)
+# ACCEPT          red             $FW     tcp     8443
+
+# ?COMMENT red-fw Mail submission
+# Submission(ACCEPT)	red	$FW
+
+###########################################################################
+# INBOUND CLIENTS
+#
+?COMMENT red-fw to our DHCP-client inbound from their DHCP server 
+ACCEPT		red:172.28.130.1/22    $FW     udp 68 67
+
+?COMMENT red-fw to our SSH client inbound from their elusive SSH-client 
+ACCEPT		red		$FW	tcp	-	2224
+
+?COMMENT red-fw to our DNS resolver TCP inbound from their DNS server
+ACCEPT		red		$FW	tcp	-	53
+?COMMENT red-fw to our DNS resolver UDP inbound from their DNS server
+ACCEPT		red		$FW	udp	-	53
+
+?COMMENT red-fw to our SSH client inbound from their elusive SSH-server 
+ACCEPT		red		$FW	tcp	-	2224
+
+?COMMENT red-fw to our HTTP client inbound from their web servers
+ACCEPT		red		$FW	tcp	-	80
+?COMMENT red-fw to our HTTPS client inbound from their web servers
+ACCEPT		red		$FW	tcp	-	443
+
+###########################################################################
+# DROP section
+#
+
+?COMMENT red-fw LifX Lightbulb Discovery Protocol (LG-TV is the offender)
+DROP	red	$FW	udp	56700
+
+?COMMENT red-fw traceroute (ICMP:8/UDP:33434:33524)
+Trcrt(DROP)	red	$FW
+
+?COMMENT red-fw drop uPnP/NAT-PMP
+DROP	red	$FW	udp	5351
+
+?COMMENT red-fw drop IRC from Y!Home webcams
+# DROP    red     $FW     udp 6667
+# DROP    red     $FW     tcp 6667
+
+?COMMENT red-fw drop dhclient from T-Link EtherOverPower hub (we're not DHCP server here)
+DROP    red:192.168.0.0/16	$FW	udp	67	68  # drop Cable-Net
+DROP    red	$FW     udp	67	68
+
+?COMMENT red-fw silently drop Lisalee work mac SAMBA client - UDP
+DROP	red:172.28.131.155	$FW	udp	137	137
+
+?COMMENT red-fw silently drop Lisalee work mac SAMBA client - TCP
+DROP	red:172.28.131.155	$FW	tcp	137	137
+
+?COMMENT red-fw silently drop Kyle Surface SAMBA client - TCP
+DROP	red:172.28.129.97 	$FW	tcp	137	137
+
+?COMMENT red-fw drop counter
+DROP:info	red		$FW

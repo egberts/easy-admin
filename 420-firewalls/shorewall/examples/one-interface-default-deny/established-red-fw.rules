@@ -1,0 +1,65 @@
+#
+# File: established-red-fw.rules
+# Path: /etc/shorewall
+# Title: Shorewall Rules File for RED <--> Firewall zones
+# Description:
+#   Established (tcp/sctp/dccp) connections are easily logged here
+#
+#   useful for blocking any long-term but outstanding connections
+#   that escaped this OS network connection tracking table due to
+#   reboot or connection table flushing.
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# Part of ?ESTABLISHED section
+#
+
+############ local servers #########################################
+############ local servers #########################################
+############ local servers #########################################
+
+?COMMENT red-fw inbound to our OS responder to their ping 
+DROP		red	$FW	icmp	echo-request
+
+?COMMENT fw-red ESTAB: outbound to their ping from our OS responder
+DROP		$FW	red	icmp	echo-reply
+
+
+############ local clients #########################################
+############ local clients #########################################
+############ local clients #########################################
+# NTP is truly state-less; there is no related, established or invalid
+?COMMENT fw-red ESTAB: outbound to their NTP server from our NTP client
+ACCEPT		$FW	red	udp	123	123
+?COMMENT red-fw ESTAB: inbound to our NTP client from their NTP server
+ACCEPT		red	$FW	udp	123	123
+
+?COMMENT red-fw ESTAB: inbound to our NTP server from their NTP client
+ACCEPT		red	$FW	udp	123	1024-65535
+?COMMENT fw-red ESTAB: outbound to their NTP client from our NTP server 
+ACCEPT		$FW	red	udp	1024-65535	123
+
+?COMMENT fw-red ESTAB: outbound to their NTP server from our NTP client
+ACCEPT		$FW	red	udp	123	1024-65535
+?COMMENT red-fw ESTAB: inbound to our NTP client from their NTP server
+ACCEPT		red	$FW	udp	1024-65535	123
+
+# ?COMMENT red-fw ESTAB: LOG
+# LOG:info	red	$FW
+
+# ?COMMENT fw-red ESTAB: LOG
+# LOG:info	$FW	red
+# # Ordering of first-encountered network packets
+#
+# Shorewall default of established connections is inviolably ACCEPT
+# but for this file, it is like
+?COMMENT fw-red state:ESTAB: blanket ACCEPT
+ACCEPT		$FW	red
+?COMMENT red-fw state:ESTAB: blanket ACCEPT
+ACCEPT		red	$FW
+
+#   Also useful for blocking any long-term but outstanding connections
+#   that escaped this OS network connection tracking table due to
+#   reboot or connection table flushing.

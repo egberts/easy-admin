@@ -1,0 +1,41 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+# 
+#   ESTABLISHED
+#     Packets in the ESTABLISHED state are processed by rules in this
+#     section.
+#     
+#     The only ACTIONs allowed in this section are ACCEPT, DROP, REJECT,
+#     LOG, NFLOG, NFQUEUE and QUEUE
+#     
+#     There is an implicit ACCEPT rule inserted at the end of this
+#     section.
+#
+#   Wolfe's note:  
+#    1. Never a good idea to move rules between sections. (unless you know)
+#    2. It is safe to organized by source-dest, as long as ordering within
+#       those matching tuple is still being maintained
+#    3. sub-chains go at the end of each sub-section
+#
+#   See following for further details.
+#     /usr/share/shorewall/macro.*
+#
+#   For information about entries in this file, type "man shorewall-rules"
+#
+# Header: action, src-ip, dst-ip, protocol, dest-port, src-port, orig-dest,
+#             rate-limit, user/group, mark, conn-limit, time
+# Action: `shorewall  reload|restart|safe-restart|safe-start|star]`
+# Source: Shorewall/Rules/process_rules()
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+#============================================================================
+#== ESTABLISHED == ESTABLISHED == ESTABLISHED == ESTABLISHED == ESTABLISHED 
+#============================================================================
+?SECTION ESTABLISHED
+

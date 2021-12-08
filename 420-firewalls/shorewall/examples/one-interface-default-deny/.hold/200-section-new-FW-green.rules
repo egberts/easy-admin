@@ -1,0 +1,31 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# fw-green (NEW Connection section)
+?COMMENT fw-green icmp
+ACCEPT		$FW		green		icmp
+?COMMENT fw-green ping
+Ping(ACCEPT)	$FW             green
+?COMMENT fw-green traceroute
+Trcrt(ACCEPT)	$FW             green
+?COMMENT fw-green SSH
+SSH(ACCEPT)	$FW		green
+?COMMENT fw-green DNS
+DNS(ACCEPT)	$FW		green
+?COMMENT fw-green HTTP/HTTPS
+Web(ACCEPT)	$FW		green
+?COMMENT fw-green custom HTTP
+ACCEPT		$FW		green:172.28.130.10	tcp	8088 # avian
+?COMMENT fw-green NAT-uPNP
+# sync port range for uPnP/UDP to /proc/sys/net/ipv4/ip_local_port_range
+ACCEPT		$FW		green	udp	-	10000:61000 # if fw->green is DENY
+?COMMENT fw-green collectd
+ACCEPT		$FW		green	tcp	8888
+

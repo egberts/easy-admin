@@ -1,0 +1,270 @@
+#
+# File: new-red-fw.rules
+# Path: /etc/shorewall
+# Title: Shorewall Rules File for RED <--> Firewall zones
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# EARLY DROP ZONE
+# following should be in a BLACKLIST
+?COMMENT fw-red NEW outbound drop 54.200.75.96
+DROP:info	$FW		red:54.200.75.96	
+
+?COMMENT red-fw NEW drop any uPnP/NAT-PMP
+DROP	red	$FW	udp	5351
+
+?COMMENT red-fw NEW LifX Lightbulb Discovery Protocol (LG-TV is the offender)
+DROP	red	$FW	udp	56700
+
+############ allowing local SERVERS  #########################################
+############ allowing local SERVERS  #########################################
+############ allowing local SERVERS  #########################################
+# Ordering of first-encountered network packets
+
+## local DHCP server (not used, but logged)
+#?COMMENT red-fw inbound to our DHCP server from their DHCP clients
+#DROP:info	red	$FW     udp	67	68
+?COMMENT red-fw NEW inbound to our DHCP server from T-Link EtherOverPower hub (we're not a DHCP server here)
+DROP    red:192.168.0.0/16	$FW	udp	67	68  # drop Cable-Net
+
+
+# local SSH server
+?COMMENT red-fw NEW inbound to our SSH server from their SSH-client 
+ACCEPT:info		red		$FW	tcp	22
+?COMMENT red-fw NEW inbound to our elusive SSH server from their SSH-client 
+ACCEPT:info		red		$FW	tcp	2224
+
+
+## local DNS server - TCP
+#?COMMENT red-fw TCP-inbound to our DNS server from their DNS resolver
+#ACCEPT		red		$FW	tcp	53	-
+## local DNS server - UDP
+#?COMMENT red-fw UDP-inbound to our DNS server from their DNS resolver
+#ACCEPT		red		$FW	udp	53	-
+#?COMMENT fw-red UDP-outbound to their DNS resolver from our DNS server
+#ACCEPT		$FW		red	udp	-	53
+# Drops any DNS replies from emenating from our silent but public-facing
+# DNS server, for this here is a silent hidden DNS master
+#?COMMENT fw-red DNS response dropped from our DNS server (hidden master)
+#A_DropDNSrep	$FW	red
+
+?COMMENT fw-red NEW outbound to their NTP from our NTP
+ACCEPT		$FW	red	udp	123	123
+
+?COMMENT fw-red NEW outbound to their NTP server from our NTP client
+ACCEPT		$FW	red	udp	123	1024-65535
+?COMMENT red-fw NEW inbound to our NTP client from their NTP server
+ACCEPT		red	$FW	udp	1024-65535	123
+
+?COMMENT red-fw NEW inbound to our NTP server from their NTP client
+ACCEPT		red	$FW	udp	123	1024-65535
+?COMMENT fw-red NEW outbound to their NTP client from our NTP server
+ACCEPT		$FW	red	udp	1024-65535	123
+
+#NTP(ACCEPT)	$FW		red
+
+# local web server
+?COMMENT red-fw inbound to our HTTP server from their web browser
+ACCEPT		red		$FW	tcp	80
+?COMMENT red-fw inbound to our HTTPS server from their web browser
+ACCEPT		red		$FW	tcp	443
+# ?COMMENT fw-red outbound to our HTTPS(8443) server from their web browser
+# ?COMMENT red-fw inbound to our HTTPS(8443) server from their web browser
+# ACCEPT          red             $FW     tcp     8443
+
+
+## local SMTP mail server (Enterprise-security-risk)
+#?COMMENT red-fw inbound to our Mail server from their mail clients submission
+#Submission(ACCEPT)	red	$FW
+#?COMMENT red-fw inbound to our SMTPS server from their mail secured transfer
+#SMTPS(ACCEPT)	red		$FW
+#?COMMENT red-fw inbound to our IMAP5 server from their mail clients
+#IMAPS(ACCEPT)	red	$FW
+
+# ?COMMENT red-fw to our rsync server inbound from their rsync clients
+# Rsync(ACCEPT)	red		$FW
+
+# ?COMMENT red-fw inbound to our OpenVPN server from their VPN clients
+# OpenVPN(ACCEPT)	red		$FW
+
+
+############ allowing local clients #########################################
+############ allowing local clients #########################################
+############ allowing local clients #########################################
+# Ordering of first-encountered network packets
+
+?COMMENT fw-red NEW UDP-bcast outbound to their DHCP server from our DHCP client
+ACCEPT		$FW   		red:255.255.255.255/32 	udp	67   68
+?COMMENT fw-red NEW UDP-unicast outbound to their DHCP server from our DHCP client 
+ACCEPT		$FW   		red:172.28.130.1/22 	udp	67   68
+?COMMENT red-fw NEW inbound to our DHCP-client from their gateway DHCP server 
+ACCEPT		red:172.28.130.1/22    $FW     udp 68 67
+
+?COMMENT red-fw NEW inbound to our NTP-client
+NTP(ACCEPT)	red		$FW
+
+# local DNS resolvers - TCP
+?COMMENT fw-red NEW TCP-outbound to their DNS server TCP from our DNS resolver
+ACCEPT		$FW		red	tcp	53	-
+# local DNS resolvers - UDP
+?COMMENT fw-red NEW UDP-outbound to their DNS server TCP from our DNS resolver
+ACCEPT		$FW		red	udp	53	-
+?COMMENT red-fw NEW UDP-inbound to our DNS resolver from their DNS servers
+ACCEPT		red		$FW	udp	-	53
+
+# Hidden DNS master arrangement
+?COMMENT fw-red NEW TCP-outbound to our slave DNS server from our hidden DNS server
+ACCEPT		$FW		red	tcp	345
+?COMMENT fw-red NEW UDP-outbound to our slave DNS server from our hidden DNS server
+ACCEPT		$FW		red	udp	345
+?COMMENT red-fw NEW UDP-inbound to our Hidden DNS server from their slave server
+ACCEPT		red		$FW	udp	-	345
+
+# allowing local SSH client
+?COMMENT fw-red NEW outbound to their SSH server from our SSH-client 
+ACCEPT		$FW		red	tcp	22
+?COMMENT fw-red NEW outbound to their elusive SSH server from our SSH-client 
+ACCEPT		$FW		red	tcp	2224
+
+# local Web browser
+?COMMENT fw-red NEW outbound to their HTTP server from our web browser
+ACCEPT		$FW		red	tcp	80
+?COMMENT fw-red NEW inbound to our web browser from their HTTP server
+ACCEPT		red		$FW	tcp	-	80
+?COMMENT fw-red NEW outbound to their HTTPS server from our web browser
+ACCEPT		$FW		red	tcp	443
+# Of course, push notification servers will do ACK,PSH,FIN which is NEW state
+# and this push will not get connection-tracked so we do return trip filtering as well
+# as ESTABLISHED state will not get used here.
+?COMMENT fw-red NEW inbound to our web browser from their HTTPS server
+ACCEPT		red		$FW	tcp	-	443
+# What did we have this entry for?  Commented out for now
+# ?COMMENT fw-red outbound to our HTTPS(8443) server from their web browser
+# ACCEPT          $FW		red     tcp     8443
+
+# local SMTP mail client 
+?COMMENT fw-red NEW outbound to their SMTPS mail server from our mail clients
+Submission(ACCEPT)	$FW	red
+?COMMENT fw-red NEW outbound to their SMTPS mail server from our mail clients
+SMTPS(ACCEPT)	$FW	red
+?COMMENT fw-red NEW outbound to their IMAP5 mail server from our mail clients
+IMAPS(ACCEPT)	$FW	red
+
+?COMMENT fw-red NEW outbound to their Git repository from our Git clients
+Git(ACCEPT)     $FW		red
+
+?COMMENT fw-red NEW outbound to their PGP Key servers from our PGP client
+HKP(ACCEPT)	$FW		red
+
+?COMMENT fw-red NEW outbound to their OpenVPN servers from our VPN client
+OpenVPN(ACCEPT)		$FW	red
+
+?COMMENT fw-red NEW outbound to their rsync server from our rsync client
+Rsync(ACCEPT)	$FW		red
+
+?COMMENT red-fw NEW UDP-inbound to our Nintendo devices from their Nintendo ConnTest
+ACCEPT		red		$FW	udp	- 50920 # Nintendo ConnTest
+
+
+########## ARP ## ICMP ####################################################3
+########## ARP ## ICMP ####################################################3
+########## ARP ## ICMP ####################################################3
+#
+# local ARP/ICMP initiators ####################
+# ?COMMENT fw-red NEW outbound to their OS from our minimal AllowICMPs set
+#AllowICMPs	$FW	red
+
+# ICMP echo-request (icmptype 8 code 0)
+?COMMENT fw-red NEW outbound ICMP-request to their OS responder from our ping
+ACCEPT		$FW	red	icmp	echo-request
+# ICMP echo-reply (icmptype 8 code 8)
+?COMMENT red-fw NEW inbound ICMP-REPLY to our OS initiator from their OS responder
+ACCEPT		red	$FW	icmp	echo-reply
+
+
+# ICMP timestamp-request (icmptype 13)
+?COMMENT fw-red NEW outbound ICMP-TS-REQ to their OS responder from our OS initiator
+ACCEPT		$FW	red	icmp	timestamp-request
+# ICMP timestamp-reply (icmptype 14)
+?COMMENT red-fw NEW inbound ICMP-TS-REPLY to our OS initator from their OS responder
+ACCEPT		red	$FW	icmp	timestamp-reply
+
+
+# local ICMP responders ####################
+#?COMMENT red-fw inbound NEW to our OS from their minimal AllowICMPs set
+#AllowICMPs	red	$FW
+
+# echo-request also used by traceroute
+?COMMENT red-fw NEW inbound NEW ICMP-REQ to our OS responder from their ping
+DROP		red	$FW	icmp	echo-request
+?COMMENT fw-red NEW outbound NEW ICMP-REQ to their ping from our OS responder
+DROP		$FW	red	icmp	echo-reply
+
+# ICMP timestamp-request (icmptype 13)
+?COMMENT red-fw NEW inbound NEW ICMP-TS-REQ to our OS responder from their OS initiator
+DROP		red	$FW	icmp	timestamp-request
+# ICMP timestamp-reply (icmptype 14)
+?COMMENT fw-red NEW outbound NEW ICMP-TS-REPLY to their OS initiator from our OS responder
+DROP		$FW	red	icmp	timestamp-reply
+
+
+# ICMP/UDP-related Traceroute ##############
+# (ICMP:8/UDP:33434:33524)
+# breakout Trcrt(DROP)	red	$FW
+?COMMENT red-fw NEW inbound to our OS responder from their traceroute tool
+DROP	red	$FW	udp	33434:33524     # UDP Traceroute
+?COMMENT fw-red NEW outbound to their traceroute tool from our OS responder 
+DROP	$FW	red	udp	-	33434:33524     # UDP Traceroute
+
+#breakout Trcrt(ACCEPT)	$FW             red
+?COMMENT fw-red NEW outbound to their OS responder from our traceroute tool 
+ACCEPT	$FW	red	udp	33434:33524     # UDP Traceroute
+?COMMENT red-fw NEW inbound to our traceroute tool from their OS responder
+ACCEPT	red	$FW	udp	-	33434:33524
+
+
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+# Silent DROP section
+#
+
+
+?COMMENT red-fw silently drop Lisalee work mac SAMBA client - UDP
+DROP	red:172.28.131.155	$FW	udp	137	137
+
+?COMMENT red-fw silently drop Lisalee work mac SAMBA client - TCP
+DROP	red:172.28.131.155	$FW	tcp	137	137
+
+?COMMENT red-fw silently drop Kyle Surface SAMBA client - TCP
+DROP	red:172.28.129.97 	$FW	tcp	137	137
+
+# ?COMMENT red-fw drop IRC from Y!Home webcams
+# DROP    red     $FW     udp 6667
+# DROP    red     $FW     tcp 6667
+
+
+###########################################################################
+# Noisy DROP section
+
+#ACCEPT:info	red:^[US,A2]	$FW	tcp	2224 # Geo rejected ATT MiFi
+# ?COMMENT red-fw portknocked SSH
+# PortKnock:info  red             $FW     tcp     2224,2134,2799,2245
+
+# Drop 465/tcp smtps from Anonymous Proxy (A1) & satellite provider network (A2)
+#?COMMENT red-fw drop SMTPS from foreign countries
+###DROP:info	red:^[A1,A2,CN]	$FW	tcp	465
+
+# Noisy ASUS router (scheduled for firmware replacement)
+#
+?COMMENT red-fw NEW quiet the noisy ASUS router Download Center
+DROP		red	$FW    udp	9999 # ASUS Download Center
+?COMMENT red-fw NEW quiet the noisy ASUS router Mono .NET platform
+DROP		red	$FW    udp	7788 # Mono .NET platform in ASUS router
+
+?COMMENT fw-red NEW unexpected packet
+DROP:info	$FW		red    # unexpected packet
+?COMMENT red-fw NEW unexpected packet
+DROP:info	red		$FW    # unexpected packet
+

@@ -1,0 +1,49 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+#   ?SECTION RELATED
+#
+#   Packets in the RELATED state are processed by rules in this
+#   section.
+#   
+#   The only ACTIONs allowed in this section are ACCEPT, DROP, REJECT,
+#   LOG, NFLOG, NFQUEUE and QUEUE
+#   
+#   There is an implicit rule added at the end of this section that
+#   invokes the RELATED_DISPOSITION (shorewall.conf[2](5)).
+#
+#   Wolfe's note:  
+#    1. Never a good idea to move rules between sections. (unless you know)
+#    2. It is safe to organized by source-dest, as long as ordering within
+#       those matching tuple is still being maintained
+#    3. sub-chains go at the end of each sub-section
+#
+#   See following for further details.
+#     /usr/share/shorewall/macro.*
+#
+#   For information about entries in this file, type "man shorewall-rules"
+#
+# Header: action, src-ip, dst-ip, protocol, dest-port, src-port, orig-dest,
+#             rate-limit, user/group, mark, conn-limit, time
+# Action: `shorewall  reload|restart|safe-restart|safe-start|star]`
+# Source: Shorewall/Rules/process_rules()
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+#============================================================================
+#== RELATED == RELATED == RELATED == RELATED == RELATED == RELATED == RELATED 
+#============================================================================
+?SECTION RELATED
+# ACCEPT		all		dmz:70.90.191.125       tcp     61001:62000 { helper=ftp }
+ACCEPT		all		all		icmp
+RST(ACCEPT)	all		all		tcp
+# ACCEPT		all		red		tcp     { helper=ftp }
+ACCEPT		$FW		all
+# ACCEPT		dmz		all		tcp     { helper=ftp }
+# ACCEPT		dmz		dmz
+

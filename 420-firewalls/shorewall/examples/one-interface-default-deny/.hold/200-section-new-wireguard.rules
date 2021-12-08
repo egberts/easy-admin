@@ -1,0 +1,22 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+#
+?COMMENT red-fw Wireguard
+ACCEPT		red		$FW		udp   51820
+ACCEPT		red		$FW		udp   51820
+ACCEPT		red		$FW		tcp   51820
+ACCEPT		red		$FW		tcp   51820
+
+?COMMENT red-fw Wireguard
+ACCEPT		$FW		red		udp   51820
+ACCEPT		$FW		red		udp   51820
+ACCEPT		$FW		red		tcp   51820
+ACCEPT		$FW		red		tcp   51820

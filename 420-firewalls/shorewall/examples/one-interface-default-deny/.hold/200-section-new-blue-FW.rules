@@ -1,0 +1,42 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# blue-fw (NEW Connection section)
+?COMMENT blue-fw
+ACCEPT		blue		$FW		icmp
+Ping(ACCEPT)	blue		$FW
+Trcrt(ACCEPT)	blue		$FW
+?COMMENT blue-fw SSH
+SSH(ACCEPT)	blue		$FW
+DNS(ACCEPT)	blue		$FW
+DNSAmp(ACCEPT)	blue		$FW
+DAAP(ACCEPT)	blue		$FW
+ACCEPT		blue		$FW	udp	48856  # DAAP
+ACCEPT		blue		$FW	udp	52178  # DAAP
+NTP(ACCEPT)	blue		$FW
+Web(ACCEPT)	blue		$FW
+?COMMENT bluefw HTTPS(8443)
+ACCEPT          blue		$FW	tcp	8443
+?COMMENT blue-fw SMTPS
+SMTPS(ACCEPT)	blue		$FW
+IMAP(ACCEPT)	blue		$FW
+Submission(ACCEPT)	blue	$FW
+IMAPS(ACCEPT)	blue		$FW
+Syslog(ACCEPT)	blue		$FW
+Squid(ACCEPT)	blue		$FW
+OpenVPN(ACCEPT)	blue		$FW
+?COMMENT blue-fw DLNA server
+ACCEPT		blue		$FW	udp	1900 # DLNA server
+ACCEPT		blue		$FW	tcp	8200 # DLNA server
+?COMMENT blue-fw UPnP + NAT-PMP
+ACCEPT		blue		$FW	udp	5351
+allowinUPnP	blue		$FW	# if blue->fw is default DENY for uPnP
+allowinUPnP	blue		$FW	udp	1234
+

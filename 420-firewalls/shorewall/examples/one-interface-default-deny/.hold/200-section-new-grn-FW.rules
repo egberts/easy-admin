@@ -1,0 +1,35 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# grn-red
+# grn-fw (NEW Connection section)
+?COMMENT grn-fw icmp
+ACCEPT		grn		$FW	icmp
+?COMMENT grn-fw ping
+Ping(ACCEPT)	grn		$FW
+?COMMENT grn-fw DNS
+DNS(ACCEPT)	grn		$FW
+?COMMENT grn-fw HTTPS(8443)
+ACCEPT          grn		$FW	tcp	8443
+?COMMENT grn-fw SMTPS
+SMTPS(ACCEPT)	grn		$FW
+?COMMENT grn-fw DLNA server
+ACCEPT		grn		$FW	udp	-	1900 # DLNA server
+ACCEPT		grn		$FW	tcp	8200 # DLNA server
+?COMMENT grn-fw DAAP
+DAAP(ACCEPT)	grn		$FW   
+ACCEPT		grn		$FW	udp	48856  # DAAP
+ACCEPT		grn		$FW	udp	52178  # DAAP
+?COMMENT grn-fw UPnP + NAT-PMP
+ACCEPT		grn		$FW	udp	5351
+allowinUPnP	grn		$FW	# if grn->fw is default DENY for uPnP
+?COMMENT grn-fw SSH
+SSH(ACCEPT)	grn		$FW
+

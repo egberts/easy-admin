@@ -1,0 +1,14 @@
+Obsoleted files are:
+
+/etc/shorewall/maclog
+/etc/shorewall/tos
+/etc/shorewall/refresh
+/etc/shorewall/refreshed
+/etc/shorewall/restored
+/etc/shorewall/router-rules
+/etc/shorewall/helpers
+
+
+ALMOST Obsoleted files are:
+
+/etc/shorewall/tcrules (displaced mostly by /etc/shorewall/mangle since v4.6.0)

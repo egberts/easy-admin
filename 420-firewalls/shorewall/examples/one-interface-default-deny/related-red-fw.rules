@@ -1,0 +1,69 @@
+#
+# File: related.rules
+# Path: /etc/shorewall
+# Title: Shorewall Rules File for RED <--> Firewall zones
+# Description:
+#    Related connection, mostly UDP and ICMP, never TCP
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# Part of ?SECTION RELATED
+#
+
+############ local server #########################################
+############ local server #########################################
+############ local server #########################################
+
+# ICMP echo-request (icmptype 8)
+?COMMENT red-fw RELATED inbound to our OS responder to their ping 
+DROP		red	$FW	icmp	echo-request
+?COMMENT fw-red RELATED outbound to their ping from our OS responder
+DROP		$FW	red	icmp	echo-reply
+
+# ICMP time-exceeded (icmptype 11)
+?COMMENT red-fw RELATED inbound to our OS responder from their traceroute tool
+ACCEPT		red	$FW	icmp	time-exceeded
+?COMMENT fw-red RELATED outbound to their OS responder from our traceroute tool
+ACCEPT		$FW	red	icmp	time-exceeded
+
+# ICMP time-exceeded (icmptype 3 code 4)
+?COMMENT red-fw RELATED inbound to our OS responder from their traceroute tool
+ACCEPT		red	$FW	icmp	fragmentation-needed
+?COMMENT fw-red RELATED outbound to their OS responder from our traceroute tool
+ACCEPT		$FW	red	icmp	fragmentation-needed
+
+# ICMP port-unreachable (icmptype 3 code 3)
+?COMMENT red-fw RELATED inbound to our OS responder from their traceroute tool
+ACCEPT		red	$FW	icmp	port-unreachable
+?COMMENT fw-red RELATED outbound to their OS responder from our traceroute tool
+ACCEPT		$FW	red	icmp	port-unreachable
+
+# ICMP destination-unreachable (icmptype 3)
+?COMMENT red-fw RELATED inbound to our OS-errorhandler from their OS-failed recvd  packet
+ACCEPT		red	$FW	icmp	destination-unreachable
+?COMMENT fw-red RELATED outbound to their OS-errorhandler from our OS-failed recvd packet
+ACCEPT		$FW	red	icmp	destination-unreachable
+
+?COMMENT red-fw RELATED inbound to our NTP client from their NTP server
+ACCEPT		red:172.28.130.1     $FW	udp	-	123
+?COMMENT fw-red RELATED outbound to their NTP server from our NTP client
+ACCEPT		$FW	red:172.28.130.1	udp	123
+
+# ?COMMENT red-fw inbound to our NTP server from their NTP client
+# ACCEPT		red:172.28.130.1     $FW	udp	123
+# ?COMMENT fw-red outbound to their NTP client from our NTP server
+# ACCEPT		$FW	red:172.28.130.1	udp	-	123
+
+?COMMENT fw-red RELATED outbound 
+DROP:info	$FW	red
+?COMMENT red-fw RELATED inbound 
+DROP:info	red	$FW
+
+############ local clients #########################################
+############ local clients #########################################
+############ local clients #########################################
+# Ordering of first-encountered network packets
+
+

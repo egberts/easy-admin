@@ -1,0 +1,39 @@
+#
+# File: rules
+# Path: /etc/shorewall
+# Title: Rules File for three-interface configuration.
+# Description:
+#
+
+#ACTION		SOURCE		DEST		PROTO	DEST	SOURCE		ORIGINAL	RATE		USER/	MARK	CONNLIMIT	TIME		HEADERS		SWITCH		HELPER
+#    							PORT	PORT(S)		DEST		LIMIT		GROUP
+
+# white-fw
+#   largely ignored by policy-bypass but for documentation purpose here
+?COMMENT grn-fw DLNA server
+ACCEPT		white		$FW	udp	-	1900 # DLNA server
+ACCEPT		white		$FW	tcp	8200 # DLNA server
+DAAP(ACCEPT)	white		$FW
+ACCEPT		white		$FW	udp	48856  # DAAP
+ACCEPT		white		$FW	udp	52178  # DAAP
+?COMMENT white-fw UPnP + NAT-PMP
+ACCEPT		white		$FW	udp	5351   # UPnP
+?COMMENT white-fw SMTPS
+SMTPS(ACCEPT)	white		$FW
+?COMMENT white-fw HTTPS(8443)
+ACCEPT          white		$FW	tcp	8443
+HTTPS(ACCEPT)	white		$FW
+allowinUPnP	white		$FW	# if white->fw is default DENY for uPnP
+?COMMENT white-fw SSH
+SSH(ACCEPT)	white		$FW
+ACCEPT		white		$FW	tcp	2224
+Rsync(ACCEPT)	white		$FW
+
+# white-dmz  (Default Policy DENY) (NEW Connection section)
+# white-blue (Default Policy DENY) (NEW Connection section)
+# white-grn (Default Policy DENY) (NEW Connection section)
+# white-white (Default Policy DENY) (NEW Connection section)
+# white-green (Default Policy DENY) (NEW Connection section)
+# white-vmnet (Default Policy DENY) (NEW Connection section)
+SSH(ACCEPT)	white		vmnet
+
