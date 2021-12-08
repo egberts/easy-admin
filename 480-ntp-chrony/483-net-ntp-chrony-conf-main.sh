@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 #  We split this up into other bash files
 #    - chrony.conf
