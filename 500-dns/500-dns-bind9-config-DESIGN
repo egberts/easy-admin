@@ -1,0 +1,84 @@
+
+
+# TODO: Need to introduce more auto-determination based on current settings and
+# setups.
+
+On your gateway, is that firewall blocking DNS port 53/udp/tcp? (Say no, if YDK)
+Is DNS port 53/udp/tcp open?
+  - Router with default-deny firewall AND
+  - Router with split-horizon/bastion DNS nameservers running
+
+if there is no firewall blocking of DNS querying at the gateway, do you want this DNS server to forward DNS queries to selected upstream nameservers (of your choice)
+  forwarders 9.9.9.9;
+  - and cache them for quicker responses?
+    recursive yes;
+
+On this host, do you have a domain (or a DNS zone) to manage (in)directly?
+- yes
+  On this host, is this DNS server going to be the primary/master nameserver?
+  -- WARN: Public interface(s) only
+    authoritative yes;
+  On this host, is this DNS server going to be the secondary/slave nameserver?
+    authoritative yes;
+  else
+    authoritative no;
+
+On the non-public side of master/slave host, do you want this DNS server to do the heavy handling of all query requests of resolving DNS entries? (or just serve your zone(s)?)
+  - Warn: prohibited on public interface(s)
+  recursive yes;
+
+  if HOST_DEFAULT_DENY_FIREWALL == 'no'  &&
+     GATEWAY_DEFAULT_DENY_FIREWALL == 'no' then
+    prompt for external DNS nameservers (default listings 8.8.8.8;1.1.1.1?)
+  else
+    use gateway as its only nameserver
+  fi
+  if HOST_MAINTAINS_ZONES == 'yes' then
+    authoritative yes;
+  else
+    authoritative no;
+  fi
+  if HOST_NONPUBLIC_HEAVY_LIFTING == 'yes' then
+    (non-public-side) recursion yes;
+  else
+    (non-public-side) recursion no;
+  fi
+fi
+
+if SPLIT_HORIZON_BASTION == 'yes' then
+  # check for two on-line IP interfaces
+  # check for upstream gateway
+  # check for firewall blockages
+
+  create_sysv_default
+  create_systemd_bind9_service
+  create_rndc_key_confs
+  create_rndc_commands
+  create_named_conf_controls_rndc
+  create_tsig_keys_intra_bastion
+  create_named_conf_acl
+  create_named_conf_trusted_keys
+  create_named_conf_logging
+  create_named_conf_masters
+  create_named_conf_servers
+  create_named_conf_options
+  create_named_conf_zone_interior
+  create_named_conf
+fi
+
+write public_named_config
+* create_sysv_default
+* create_systemd_bind9_service
+* create_rndc_key_confs
+* create_rndc_commands
+x create_named_conf_controls_rndc   not needed, done by create_rndc_key_confs
+  create_tsig_keys_intra_bastion
+  create_named_conf_acl
+  create_named_conf_trusted_keys
+  create_named_conf_logging
+  create_named_conf_masters
+  create_named_conf_servers
+  create_named_conf_options
+  create_named_conf_zone_public
+  create_named_conf
+fi
