@@ -20,7 +20,7 @@
 ############ local servers #########################################
 ############ local servers #########################################
 
-?COMMENT red-fw inbound to our OS responder to their ping 
+?COMMENT red-fw ESTAB: inbound to our OS responder to their ping 
 DROP		red	$FW	icmp	echo-request
 
 ?COMMENT fw-red ESTAB: outbound to their ping from our OS responder

@@ -1,0 +1,92 @@
+#
+# File: stoppedrules
+# Path: /etc/shorewall
+# Title: Sample Stoppedrules File for three-interface configuration.
+# Description: 
+#
+#   action - ACCEPT, NOTRACK, DROP
+#
+#   For information about entries in this file, 
+#   type "man shorewall-stoppedrules"
+#
+#   WARNING:
+#     Changes to this file will not take effect until
+#     `shorewall [compile|reload|restart|start]`
+#
+# Header: action, src, dest, [proto, [dest-port, [src-port]]]
+# Action: `shorewall reload|restart|safe-restart|safe-start|start`
+# Source: Shorewall/Misc.pm
+#
+
+#ACTION        SOURCE        DEST        PROTO    DEST        SOURCE
+#                            PORT(S)              PORT(S)     PORT(S)
+# Always let in DHCP (and its ping-check)
+?COMMENT red-fw to our OS inbound from their pinger (remove if PUBLIC)
+ACCEPT         enp5s0        $FW         icmp     8       # DHCP pingcheck?
+
+?COMMENT red-fw to our ping tool inbound from their OS 
+ACCEPT         enp5s0        $FW         icmp     0
+
+# red-fw
+?COMMENT red-fw to our ssh-server inbound from their ssh-client
+ACCEPT         enp5s0        $FW         tcp      22     # TODO: get rid of this
+?COMMENT red-fw to our elusive ssh-server inbound from their ssh-client
+ACCEPT         enp5s0        $FW         tcp      2224
+?COMMENT red-fw to our authoritative DNS-server TCP inbound from their DNS resolver
+ACCEPT         enp5s0        $FW         tcp      53
+?COMMENT red-fw to our authoritative DNS-server UDP inbound from their DNS resolver
+ACCEPT         enp5s0        $FW         udp      53
+
+?COMMENT fw-red to our DHCP server inbound from their DHCP client
+ACCEPT         enp5s0        $FW         udp      67	68
+?COMMENT fw-red to our DHCP client inbound from their DHCP server
+ACCEPT         enp5s0        $FW         udp      68    67
+
+
+# no outbound NTP client udp 123 here
+?COMMENT red-fw to our NTP client, inbound from their NTP servers
+ACCEPT         enp5s0        $FW         udp      123
+
+?COMMENT red-fw to our ssh-client inbound from their SSH server
+ACCEPT         enp5s0        $FW         tcp      -    22
+?COMMENT red-fw to our SSH client inbound from their elusive SSH server
+ACCEPT         enp5s0        $FW         tcp      -    2224
+
+?COMMENT red-fw to our DNS resolver TCP inbound from their authoritative DNS server
+ACCEPT         enp5s0        $FW         tcp      -    53
+?COMMENT red-fw to our DNS resolver UDP inbound from their authoritative DNS server
+ACCEPT         enp5s0        $FW         udp      -    53
+
+####################################################################################
+# fw-red
+?COMMENT red-fw to their OS outbound from our ping tool
+ACCEPT         $FW           enp5s0     icmp      8    # red-fw-OS-ping
+?COMMENT red-fw to their ping tool outbound from our OS pinger (remove if PUBLIC)
+ACCEPT         $FW           enp5s0     icmp      0       # DHCP pingcheck?
+
+?COMMENT fw-red to their SSH server outbound from our SSH client
+ACCEPT         $FW           enp5s0      tcp      22
+?COMMENT fw-red to their elusive SSH server outbound from our SSH client
+ACCEPT         $FW           enp5s0      tcp      2224
+
+?COMMENT fw-red to their DNS server UDP-outbound from our DNS resolver
+ACCEPT         $FW           enp5s0      udp      53
+?COMMENT fw-red to their DNS server TCP-outbound from our DNS resolver
+ACCEPT         $FW           enp5s0      tcp      53
+
+?COMMENT fw-red to their DHCP client outbound from our DHCP server (remove if PUBLIC)
+ACCEPT         $FW           enp5s0      udp      68   67
+?COMMENT fw-red to their DHCP server outbound from our DHCP client
+ACCEPT         $FW           enp5s0      udp      67   68
+
+?COMMENT fw-red to their SSH client inbound from our SSH server
+ACCEPT         $FW           enp5s0      tcp      -    22
+?COMMENT fw-red to their SSH client inbound from our elusive SSH server
+ACCEPT         $FW           enp5s0      tcp      -    2224
+
+?COMMENT fw-red to their DNS resolver UDP inbound from our authoritative DNS server
+ACCEPT         $FW           enp5s0      udp      -    53
+?COMMENT fw-red to their DNS resolver TCP inbound from our authoritative DNS server
+ACCEPT         $FW           enp5s0      tcp      -    53
+
+
