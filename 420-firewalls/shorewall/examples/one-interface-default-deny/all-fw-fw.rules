@@ -24,13 +24,13 @@ SSH(ACCEPT)	$FW	$FW
 ?COMMENT fw-fw state:ALL DNS
 DNS(ACCEPT)	$FW	$FW
 
+?COMMENT fw-fw state:ALL quiet their Microsoft DHCP client (we are not a server)
+DROP	red:0.0.0.0	$FW:255.255.255.255	udp	67	68
+
 ?COMMENT fw-fw state:ALL HTTP web 
 ACCEPT		$FW	$FW	tcp	80
 ?COMMENT fw-fw state:ALL HTTP/QUIC web 
 DROP		$FW	$FW	udp	80
-
-?COMMENT fw-fw state:ALL quiet their Microsoft DHCP client (we are not a server)
-DROP	red:0.0.0.0	$FW:255.255.255.255	udp	137	137
 
 ?COMMENT fw-fw state:ALL HTTPS web 
 ACCEPT		$FW	$FW	tcp	443
