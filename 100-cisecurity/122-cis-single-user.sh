@@ -15,17 +15,19 @@
 #   https://help.ubuntu.com/community/Grub2/Passwords
 
 BUILDROOT=${BUILDROOT:-/tmp}
-
+echo "Ensure that root is disabled"
+echo ""
 echo "Reading /etc/shadow..."
 ROOT_PWD="$(sudo grep -E '^root:[*\!]+:' /etc/shadow)"
 RETSTS=$?
 if [ $RETSTS -eq 1 ] && [ -z "$ROOT_PWD" ]; then
-  echo "Good"
-else
-  echo "Bad"
-  echo "You need to run 'passwd root'."
+  echo "FAIL: Root is not disabled."
   echo "Aborted."
+  exit 1
+else
+  echo "PASS: Root account is disabled."
 fi
+echo ""
 
 echo "Done."
 exit 0
