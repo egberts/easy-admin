@@ -8,6 +8,7 @@ echo ""
 source /etc/os-release
 
 GRUB_FILENAME="grub.cfg"
+DEFAULT_GRUB_FILESPEC="/etc/default/grub"
 echo "Determine OS distro ..."
 case $ID in
   'debian')
@@ -35,6 +36,12 @@ echo "Changing file ownership to root:root on $GRUB_FILESPEC ..."
 sudo chown root:root "$GRUB_FILESPEC"
 echo "Changing file permission og-rwx to $GRUB_FILESPEC ..."
 sudo chmod og-rwx    "$GRUB_FILESPEC"
+echo ""
+
+echo "Changing file ownership to root:root on $DEFAULT_GRUB_FILESPEC ..."
+sudo chown root:root "$DEFAULT_GRUB_FILESPEC"
+echo "Changing file permission og-rwx to $DEFAULT_GRUB_FILESPEC ..."
+sudo chmod og-rwx    "$DEFAULT_GRUB_FILESPEC"
 echo ""
 
 echo "Done."
