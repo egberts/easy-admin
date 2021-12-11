@@ -9,7 +9,7 @@
 function flex_mkdir() {
   if [ $UID -eq 0 ]; then
     # NO '-p' option in root-mode, script MUST make each subdir manually
-    mkdir "${BUILDROOT}${CHROOT_DIR}${1}"
+    mkdir -p "${BUILDROOT}${CHROOT_DIR}${1}"
   else
     # It is probably the user's build area, make all parent directories
     # Do nothing with build area, this is portable script building
