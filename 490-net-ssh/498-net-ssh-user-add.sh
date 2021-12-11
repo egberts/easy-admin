@@ -15,6 +15,15 @@ else
   SSH_USER="$REPLY"
 fi
 
+# check if user already has that supplemental group ID
+USER_HAS_GID="$(egrep "^${SSH_USER}:" /etc/group | wc -l)"
+if [ "$USER_HAS_GID" -ge 1 ]; then
+  echo "User $SSH_USER already has $SSH_GROUP GID"
+  echo ""
+  echo "Done."
+  exit 0
+fi
+
 # Add user to SSH group: who can log into this host?
 echo "Executing: sudo addgroup $SSH_USER $SSH_GROUP"
 sudo usermod -a -G "$SSH_GROUP" "$SSH_USER"
