@@ -19,6 +19,7 @@
 
 MINI_REPO="${PWD}"
 DEFAULT_ETC_CONF_DIRNAME="ssh"
+SSHD_CONFIGD_DIRNAME="sshd_config.d"
 
 source ssh-openssh-common.sh
 FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-server.sh"
@@ -33,7 +34,7 @@ if [ "$USER" == "root" ]; then
   # log back in as non-root and become root
 
   # Check for '!' substring in root entry of /etc/shadow file.
-  ROOT_LOGIN_PWD="$(grep root /etc/shadow | awk -F: '{ print $2; }')"
+  ROOT_LOGIN_PWD="$(grep "^root:" /etc/shadow | awk -F: '{ print $2; }')"
   if [[ "$ROOT_LOGIN_PWD" == *'!'* ]]; then
     WARNING_NO_ROOT_LOGIN=1
   fi
@@ -49,9 +50,9 @@ fi
 echo ""
 
 # Check if anyone has 'sudo' group access on this host
-SUDO_USERS_BY_GROUP="$(grep sudo /etc/group | awk -F: '{ print $4; }')"
+SUDO_USERS_BY_GROUP="$(grep "^$WHEEL_GROUP:" /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SUDO_USERS_BY_GROUP" ]; then
-  echo "There is no user account involving with the 'sudo' group; "
+  echo "There is no user account involving with the '$WHEEL_GROUP' group; "
   echo "... You may want to add 'ssh' supplemental group to various users."
 
   # Well, no direct root and no sudo-able user account, this is rather bad.
@@ -59,28 +60,78 @@ if [ -z "$SUDO_USERS_BY_GROUP" ]; then
     echo "no root access possible from non-root"
     echo ""
     echo "You probably need to run:"
-    echo "  usermod -a -G sudo <your-user-name>"
+    echo "  usermod -a -G $WHEEL_GROUP <your-user-name>"
     echo ""
     echo "And add a line to '/etc/sudoers':"
-    echo "  %sudo   ALL=(ALL:ALL) ALL"
+    echo "  %$WHEEL_GROUP   ALL=(ALL:ALL) ALL"
     echo ""
     exit 1
   fi
 fi
 
-# Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep $SSH_GROUP /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SSH_USERS_BY_GROUP" ]; then
-  echo "There is no one in the 'ssh' group; "
-  echo "no remote access possible."
-  echo "To add remote access, run:"
-  echo "  usermod -a -G $SSH_GROUP <your-user-name>"
+# Check if 'ssh' group exist
+SSH_GROUP_FOUND="$(grep "^${SSH_GROUP}:" /etc/group | wc -l)"
+if [ "$SSH_GROUP_FOUND" -eq 0 ]; then
+  echo "There is no '$SSH_GROUP' group; "
+  echo "no remote access possible by this UNIX group name."
+  echo "To add remote access by UNIX group, run:"
+  echo "  groupadd --system $SSH_GROUP"
+  echo ""
+  echo "Aborted."
   exit 1
 fi
 
-SSHD_CONFIGD_DIRNAME="sshd_config.d"
-SSHD_CONFIGD_DIRSPEC="$sysconfdir/$SSHD_CONFIGD_DIRNAME"
-flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
+# Check if anyone has 'ssh' group access on this host
+SSH_USERS_BY_GROUP="$(grep "^${SSH_GROUP}:" /etc/group | awk -F: '{ print $4; }')"
+if [ -z "$SSH_USERS_BY_GROUP" ]; then
+  echo "There is no one in the 'ssh' group; "
+  echo "no remote access possible by UNIX group."
+  echo "To add remote access by UNIX group, run:"
+  echo "  usermod --append --groups $SSH_GROUP <your-user-name>"
+  echo "or"
+  echo "  usermod -a -G $SSH_GROUP <your-user-name>"
+  echo ""
+  echo "Aborted."
+  exit 1
+fi
+
+case $ID in
+  fedora)
+    HAS_SSHD_CONFIG_D=0
+    if [ "$VERSION_ID" -le 28 ]; then
+      HAS_SSHD_CONFIG_D=0
+    else
+      HAS_SSHD_CONFIG_D=1
+    fi
+    ;;
+  redhat)
+    if [ "$VERSION_ID" -le 9 ]; then
+      HAS_SSHD_CONFIG_D=0
+    else
+      HAS_SSHD_CONFIG_D=1
+    fi
+    ;;
+  centos)
+    if [ "$VERSION_ID" -le 8 ]; then
+      HAS_SSHD_CONFIG_D=0
+    else
+      HAS_SSHD_CONFIG_D=1
+    fi
+    ;;
+  debian)
+    if [ "$VERSION_ID" -le 7 ]; then
+      HAS_SSHD_CONFIG_D=0
+    else
+      HAS_SSHD_CONFIG_D=1
+    fi
+    ;;
+esac
+
+if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
+  SSHD_CONFIGD_DIRSPEC="$sysconfdir/$SSHD_CONFIGD_DIRNAME"
+  flex_mkdir "$sysconfdir"
+  flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
+fi
 
 SSHD_CONFIG_FILENAME="sshd_config"
 SSHD_CONFIG_FILESPEC="$sysconfdir/$SSHD_CONFIG_FILENAME"
@@ -93,10 +144,13 @@ flex_chown root:ssh "$SSHD_CONFIG_FILESPEC"
 flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
 
 
+CONF_LIST="$(find ${SSHD_CONFIGD_DIRNAME} -maxdepth 1 -name "*.conf")"
+
 # Update the SSH server settings
 #
 
-cat << SSHD_EOF | tee "$BUILDROOT$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
+echo "Creating $SSHD_CONFIG_FILESPEC ..."
+cat << SSHD_EOF | tee "${BUILDROOT}$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
 #
 # File: $SSHD_CONFIG_FILENAME
 # Path: $sysconfdir
@@ -143,36 +197,50 @@ cat << SSHD_EOF | tee "$BUILDROOT$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
 # * User Authentication
 # * Channel/Connection Layer
 
-include "${SSHD_CONFIGD_DIRSPEC}/*.conf"
 SSHD_EOF
 
-if [ ! -d "$SSHD_CONFIGD_DIRSPEC" ]; then
-  flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
-fi
-flex_chown root:ssh "$SSHD_CONFIGD_DIRSPEC"
-flex_chmod 750 "$SSHD_CONFIGD_DIRSPEC"
-cp "$MINI_REPO"/${SSHD_CONFIGD_DIRNAME}/* "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
+if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
 
-CONF_LIST="$(find ${SSHD_CONFIGD_DIRSPEC} -maxdepth 1 -name "*.conf")"
-for this_subconf_file in $CONF_LIST; do
-  flex_chown root:ssh "$this_subconf_file"
-  flex_chmod 640 "$this_subconf_file"
-done
+  cat << SSHD_EOF | tee -a "${BUILDROOT}$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
+  include "${SSHD_CONFIGD_DIRSPEC}/*.conf"
+
+SSHD_EOF
+
+  if [ ! -d "$SSHD_CONFIGD_DIRSPEC" ]; then
+    flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
+    flex_chown root:ssh "$SSHD_CONFIGD_DIRSPEC"
+    flex_chmod 750 "$SSHD_CONFIGD_DIRSPEC"
+    cp "$MINI_REPO"/${SSHD_CONFIGD_DIRNAME}/* "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
+    for this_subconf_file in $CONF_LIST; do
+      flex_chown root:ssh "$this_subconf_file"
+      flex_chmod 640 "$this_subconf_file"
+    done
+  fi
+else
+#  otherwise, we do not have 'include' directive option available in openssh daemon config file
+
+  # concatenate all the config files together into "/etc/ssh/sshd_config".
+  for this_subconf_file in $CONF_LIST; do
+    cat "$MINI_REPO"/${SSHD_CONFIGD_DIRNAME}/*.conf >> "$BUILDROOT$SSHD_CONFIG_FILESPEC"
+  done
+fi
+
 
 # Fake generate throwaway host key for syntax-checking effort
 TEMP_THROWAWAY_KEY="/tmp/fake-ssh-keys-$USER.key"
 ssh-keygen -t ed25519 -f "${TEMP_THROWAWAY_KEY}" -q -N ""
 
 # Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
-/usr/sbin/sshd -T -t \
-    -f ${SSHD_CONFIG_FILESPEC} \
+echo "Checking sshd_config syntax ..."
+sudo /usr/sbin/sshd -T -t \
+    -f ${BUILDROOT}${SSHD_CONFIG_FILESPEC} \
     -h ${TEMP_THROWAWAY_KEY} \
     >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Error during ssh config syntax checking."
   echo "Showing sshd_config output"
-  /usr/sbin/sshd -T -t -f ${BUILDROOT}${SSHD_CONFIG_FILESPEC} -h ${TEMP_THROWAWAY_KEY}
+  sudo /usr/sbin/sshd -T -t -f ${BUILDROOT}${SSHD_CONFIG_FILESPEC} -h ${TEMP_THROWAWAY_KEY}
   rm "$TEMP_THROWAWAY_KEY"
   rm "${TEMP_THROWAWAY_KEY}.pub"
   exit "$retsts"
@@ -203,4 +271,3 @@ if [ $FOUND -eq 0 ]; then
 fi
 echo ""
 echo "Done."
->>>>>>> Stashed changes
