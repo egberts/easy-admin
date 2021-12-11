@@ -15,9 +15,10 @@
 #
 
 echo "Creating SSH client configuration files..."
+echo ""
 MINI_REPO="${PWD}"
 
-source ./ssh-openssh-common
+source ./ssh-openssh-common.sh
 
 echo "Check the OpenSSH client for appropriate file permission settings"
 echo ""

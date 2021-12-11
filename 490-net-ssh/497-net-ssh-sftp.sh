@@ -14,8 +14,9 @@
 #
 
 echo "Creating SSH SFTP server configuration settings..."
+echo ""
 
-source ./ssh-openssh-common
+source ./ssh-openssh-common.sh
 
 SSH_SFTP_GROUP="sftpusers"
 
@@ -99,7 +100,6 @@ fi
 # Create the build script file before checking if anyone is using it.
 flex_chown root:${SSH_SFTP_GROUP} "$SFTP_SERVER_BINSPEC"
 flex_chmod 0750 "$SFTP_SERVER_BINSPEC"
-exit
 
 # Check if anyone has 'ssh' group access on this host
 SSH_USERS_BY_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $4; }')"
@@ -142,4 +142,6 @@ else
   echo "  usermod -g ${SSH_SFTP_GROUP} <app-username>"
 fi
 echo ""
+
 echo "Done."
+

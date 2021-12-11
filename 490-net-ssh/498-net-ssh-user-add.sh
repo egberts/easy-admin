@@ -2,7 +2,11 @@
 # File: 498-net-ssh-user-add.sh
 # Title: Add authorized users to 'ssh' group for using 'ssh' tools
 
-source ./ssh-openssh-common
+
+source ./ssh-openssh-common.sh
+
+echo "Adding '$SSH_GROUP' GID to a user's supplementary group"
+echo ""
 
 if [ $UID -ne 0 ]; then
   echo "WARNING: sudo password may appear."
@@ -14,6 +18,7 @@ if [ -z "$REPLY" ]; then
 else
   SSH_USER="$REPLY"
 fi
+echo ""
 
 # check if user already has that supplemental group ID
 USER_HAS_GID="$(egrep "^${SSH_USER}:" /etc/group | wc -l)"
@@ -32,4 +37,7 @@ if [ $RETSTS -ne 0 ]; then
   echo "Unable to add '$SSH_USER' user to '$SSH_GROUP' group: Error $RETSTS"
   exit $RETSTS
 fi
+echo ""
+
 echo "Done."
+
