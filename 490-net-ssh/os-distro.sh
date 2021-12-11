@@ -5,37 +5,50 @@
 #   DEFAULT_PKG_NAME=
 #   DEFAULT_ETC_CONF_DIRNAME=
 #
-OS_TYPE="$(uname -s)"
+SSH_GROUP="ssh"
+
+source /etc/os-release
 DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-}"
 
-case $OS_TYPE in
-  Linux)
-    DISTRO_MANUF="$(lsb_release -s -i)"
-    case $DISTRO_MANUF in
-      Debian)
-        DEFAULT_PREFIX=""
-        DEFAULT_EXEC_PREFIX="/usr"
-        DEFAULT_LOCALSTATEDIR=""
-        DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-        # No USER_NAME
-        # No GROUP_NAME
-        ;;
-      Redhat)
-        DEFAULT_PREFIX=""
-        DEFAULT_EXEC_PREFIX="/usr"
-        DEFAULT_LOCALSTATEDIR="/var"
-        DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-        # No USER_NAME
-        # No GROUP_NAME
-        ;;
-      *)
-        echo "Unknown Linux distro"
-        exit 3
-        ;;
-    esac
+case $ID in
+  debian)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    # No USER_NAME
+    # No GROUP_NAME
+    WHEEL_GROUP="ssh"
+    ;;
+  centos)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    # No USER_NAME
+    # No GROUP_NAME
+    WHEEL_GROUP="wheel"
+    ;;
+  redhat)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    # No USER_NAME
+    # No GROUP_NAME
+    WHEEL_GROUP="wheel"
+    ;;
+  fedora)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    # No USER_NAME
+    # No GROUP_NAME
+    WHEEL_GROUP="wheel"
     ;;
   *)
-    echo "Unknown Operating System; undefined action; aborted."
+    echo "Unknown Linux distro"
     exit 3
     ;;
 esac
