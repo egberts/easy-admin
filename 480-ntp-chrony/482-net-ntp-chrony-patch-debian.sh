@@ -26,6 +26,16 @@
 #   /etc/chrony/sources.d/*
 #
 DEFAULT_DROPIN_CONF_FILENAME="debian-stock-pool.sources"
+echo "Relocate debian-assigned pool fron chrony.conf into sources.d/ subdir"
+echo ""
+source /etc/os-release
+if [ "$ID" != "debian" ]; then
+  echo "This is for a Debian distro."
+  echo "Not applicable."
+  echo ""
+  echo "Done."
+  exit 0
+fi
 
 sysconfdir="/etc"
 localstatedir="/"
@@ -229,5 +239,7 @@ fi
 if [ "$CHRONY_DHCP_COUNT" -ge 1 ]; then
   echo "Cool. We detected your DHCP server is obtaining NTP address(es)."
 fi
+echo ""
 
+echo "Done."
 
