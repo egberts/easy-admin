@@ -148,7 +148,6 @@ flex_chown root:ssh "$SSHD_CONFIG_FILESPEC"
 flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
 
 
-CONF_LIST="$(find ${SSHD_CONFIGD_DIRNAME} -maxdepth 1 -name "*.conf")"
 
 # Update the SSH server settings
 #
@@ -215,6 +214,7 @@ SSHD_EOF
     flex_chown root:ssh "$SSHD_CONFIGD_DIRSPEC"
     flex_chmod 750 "$SSHD_CONFIGD_DIRSPEC"
     cp "$MINI_REPO"/${SSHD_CONFIGD_DIRNAME}/* "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
+    CONF_LIST="$(find ${SSHD_CONFIGD_DIRNAME} -maxdepth 1 -name "*.conf")"
     for this_subconf_file in $CONF_LIST; do
       flex_chown root:ssh "$this_subconf_file"
       flex_chmod 640 "$this_subconf_file"
@@ -224,8 +224,9 @@ else
 #  otherwise, we do not have 'include' directive option available in openssh daemon config file
 
   # concatenate all the config files together into "/etc/ssh/sshd_config".
+  CONF_LIST="$(find ${MINI_REPO}/${SSHD_CONFIGD_DIRNAME} -maxdepth 1 -name "*.conf")"
   for this_subconf_file in $CONF_LIST; do
-    cat "$MINI_REPO"/${SSHD_CONFIGD_DIRNAME}/*.conf >> "$BUILDROOT$SSHD_CONFIG_FILESPEC"
+    cat "$this_subconf_file" >> "$BUILDROOT$SSHD_CONFIG_FILESPEC"
   done
 fi
 
