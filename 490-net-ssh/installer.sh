@@ -62,4 +62,3 @@ function flex_touch() {
   # Do nothing with build area, this is only for portable script building
 }
 
-
