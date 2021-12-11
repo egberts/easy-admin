@@ -17,6 +17,9 @@
 #   Created: none
 #   Modified: none
 
+echo "Setting up OpenSSH daemon configuration file(s)"
+echo ""
+
 MINI_REPO="${PWD}"
 DEFAULT_ETC_CONF_DIRNAME="ssh"
 SSHD_CONFIGD_DIRNAME="sshd_config.d"
@@ -95,6 +98,7 @@ if [ -z "$SSH_USERS_BY_GROUP" ]; then
   exit 1
 fi
 
+echo "Detected $ID distro."
 case $ID in
   fedora)
     HAS_SSHD_CONFIG_D=0
@@ -225,7 +229,6 @@ else
   done
 fi
 
-
 # Fake generate throwaway host key for syntax-checking effort
 TEMP_THROWAWAY_KEY="/tmp/fake-ssh-keys-$USER.key"
 ssh-keygen -t ed25519 -f "${TEMP_THROWAWAY_KEY}" -q -N ""
@@ -270,4 +273,6 @@ if [ $FOUND -eq 0 ]; then
   exit 1
 fi
 echo ""
+
 echo "Done."
+
