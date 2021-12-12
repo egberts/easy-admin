@@ -3,8 +3,13 @@
 # File: 490-net-ssh.sh
 # Title: Setup and harden SSH server
 #
+# Examples:
+#   ./495-net-ssh-moduli.sh
+#   SSH_MODULI_BITS=512 ./495-net-ssh-moduli.sh  # one hour'ish
+#   SSH_MODULI_BITS=8192 ./495-net-ssh-moduli.sh  # takes about 2 days
+#
 # Environment settings:
-#   SSH_MODULI_BITS - 512 to 4096
+#   SSH_MODULI_BITS - 512 to 8192
 #
 echo "OpenSSH Moduli File Creator"
 echo ""
