@@ -17,8 +17,34 @@
 echo "Creating SSH client configuration files..."
 echo ""
 MINI_REPO="${PWD}"
+OPENSSH_SSH_BIN_FILESPEC="/usr/bin/ssh"
+
+function check_redhat_crypto_policy()
+{
+  if [ -f /etc/ssh/ssh_config.d/05-redhat.conf ]; then
+    echo "Ummmmm, Redhat Crypto Policy in effect."
+    echo "Check /etc/ssh/ssh_config.d/05-redhat.conf if this is what you want"
+    echo "Otherwise, remove/rename that file and re-run $0"
+    echo "Aborted."
+    exit 3
+  fi
+}
 
 source ./ssh-openssh-common.sh
+
+case $ID in
+  debian)
+    ;;
+  centos)
+    check_redhat_crypto_policy
+    ;;
+  fedora)
+    check_redhat_crypto_policy
+    ;;
+  redhat)
+    check_redhat_crypto_policy
+    ;;
+esac
 
 echo "Check the OpenSSH client for appropriate file permission settings"
 echo ""
@@ -35,20 +61,23 @@ SSH_CONFIGD_DIRSPEC="${sysconfdir}/$SSH_CONFIGD_DIRNAME"
 
 REPO_DIR="$PWD/$SSH_CONFIGD_DIRNAME"
 
+TEST_SSH_CONFIG_FILESPEC="build/${SSH_CONFIG_FILENAME}.build-test-only"
+TEST_SSH_CONFIGD_DIRSPEC="build/${SSH_CONFIGD_DIRNAME}"
+
 FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
 rm "$FILE_SETTINGS_FILESPEC"
 
 # Check if anyone has 'sudo' group access on this host
-SUDO_USERS_BY_GROUP="$(grep sudo /etc/group | awk -F: '{ print $4; }')"
+SUDO_USERS_BY_GROUP="$(grep $WHEEL_GROUP /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SUDO_USERS_BY_GROUP" ]; then
-  echo "There is no user account involving with the 'sudo' group; "
+  echo "There is no user account involving with the '$WHEEL_GROUP' group; "
   echo "... You may want to add 'ssh' supplemental group to various users."
 
   # Well, no direct root and no sudo-able user account, this is rather bad.
   if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
     echo "no root access possible from non-root"
     echo "Run:"
-    echo "  usermod -a -G sudo <your-user-name>"
+    echo "  usermod -a -G $WHEEL_GROUP <your-user-name>"
     exit 1
   fi
 fi
@@ -71,10 +100,10 @@ if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
   echo "We are backing up old SSH settings"
   # Only the first copy is saved as the backup
-  if [ ! -f "${SSH_CONF_FILESPEC}.backup" ]; then
+  if [ ! -f "${SSH_CONFIG_FILESPEC}.backup" ]; then
     BACKUP_FILENAME=".backup-$(date +'%Y%M%d%H%M')"
     echo "Moving /etc/ssh/* to /etc/ssh/${BACKUP_FILENAME}/ ..."
-    mv "$SSH_CONF_FILESPEC" "${SSH_CONF_FILESPEC}.backup"
+    mv "$SSH_CONFIG_FILESPEC" "${SSH_CONFIG_FILESPEC}.backup"
     retsts=$?
     if [ $retsts -ne 0 ]; then
       echo "ERROR: Failed to create a backup of /etc/ssh/*"
@@ -85,7 +114,6 @@ else
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
 
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemod-openssh-ssh.sh"
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
 # shellcheck disable=SC2094
@@ -98,14 +126,17 @@ fi
 
 mkdir -p "$BUILDROOT$SSH_CONFD_DIRSPEC"
 
-flex_chown root:ssh "$SSH_CONF_FILESPEC"
-flex_chmod 640      "$SSH_CONF_FILESPEC"
 
 
 # Update the SSH server settings
 #
 
 DATE="$(date)"
+echo "Creating $TEST_SSH_CONFIG_FILESPEC ..."
+cat << TEST_SSH_EOF | tee "$TEST_SSH_CONFIG_FILESPEC" >/dev/null
+include "${TEST_SSH_CONFIGD_DIRSPEC}/*.conf"
+TEST_SSH_EOF
+
 echo "Creating ${BUILDROOT}$SSH_CONFIG_FILESPEC ..."
 cat << SSH_EOF | tee "${BUILDROOT}${SSH_CONFIG_FILESPEC}" >/dev/null
 #
@@ -153,15 +184,18 @@ done
 
 
 echo "Checking ${BUILDROOT}${SSH_CONFIG_FILESPEC} for any syntax error ..."
-ssh -G localhost >/dev/null 2>&1
+$OPENSSH_SSH_BIN_FILESPEC -G \
+    -F ${TEST_SSH_CONFIG_FILESPEC} \
+    localhost \
+    >/dev/null 2>&1
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
   echo "Error during ssh config syntax checking. Showing error output"
-  echo "Cmd: ssh -G localhost -v"
-  ssh -G localhost -v
-  echo "Error during ssh config syntax checking."
+  echo "Cmd: ssh -G -v -F ${TEST_SSH_CONFIG_FILESPEC} localhost" 
   echo "Showing ssh_config output"
-  $OPENSSH_SSH_BIN_FILESPEC -G -F "${BUILDROOT}${SSH_CONF_FILESPEC}" localhost
+  $OPENSSH_SSH_BIN_FILESPEC -G -v \
+      -F "${TEST_SSH_CONFIG_FILESPEC}" \
+      localhost
   exit "$retsts"
 fi
 echo "Passes syntax checks."
@@ -185,14 +219,14 @@ if [ $FOUND -eq 0 ]; then
   echo "No user in '$SSH_GROUP' group."
   echo "User ${USER} cannot access this SSH server here."
   echo "Must execute:"
-  echo "  usermod -g ${SSH_GROUP} ${USER}"
+  echo "  usermod -a -G ${SSH_GROUP} ${USER}"
   exit 1
 else
   echo "Only these users can use 'ssh' tools: '$USERS_IN_SSH_GROUP'"
   echo ""
   echo "If you have non-root apps that also uses 'ssh', then add that user"
   echo "to the '$SSH_GROUP' supplemental group; run:"
-  echo "  usermod -g ${SSH_GROUP} <app-username>"
+  echo "  usermod -a -G ${SSH_GROUP} <app-username>"
 fi
 echo ""
 
