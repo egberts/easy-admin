@@ -1,64 +1,156 @@
-#
+
 # File: installer.sh
-# Title: Create an install script that handles file permissions
+# Title: Create an installer script that handles file permissions
+# Description:
 #
 # Envvars:
 #
+#    BUILDROOT - scratch build area; if empty, it is an actual install
+#    CHROOT_DIR - directory specification to a chroot area
 #    FILE_SETTINGS_FILESPEC - output file containing bash file settings script
+#
+# shellcheck disable=SC2148
 
+
+###############################################################
+# Flexible mkdir()
+# Description:
+#   Make a directory
+# Globals:
+#   BUILDROOT - if undefined or '/', then there is no build but a direct install
+#   CHROOT_DIR - a full directory specification for chroot use.
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#                            file permission settings
+# Arguments:
+#   $1 - absolute directory specification
+# Outputs:
+#   none
+################################################################
 function flex_mkdir() {
-  if [ $UID -eq 0 ]; then
-    # NO '-p' option in root-mode, script MUST make each subdir manually
-    mkdir -p "${BUILDROOT}${CHROOT_DIR}${1}"
-  else
-    # It is probably the user's build area, make all parent directories
-    # Do nothing with build area, this is portable script building
-    mkdir -p "${BUILDROOT}${CHROOT_DIR}${1}"
-    DESTDIR_FILESPEC="${CHROOT_DIR}${1}"
-    if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
-      echo "mkdir -p $DESTDIR_FILESPEC" >> "$FILE_SETTINGS_FILESPEC"
-    else
-      echo "\$dry-run: mkdir $DESTDIR_FILESPEC"
+
+  if [ "${1:0:1}" != "/" ]; then
+    echo "flex_mkdir: argument must be an absolute directory path"
+    exit 9
+  fi
+  destdir_dirspec="${CHROOT_DIR}${1}"
+
+  # mkdir is driven by $BUILDROOT$CHROOT_DIR, or 'root' UID, or not at all
+  if [ -n "${BUILDROOT}${CHROOT_DIR}" ] ||
+     [ $UID -eq 0 ]; then
+
+    if [ ! -d "${BUILDROOT}${CHROOT_DIR}$destdir_dirspec" ]; then
+      echo "Creating ${BUILDROOT}${CHROOT_DIR}$destdir_dirspec directory ..."
+      mkdir "${BUILDROOT}${CHROOT_DIR}$destdir_dirspec"
     fi
   fi
+
+  if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+    echo "mkdir -p $destdir_dirspec" >> "$FILE_SETTINGS_FILESPEC"
+  else
+    echo "\$dry-run: mkdir $destdir_dirspec"
+  fi
+  unset destdir_dirspec
 }
 
+###############################################################
+# Flexible chown()
+# Description:
+#   if BUILDROOT is undefined, then mkdir is from the '/' or '$CHROOT_DIR'
+# Globals:
+#   BUILDROOT - if undefined or '/', then there is no build but a direct install
+#   CHROOT_DIR - a full directory specification for chroot use.
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#                            file permission settings
+# Arguments:
+#   $1 - chown file ownership options
+#   $2 - absolute directory specification
+# Outputs:
+#   none
+################################################################
 function flex_chown() {
-  # Is current user 'root'?
-  if [ $UID -eq 0 ]; then
-    # Sure go ahead and set the file permission, even in build areas
-    chown "$1" "${BUILDROOT}${CHROOT_DIR}$2"
-  else
-    # Do nothing with build area, this is portable script building
-    DESTDIR_FILESPEC="${CHROOT_DIR}${2}"
-    if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
-      echo "chown $1 $DESTDIR_FILESPEC" >> "$FILE_SETTINGS_FILESPEC"
-    else
-      echo "\$dry-run: chown $1 $DESTDIR_FILESPEC"
-    fi
+
+  destdir_filespec="${CHROOT_DIR}${2}"
+
+  # chown is driven by no $BUILDROOT and 'root' UID, or not at all
+  if [ -z "${BUILDROOT}" ] &&
+     [ "$UID" -eq 0 ]; then
+    chown "$1" "${BUILDROOT}${CHROOT_DIR}$destdir_filespec"
   fi
+
+  if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+    echo "chown $1 $destdir_filespec" >> "$FILE_SETTINGS_FILESPEC"
+  else
+    echo "\$dry-run: chown $1 $destdir_filespec"
+  fi
+  unset destdir_dirspec
 }
 
+###############################################################
+# Flexible chmod()
+# Description:
+#   if BUILDROOT is undefined, then mkdir is from the '/' or '$CHROOT_DIR'
+# Globals:
+#   BUILDROOT - if undefined or '/', then there is no build but a direct install
+#   CHROOT_DIR - a full directory specification for chroot use.
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#                            file permission settings
+# Arguments:
+#   $1 - chmod file permission options
+#   $2 - absolute directory specification
+# Outputs:
+#   none
+################################################################
 function flex_chmod() {
-  # Is current user 'root'?
-  if [ $UID -eq 0 ]; then
-    # Sure go ahead and set the file permission, even in build areas
-    chmod "$1" "${BUILDROOT}${CHROOT_DIR}$2"
-  else
-    # Do nothing with build area, this is portable script building
-    DESTDIR_FILESPEC="${CHROOT_DIR}${2}"
-    if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
-      echo "chown $1 $DESTDIR_FILESPEC" >> "$FILE_SETTINGS_FILESPEC"
-    else
-      echo "\$dry-run chown $1 $DESTDIR_FILESPEC"
-    fi
+
+  destdir_filespec="${CHROOT_DIR}${2}"
+
+  # chmod is driven by $BUILDROOT$CHROOT_DIR, or 'root' UID, or not at all
+  if [ -z "${BUILDROOT}" ] &&
+     [ "$UID" -eq 0 ]; then
+
+    echo "chmod $1 to ${BUILDROOT}${CHROOT_DIR}$destdir_filespec ..."
+    chmod "$1" "${BUILDROOT}${CHROOT_DIR}$destdir_filespec"
   fi
+
+  if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+    echo "chmod $1 $destdir_filespec" >> "$FILE_SETTINGS_FILESPEC"
+  else
+    echo "\$dry-run chmod $1 $destdir_filespec"
+  fi
+  unset destdir_dirspec
 }
+
+###############################################################
+# Flexible touch()
+# Description:
+#   if BUILDROOT is undefined, then mkdir is from the '/' or '$CHROOT_DIR'
+# Globals:
+#   BUILDROOT - if undefined or '/', then there is no build but a direct install
+#   CHROOT_DIR - a full directory specification for chroot use.
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#                            file permission settings
+# Arguments:
+#   $1 - absolute directory specification
+# Outputs:
+#   none
+################################################################
 
 function flex_touch() {
-  if [ $UID -eq 0 ]; then
-    touch "$1"
+
+  destdir_filespec="${CHROOT_DIR}${1}"
+
+  # touch is driven by $BUILDROOT$CHROOT_DIR, or 'root' UID, or not at all
+  if [ -z "${BUILDROOT}" ] &&
+     [ "$UID" -eq 0 ]; then
+
+    echo "touching ${BUILDROOT}${CHROOT_DIR}$destdir_filespec file ..."
+    touch "${BUILDROOT}${CHROOT_DIR}$destdir_filespec"
   fi
-  # Do nothing with build area, this is only for portable script building
+
+  if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+    echo "touch $destdir_filespec" >> "$FILE_SETTINGS_FILESPEC"
+  else
+    echo "\$dry-run touch $destdir_filespec"
+  fi
 }
 
