@@ -107,6 +107,7 @@ case $ID in
     else
       HAS_SSHD_CONFIG_D=1
     fi
+    echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
     ;;
   redhat)
     if [ "$VERSION_ID" -le 9 ]; then
@@ -114,6 +115,7 @@ case $ID in
     else
       HAS_SSHD_CONFIG_D=1
     fi
+    echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
     ;;
   centos)
     if [ "$VERSION_ID" -le 8 ]; then
@@ -121,6 +123,7 @@ case $ID in
     else
       HAS_SSHD_CONFIG_D=1
     fi
+    echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
     ;;
   debian)
     if [ "$VERSION_ID" -le 7 ]; then
