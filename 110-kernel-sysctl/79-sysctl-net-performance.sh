@@ -19,8 +19,7 @@ SYSCTLD_DIRPATH="$sysconfdir/$SYSCTLD_DIRNAME"
 echo "Default settings for $SYSCTLD_DIRPATH."
 
 if [ -f "$SYSCTL_FILESPEC" ]; then
-  echo "ERROR: /etc/sysctl.conf exists; delete or rename it away"
-  exit 9
+  echo "WARNING: /etc/sysctl.conf exists; delete, disable or rename it away"
 fi
 
 DISTRO_DEFAULT_SYSCTL_FILESPEC="$SYSCTLD_DIRPATH/99-sysctl.conf"
