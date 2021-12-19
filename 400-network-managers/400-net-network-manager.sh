@@ -11,11 +11,13 @@ ENABLED_SYSNETD="$(sudo systemctl is-enabled systemd-networkd)"
 ACTIVE_SYSNETD="$(sudo systemctl is-active systemd-networkd)"
 
 if [ "${ENABLED_SYSNETD}" == "enabled" ]; then
-  echo "Need to execute 'systemctl disable systemd-networkd.service'"
+  echo "Need to execute:"
+  echo "    systemctl disable systemd-networkd.service systemd-networkd.socket"
   exit 3
 fi
 if [ "${ACTIVE_SYSNETD}" == "active" ]; then
-  echo "Need to execute 'systemctl disable systemd-networkd.service'"
+  echo "Need to execute:"
+  echo "    systemctl disable systemd-networkd.service systemd-networkd.socket"
   exit 3
 fi
 
