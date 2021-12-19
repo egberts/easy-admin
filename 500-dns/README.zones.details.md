@@ -80,13 +80,14 @@ and four nameservers needed to dish out info about this domain name:
 
 Zone File
 ---------
-Zone file is a keyvalue-store database.  Zone file contains key/value stuff about a zone.  
+Zone file is a keyvalue-store database.  Zone file contains key/value stuff about a zone.  Zone files are often stored as text file but may be in binary format
+on non-master DNS servers.
 
 A zone is that domain name (but without a period symbol in its name).
 
-A zone file is often called the primary zone.  There is only one copy/one file
-and one primary DNS server to dish it out.  There might be some secondary
-nameservers to help out there.
+The zone file is often called the primary zone.  There is only one copy/one file
+and one primary DNS server to dish it out.  There might be (and often are)
+some secondary nameservers to help out there.
 
 NOTE: For the old readers, 'primary' used to be called 'master', and 'secondary' a 'slave'.
 
@@ -100,19 +101,19 @@ A zone file holds records (lines) of record type (or key) and each record holds 
 
 Zone File Format
 ----------------
-Zone file is a UNIX-ASCII-based flat-file format.  
+Zone file is (usually) an UNIX-ASCII-based flat-file format.  
 
 Such a format of a Zone file is like a comma-separated-value format but without the commas.  Also takes ';' symbol as a comment part for the remainder of its line. 
 
-DEEP-INSIGHT: Giant ISPs use full-blown database server instead of a zone text file.  Here, we focus on zone file being text-based instead of delving into database backends; because text-based zone file is more common scenario.
+DEEP-INSIGHT: Giant ISPs use full-blown database server instead of a zone text file.  Here, we focus on zone file being text-based instead of delving into database backends; because text-based zone file is easier to use and the more common scenario.
 
 HISTORICAL: As administrators, we say that a zone file is actually the primary zone file.  Reason is that secondary zone file had since been redesigned to be a memory-stored, disk-checkpointed, indexed-binary blob format, which provides for the fastest response time with record answers (values).
 
-Meanwhile, secondary zone file (only found in secondary nameserver) get its blob file automatically updated by its primary DNS server whose primary zone file remains in text-based format.
+Meanwhile, secondary zone file (only found in secondary nameserver) get its blob file automatically updated from and by its primary DNS server whose primary zone file remains in text-based format.
 
-Henceforth, editing a zone file often means the only the primary aspect of zone file is being edited.
+Henceforth, editing a zone file often means the only the primary aspect of zone file is being edited and on the primary server.  (It is possible to edit the text-based zone file on secondary nameservers as an emergency backstop effort).
 
-Secondary zone file get directly maintained by secondary nameserver software yet updated by its primary nameserver.  No administrator need be involved in the maintenance of these secondary zone files.  
+Secondary zone file gets directly maintained and dished out by a secondary nameserver software yet updated by its primary nameserver.  No administrator need be involved in the maintenance of these secondary zone files.  
 
 You can peek at a secondary zone file, but not change it.
 
@@ -173,11 +174,14 @@ Absolute TLD path - First Value - First Lines - Zone File
 Absolute TLD zone file does not detail anything past the first part of its FQDN
 (the `.tld.` part)
 
-Only the first domain part is focused within its zone file.  The rest of the
-domain parts are there to assist DNS server software with where along the domain
-path it belongs to.
+Only the first (left-most) domain part is focused within its 
+zone file.  The rest of the domain parts are optional and
+are there to assist DNS server software with where along the 
+domain path it belongs to.
 
-For an absolute TLD path domain name, nothing can be added after the last period.  This domain name cannot be made extensible to any add-on domain names.  
+For an absolute TLD path domain name, nothing can be added 
+after the last period.  This domain name cannot be made 
+extensible to any add-on domain names.  
 
 This first value is the most useful and common choice for a top-most part of a domain that you control.
 
@@ -209,14 +213,15 @@ RANT: Shifting subnets around is a sign of bad network engineering practice; if 
 
 Second Value - First Lines - Zone File
 -------------------------------------
-TTL is how long should we be telling other people to remember our record type and answer (value/key) settings of a zone before asking us of the same answer again.
-
 Time to Live (TTL) is the second value of the first line.
+
+TTL is how long should we be telling other people to remember 
+our record type and answer (value/key) settings of a zone 
+before asking us for the same answer again.
 
 That's the `86400` part of the first line:
 
     example.tld.  86400  SOA  ns1.example.tld. admin.example.tld. 2020103437 1200 180 1209600 10800
-
 
 TTL usefulness is when we might be moving to another nameserver, and to do that we must shorten this TTL firstly.  
 
@@ -252,7 +257,7 @@ Primary zone file needs to let others know where its own nameserver is.  SOA
 primary nameserver is that place.
 
 Controlling nameserver of the zone must also goes into the SOA record of
-this zone file.  
+this zone file.  Nothing to do with original zone text file.
 
 It is very often that the hostname of the host that is running the DNS server is
 used as this SOA primary nameserver.
@@ -291,28 +296,6 @@ nameservers:
     .			17556	IN	NS	g.root-servers.net.
     .			17556	IN	NS	f.root-servers.net.
 
-To see SOA in action for Root Servers, we have a special Root Server domain name (a period (`.`) symbol) in which to run this command:
-
-    dig  @8.8.8.8  .  NS
-
-
-and it answers back, whose obfuscated output of AUTHORITY SECTION so we can show just the relevant part as:
-
-    ;; ANSWER SECTION:
-    .			17644	IN	NS	f.root-servers.net.
-    .			17644	IN	NS	i.root-servers.net.
-    .			17644	IN	NS	c.root-servers.net.
-    .			17644	IN	NS	j.root-servers.net.
-    .			17644	IN	NS	k.root-servers.net.
-    .			17644	IN	NS	e.root-servers.net.
-    .			17644	IN	NS	g.root-servers.net.
-    .			17644	IN	NS	a.root-servers.net.
-    .			17644	IN	NS	m.root-servers.net.
-    .			17644	IN	NS	h.root-servers.net.
-    .			17644	IN	NS	b.root-servers.net.
-    .			17644	IN	NS	l.root-servers.net.
-    .			17644	IN	NS	d.root-servers.net.
-    
     ;; ADDITIONAL SECTION:
     a.root-servers.net.	4198	IN	A	198.41.0.4
     a.root-servers.net.	18698	IN	AAAA	2001:503:ba3e::2:30
