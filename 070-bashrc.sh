@@ -1,7 +1,7 @@
 #!/bin/bash
 # File: 070-bashrc.sh
 # Title: Clean up bashrc
-#1
+#
 # Design:
 #    For system-wide settings
 #    Check if /etc/profile
@@ -17,11 +17,12 @@
 #    Check for conflict between $HOME/.bashrc and $HOME/.bash_profile
 #      which to use
 #
-#    Add snippet to $HOME/.bashrc
-#        for file in ~/.bashrc.d/*.bashrc; do
-#            source "$file"
-#        done
-#    chmod a+x $HOME/.bashrc.d/*.bashrc
+#    If ".bashrc.d" does not exist in $HOME/.bashrc then
+#        Add snippet to $HOME/.bashrc
+#            for file in ~/.bashrc.d/*.bashrc; do
+#                source "$file"
+#            done
+#        chmod a+x $HOME/.bashrc.d/*.bashrc
 
 echo "Checking file permissions on various Bash script files"
 echo ""
@@ -66,13 +67,14 @@ else
   DOT_BASH_PROFILE_EXIST=0
 fi
 
-if [ "$DOT_BASH_PROFILE_EXIST" -eq 1 ] &&
-   [ "$DOT_BASHRC_EXIST" -eq 1 ]; then
-  echo "Your login(1) is stable and uses $DOT_BASH_PROFILE_FILESPEC."
-  echo "It is confusing to be using both $DOT_BASH_PROFILE_FILESPEC and"
-  echo "   $DOT_BASHRC_FILESPEC together. Aborted"
-  exit 3
-fi
+# Should be OK by most latest distros to use both .bashrc and .bash_profile now
+#if [ "$DOT_BASH_PROFILE_EXIST" -eq 1 ] &&
+#   [ "$DOT_BASHRC_EXIST" -eq 1 ]; then
+#  echo "Your login(1) is stable and uses $DOT_BASH_PROFILE_FILESPEC."
+#  echo "It is confusing to be using both $DOT_BASH_PROFILE_FILESPEC and"
+#  echo "   $DOT_BASHRC_FILESPEC together. Aborted"
+#  exit 3
+#fi
 
 SKEL_PATHNAME="/etc/skel"
 SKEL_DOT_BASHRC_FILENAME=".bashrc"
@@ -102,15 +104,19 @@ function create_dot_bashrc_header()
 DOT_BASHRC_EOF
 }
 
-function append_dot_bashrc()
+function append_dot_bashrc_subdirs()
 {
-echo "Appending more bash scripting to $DOT_BASHRC_FILESPEC ..."
-cat << DOT_BASHRC_EOF_2 | tee -a "$DOT_BASHRC_FILESPEC" >/dev/null 2>&1
+  FOUND_BASHRC_D_SUBDIRS="$(grep "aliases completions plugins" "$DOT_BASHRC_FILESPEC"|wc -l)"
+  if [ "$FOUND_BASHRC_D_SUBDIRS" -eq 0 ]; then
 
+    echo "Appending the .bashrc/<subdir> scripting to $DOT_BASHRC_FILESPEC ..."
+    cat << DOT_BASHRC_EOF_2 | tee -a "$DOT_BASHRC_FILESPEC" >/dev/null 2>&1
+
+#+++Appended by $0
 # How to test ~/.bashrc.d file permission for strictness?
 for this_dir in aliases completions plugins; do
   # sort the directory
-  scripts="\$(ls -A ${BASHRC_DROPIN_DIRSPEC}/\$this_dir/*.bash 2>/dev/null)"
+  scripts="\$(ls -A \$HOME/${BASHRC_DROPIN_DIRNAME}/\$this_dir/*.bash 2>/dev/null)"
   for this_script in \$scripts; do
     # Only source those with exec-bit in its file permission setting
     if [ -x \$this_script ]; then
@@ -118,7 +124,11 @@ for this_dir in aliases completions plugins; do
     fi
   done
 done
+#---Appended by $0
 DOT_BASHRC_EOF_2
+  else
+    echo ".bashrc/<subdir> script segment found in $DOT_BASHRC_FILESPEC ..."
+  fi
 }
 
 # Check if skeleton file has recently changed over user's bash file
@@ -141,15 +151,15 @@ if [ "$SKEL_DOT_BASHRC_TIMESTAMP" -gt "$DOT_BASHRC_TIMESTAMP" ]; then
     mv -v -i "$DOT_BASHRC_FILESPEC" "$DOT_BASHRC_FILESPEC.backup"
     create_dot_bashrc_header
     cp -v -i "$SKEL_DOT_BASHRC_FILESPEC" "$DOT_BASHRC_FILESPEC"
-    append_dot_bashrc
+    append_dot_bashrc_subdirs
   elif [ "$REPLY" == 'a' ]; then
     echo "Appending $DOT_BASHRC_FILESPEC..."
-    append_dot_bashrc
+    append_dot_bashrc_subdirs
   elif [ "$REPLY" == 'o' ]; then
     "Overwriting $DOT_BASHRC_FILESPEC..."
     create_dot_bashrc_header
     cp -v -i "$SKEL_DOT_BASHRC_FILESPEC" "$DOT_BASHRC_FILESPEC"
-    append_dot_bashrc
+    append_dot_bashrc_subdirs
   elif [ "$REPLY" == 'i' ]; then
     echo "Ignoring $DOT_BASHRC_FILESPEC..."
   else
@@ -157,6 +167,8 @@ if [ "$SKEL_DOT_BASHRC_TIMESTAMP" -gt "$DOT_BASHRC_TIMESTAMP" ]; then
     # exit 1
   fi
   echo ""
+else
+  append_dot_bashrc_subdirs
 fi
 
 # weird quirk - User having its group name the same as its user name
