@@ -7,15 +7,15 @@
 #   This script will do the following:
 #   - generate ZSK and KSK public key-pairs for '.' zone
 #   - generate root zone file by cloning f.root-server.net via AXFR
-#   - place the files into their Fedora-default named subdirectories
+#   - place the files into their named subdirectories
 #   - create partial named.conf configuration files for your own inclusion
 #   - Set correct file ownership/permissions 
 #   - If SELinux-enabled, set the correct SELinux context for all files.
 #
 # Env vars:
-#   RUNDIR
-#   SYSCONFDIR
-#   NAMED_HOME_DIRSPEC
+#   rundir
+#   sysconfdir
+#   NAMED_HOME_DIRSPEC (defaults to os-distro-selected named/bind $HOME)
 #   NAMED_DATA_DIRSPEC
 #   ZONE_DB_DIRSPEC
 #   KEYS_DIRSPEC
@@ -23,21 +23,21 @@
 echo "Create a standalone root server for a closed network whitelab usage"
 echo ""
 
+
+source dns-isc-common.sh
+
 DOMAIN_TTL=86400
-SYSCONFDIR="${SYSCONFDIR:-/etc/named}"   # typically /etc/bind or /etc/named
-if [ -z "$NAMED_HOME_DIRSPEC" ]; then
-  NAMED_HOME_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $6}')"
-fi
+sysconfdir="${sysconfdir:-/etc/named}"   # typically /etc/bind or /etc/named
 NAMED_DATA_DIRSPEC="${NAMED_DATA_DIRSPEC:-${NAMED_HOME_DIRSPEC}/data}"
 # Directory of Zone DBs are always a separate declaration than named's $HOME 
 ZONE_DB_DIRSPEC="${ZONE_DB_DIRSPEC:-/var/named}"  # typically /var/lib/bind or /var/named
 KEYS_DIRSPEC="${KEYS_DB_DIRSPEC:-$ZONE_DB_DIRSPEC/keys}"   # typically /var/lib/bind/keys or /var/named/keys
-NAMED_CONF_FILESPEC="${SYSCONFDIR}/standalone-named.conf"
+NAMED_CONF_FILESPEC="${sysconfdir}/standalone-named.conf"
 
 echo "This will write over your Bind9 settings."
 echo "Or you could define the following and rerun for a local daemon copy:"
 echo ""
-echo "    RUNDIR=. SYSCONFDIR=. NAMED_HOME_DIRSPEC=. \\"
+echo "    rundir=. sysconfdir=. NAMED_HOME_DIRSPEC=. \\"
 echo "        NAMED_DATA_DIRSPEC=. ZONE_DB_DIRSPEC=.  \\"
 echo "        KEYS_DIRSPEC=.  \\"
 echo "        ./dns-root-server-standalone.sh"
@@ -56,7 +56,6 @@ if [ "$USER" != "root" ]; then
   exit 9
 fi
 
-exit
 PRIVATE_TLD="my-root"  # could be 'home', 'private', 'lan', 'internal'
 NS1_IP="10.10.0.1"  # could be whatever netdev IP that is private or NOT NAT'd 
 SN="$(date +%Y%m%d%H)"
@@ -66,6 +65,23 @@ T3="604800"
 T4="86400"
 NS1_NAME="ns1.a.myroot-servers.${PRIVATE_TLD}."
 CONTACT="hostmaster.${PRIVATE_TLD}."
+
+BUILDROOT="${BUILDROOT:-build/}"
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p build
+else
+  BUILDROOT=""
+fi
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone.sh"
+rm -f "$FILE_SETTINGS_FILESPEC"
+
+flex_mkdir $libdir
+flex_mkdir $libdir/dynamic
+flex_mkdir $libdir/keys
+flex_mkdir $libdir/data
+flex_mkdir $localstatedir
+flex_mkdir $sysconfdir
+flex_mkdir $sysconfdir/keys
 
 # In ALGORITHSM, the first entry is the input default
 echo "List of supported DNSSEC algorithms:"
@@ -111,30 +127,12 @@ if [ ! -d "$KEYS_DIRSPEC" ]; then
   exit 3
 fi
 
-# file_perms <filespec> 0640 named:named <se-context>
-function file_perms()
-{
-  FILESPEC=$1
-  FILE_MODE=$2
-  OWNER_GROUP=$3
-  SECONTEXT=$4
-  chmod "$FILE_MODE" "$FILESPEC"
-  chown "$OWNER_GROUP" "$FILESPEC"
-  selinuxenabled
-  RETSTS=$?
-  if [ "$RETSTS" -eq 0 ]; then
-    chcon "system_u:object_r:$SECONTEXT:s0" "$FILESPEC"
-  fi
-  unset FILESPEC FILE_MODE OWNER_GROUP SECONTEXT
-}
+#cd "$ZONE_DB_DIRSPEC" || exit 9
 
 
-cd "$ZONE_DB_DIRSPEC" || exit 9
-
-
-echo "Creating Zone-Signing-Key (ZSK) files ..."
+echo "Creating Zone-Signing-Key (ZSK) files in $PWD PWD..."
 ZSK_ID="$(dnssec-keygen -T DNSKEY \
-    -K "$KEYS_DIRSPEC" \
+    -K "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" \
     -n ZONE \
     -p 3 \
     -a "${ALGORITHM}" \
@@ -151,12 +149,13 @@ if [ $RETSTS -ne 0 ]; then
 fi
 ZSK_KEY_FILESPEC="${KEYS_DIRSPEC}/${ZSK_ID}.key"
 ZSK_PRIVATE_FILESPEC="${KEYS_DIRSPEC}/${ZSK_ID}.private"
-file_perms "$ZSK_KEY_FILESPEC" 0644 named:named named_cache_t
-file_perms "$ZSK_PRIVATE_FILESPEC" 0600 named:named named_cache_t
+flex_chmod 0644 "$ZSK_KEY_FILESPEC"
+flex_chown ${USER_NAME}:${GROUP_NAME} "$ZSK_KEY_FILESPEC" 
+flex_chcon named_cache_t "$ZSK_PRIVATE_FILESPEC" 
 
 echo "Creating Key-Signing-Key (KSK) files ..."
 KSK_ID="$(dnssec-keygen -T DNSKEY \
-    -K "$KEYS_DIRSPEC" \
+    -K "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" \
     -f KSK \
     -n ZONE \
     -p 3 \
@@ -174,8 +173,12 @@ if [ $RETSTS -ne 0 ]; then
 fi
 KSK_KEY_FILESPEC="${KEYS_DIRSPEC}/${KSK_ID}.key"
 KSK_PRIVATE_FILESPEC="${KEYS_DIRSPEC}/${KSK_ID}.private"
-file_perms "$KSK_KEY_FILESPEC" 0644 named:named named_cache_t
-file_perms "$KSK_PRIVATE_FILESPEC" 0600 named:named named_cache_t
+flex_chmod 0644 "$KSK_KEY_FILESPEC"
+flex_chown ${USER_NAME}:${GROUP_NAME} "$KSK_KEY_FILESPEC"
+flex_chcon named_cache_t "$KSK_KEY_FILESPEC"
+flex_chmod 0600 "$KSK_PRIVATE_FILESPEC" 
+flex_chown ${USER_NAME}:${GROUP_NAME} "$KSK_PRIVATE_FILESPEC"
+flex_chcon named_cache_t "$KSK_PRIVATE_FILESPEC" 
 echo ""
 
 # Make sure that all other NS records for the root zone "." have been removed
@@ -184,7 +187,7 @@ echo ""
 
 # Create SOA, NS, and A glue records
 echo "Creating SOA, NS, annd A glue record in ${ROOT_ZONE_FILESPEC} ..."
-cat << ROOT_ZONE_EOF > ${ROOT_ZONE_FILESPEC}
+cat << ROOT_ZONE_EOF > ${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC}
 .		${DOMAIN_TTL}	IN	SOA	mname.invalid. nm.invalid. (
 						$SN	; Serial Number
 						$T1	; Refresh
@@ -205,24 +208,27 @@ ns.example.			A	10.10.0.1
 
 ROOT_ZONE_EOF
 
-# Copy the big full zone transfer file after our SOA, NS, A header
-cat "$TMP_ROOT_ZONE_FILESPEC" >> "$ROOT_ZONE_FILESPEC"
-file_perms "$ROOT_ZONE_FILESPEC" 0644 named:named named_zone_t
-echo "$ROOT_ZONE_FILESPEC created."
-rm "$TMP_ROOT_ZONE_FILESPEC"
+# Append the big full zone transfer file after our SOA, NS, A header
+cat "$TMP_ROOT_ZONE_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 
 # Append the DNSKEYs at the end of the zone file
-cat "$ZSK_KEY_FILESPEC" >> "$ROOT_ZONE_FILESPEC"
-cat "$KSK_KEY_FILESPEC" >> "$ROOT_ZONE_FILESPEC"
+cat "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
+cat "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
+
+echo "$ROOT_ZONE_FILESPEC created."
+flex_chmod 0644 "$ROOT_ZONE_FILESPEC" 
+flex_chown ${USER_NAME}:${GROUP_NAME} "$ROOT_ZONE_FILESPEC" 
+flex_chcon named_zone_t "$ROOT_ZONE_FILESPEC" 
+rm "${BUILDROOT}${CHROOT_DIR}$TMP_ROOT_ZONE_FILESPEC"
 echo ""
 
-rm -f "$DSSET_FILESPEC"
+rm -f "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC"
 # input directory -d
 # input directory -K
 # input file db.root
 dnssec-signzone \
-    -d "$ZONE_DB_DIRSPEC" \
-    -K "$KEYS_DIRSPEC" \
+    -d "${BUILDROOT}${CHROOT_DIR}$ZONE_DB_DIRSPEC" \
+    -K "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" \
     -o "." \
     -R \
     -S \
@@ -231,7 +237,7 @@ dnssec-signzone \
     -N keep \
     -D \
     -a \
-    "$ROOT_ZONE_FILESPEC"
+    "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   echo "dnssec-signzone failed: Error $retsts; aborted."
@@ -239,18 +245,22 @@ if [ "$retsts" -ne 0 ]; then
 fi
 # $ROOT_ZONE_FILESPEC.signed created
 # dsset-. created
-mv "${ZONE_DB_DIRSPEC}/dsset-." "${ZONE_DB_DIRSPEC}/dsset-root"
-echo "$DSSET_FILESPEC created."
-file_perms "$DSSET_FILESPEC" 0644 named:named named_zone_t
+mv "${BUILDROOT}${CHROOT_DIR}${ZONE_DB_DIRSPEC}/dsset-." "${BUILDROOT}${CHROOT_DIR}${ZONE_DB_DIRSPEC}/dsset-root"
+echo "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC created."
+flex_chmod 0644 "$DSSET_FILESPEC" 
+flex_chown ${USER_NAME}:${GROUP_NAME} "$DSSET_FILESPEC" 
+flex_chcon named_zone_t "$DSSET_FILESPEC" 
 
 SIGNED_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.signed"
 echo "$SIGNED_ZONE_FILESPEC created."
-file_perms "$SIGNED_ZONE_FILESPEC" 0644 named:named named_zone_t
+flex_chmod 0644 "$SIGNED_ZONE_FILESPEC" 
+flex_chown ${USER_NAME}:${GROUP_NAME} "$SIGNED_ZONE_FILESPEC" 
+flex_chcon named_zone_t "$SIGNED_ZONE_FILESPEC" 
 
 # Create the view and its zone file
-VIEW_NAMED_CONF_FILESPEC="${SYSCONFDIR}/standalone-view-recursive-zone-root-named.conf"
+VIEW_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-view-recursive-zone-root-named.conf"
 echo "Creating $VIEW_NAMED_CONF_FILESPEC ..."
-cat << PARTIAL_NAMED_CONF_EOF | tee "$VIEW_NAMED_CONF_FILESPEC" >/dev/null
+cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$VIEW_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $VIEW_NAMED_CONF_FILESPEC
 # Date: $(date +"%Y%M%D %H%M")"
@@ -282,11 +292,13 @@ view "recursive" IN {
     };
 };
 PARTIAL_NAMED_CONF_EOF
-file_perms "$VIEW_NAMED_CONF_FILESPEC" 0640 root:named named_conf_t
+flex_chmod 0640 "$VIEW_NAMED_CONF_FILESPEC" 
+flex_chown root:${GROUP_NAME} "$VIEW_NAMED_CONF_FILESPEC" 
+flex_chcon named_conf_t "$VIEW_NAMED_CONF_FILESPEC" 
 
-OPTIONS_NAMED_CONF_FILESPEC="${SYSCONFDIR}/standalone-options-named.conf"
+OPTIONS_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-options-named.conf"
 echo "Creating $OPTIONS_NAMED_CONF_FILESPEC ..."
-cat << PARTIAL_NAMED_CONF_EOF | tee "$OPTIONS_NAMED_CONF_FILESPEC" >/dev/null
+cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$OPTIONS_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $OPTIONS_NAMED_CONF_FILESPEC
 # Date: $(date +"%Y%M%D %H%M")"
@@ -304,7 +316,7 @@ options {
     statistics-file "${NAMED_DATA_DIRSPEC}/named_stats.txt";
     memstatistics-file "${NAMED_DATA_DIRSPEC}/named.memstats";
 
-    session-keyfile "${RUNDIR}/named-session.key";
+    session-keyfile "${rundir}/named-session.key";
     pid-file none;
 
     zone-statistics yes;
@@ -330,15 +342,17 @@ options {
     root-delegation-only;
 
     // Keep that one to ourself
-    trust-anchor-telemetry no;
+    //trust-anchor-telemetry yes;
 };
 PARTIAL_NAMED_CONF_EOF
-file_perms "$OPTIONS_NAMED_CONF_FILESPEC" 0640 root:named named_conf_t
+flex_chmod 0640 "$OPTIONS_NAMED_CONF_FILESPEC"
+flex_chown root:${GROUP_NAME} "$OPTIONS_NAMED_CONF_FILESPEC"
+flex_chcon named_conf_t "$OPTIONS_NAMED_CONF_FILESPEC"
 
 # And for the 'key' clause for RNDC of named configuration
-KEY_NAMED_CONF_FILESPEC="${SYSCONFDIR}/standalone-key-named.conf"
+KEY_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-key-named.conf"
 echo "Creating $KEY_NAMED_CONF_FILESPEC ..."
-cat << PARTIAL_NAMED_CONF_EOF | tee "$KEY_NAMED_CONF_FILESPEC" >/dev/null
+cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$KEY_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $KEY_NAMED_CONF_FILESPEC
 # Date: $(date +"%Y%M%D %H%M")"
@@ -346,12 +360,14 @@ cat << PARTIAL_NAMED_CONF_EOF | tee "$KEY_NAMED_CONF_FILESPEC" >/dev/null
 
 include "/etc/rndc.key";
 PARTIAL_NAMED_CONF_EOF
-file_perms "$KEY_NAMED_CONF_FILESPEC" 0640 root:named named_conf_t
+flex_chmod 0640 "$KEY_NAMED_CONF_FILESPEC"
+flex_chown root:${GROUP_NAME} "$KEY_NAMED_CONF_FILESPEC"
+flex_chcon named_conf_t "$KEY_NAMED_CONF_FILESPEC"
 
 # And now for the 'managed-keys' clause of named configuration
-TA_NAMED_CONF_FILESPEC="${SYSCONFDIR}/standalone-trust-anchors-named.conf"
+TA_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-trust-anchors-named.conf"
 echo "Creating $TA_NAMED_CONF_FILESPEC ..."
-cat << PARTIAL_NAMED_CONF_EOF | tee "$TA_NAMED_CONF_FILESPEC" >/dev/null
+cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $TA_NAMED_CONF_FILESPEC
 # Date: $(date +"%Y%M%D %H%M")"
@@ -365,35 +381,37 @@ PARTIAL_NAMED_CONF_EOF
 # Insert in the Zone-Signing-Key as a managed-key
 # Instead of reusing the DNSKEYs in the "db.root", use our newly created ones
 # Following bash script is similiar to the famous managed-keys.pl Perl script.
-TA_DOMAIN="$(grep -v '^;' "$ZSK_KEY_FILESPEC" |awk '{print $1}')"
-TA_DNSSEC_ID="$(grep -v '^;' "$ZSK_KEY_FILESPEC" |awk '{print $5}')"
-TA_ALG_ID="$(grep -v '^;' "$ZSK_KEY_FILESPEC" |awk '{print $6}')"
-TA_ALG_SID="$(grep -v '^;' "$ZSK_KEY_FILESPEC" |awk '{print $7}')"
-TA_HASH="$(grep -v '^;' "$ZSK_KEY_FILESPEC" |awk '{print $8}')"
+TA_DOMAIN="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" |awk '{print $1}')"
+TA_DNSSEC_ID="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" |awk '{print $5}')"
+TA_ALG_ID="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" |awk '{print $6}')"
+TA_ALG_SID="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" |awk '{print $7}')"
+TA_HASH="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" |awk '{print $8}')"
 printf '%s initial-key %s %s %s \"%s\";\n' \
   "$TA_DOMAIN" "$TA_DNSSEC_ID" "$TA_ALG_ID" "$TA_ALG_SID" "$TA_HASH" \
-   >> "$TA_NAMED_CONF_FILESPEC"
+   >> "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC"
 
 # Insert in the Key-Signing-Key as a managed-key
-TA_DOMAIN="$(grep -v '^;' "$KSK_KEY_FILESPEC" | awk '{print $1}')"
-TA_DNSSEC_ID="$(grep -v '^;' "$KSK_KEY_FILESPEC" |awk '{print $5}')"
-TA_ALG_ID="$(grep -v '^;' "$KSK_KEY_FILESPEC" |awk '{print $6}')"
-TA_ALG_SID="$(grep -v '^;' "$KSK_KEY_FILESPEC" |awk '{print $7}')"
-TA_HASH="$(grep -v '^;' "$KSK_KEY_FILESPEC" |awk '{print $8}')"
+TA_DOMAIN="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" | awk '{print $1}')"
+TA_DNSSEC_ID="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" |awk '{print $5}')"
+TA_ALG_ID="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" |awk '{print $6}')"
+TA_ALG_SID="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" |awk '{print $7}')"
+TA_HASH="$(grep -v '^;' "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" |awk '{print $8}')"
 printf '%s initial-key %s %s %s \"%s\";\n' \
   "$TA_DOMAIN" "$TA_DNSSEC_ID" "$TA_ALG_ID" "$TA_ALG_SID" "$TA_HASH" \
-   >> "$TA_NAMED_CONF_FILESPEC"
-echo "};" >> "$TA_NAMED_CONF_FILESPEC"
-file_perms "$TA_NAMED_CONF_FILESPEC" 0640 root:named named_conf_t
+   >> "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC"
+echo "};" >> "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC"
+flex_chmod 0640 "$TA_NAMED_CONF_FILESPEC"
+flex_chown root:${GROUP_NAME} "$TA_NAMED_CONF_FILESPEC"
+flex_chcon named_conf_t "$TA_NAMED_CONF_FILESPEC"
 
 # A final named.conf to include all the above partial named.conf files
 echo "Creating $NAMED_CONF_FILESPEC ..."
-cat << PARTIAL_NAMED_CONF_EOF | tee "$NAMED_CONF_FILESPEC" >/dev/null
+cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESPEC" >/dev/null
 # File: $NAMED_CONF_FILESPEC
 # Date: $(date +"%Y%M%D %H%M")"
 # Title: named configuration file for standalone CLOSED-NET root server
 
-include "${SYSCONFDIR}/logging-named.conf";
+# include "${sysconfdir}/logging-named.conf";
 include "$KEY_NAMED_CONF_FILESPEC";
 include "$OPTIONS_NAMED_CONF_FILESPEC";
 include "$TA_NAMED_CONF_FILESPEC";
@@ -404,18 +422,22 @@ echo ""
 
 # Perform syntax-checking
 echo "Performing syntax-checking on newly created config files ..."
-named-checkconf -z "$NAMED_CONF_FILESPEC" >/dev/null 2>&1
+if [ ! -z "${BUILDROOT}${CHROOT_DIR}" ]; then
+  NAMED_VIRT_DIROPT="-t $(realpath ${BUILDROOT}${CHROOT_DIR})"
+  cp /etc/rndc.key ${BUILDROOT}${CHROOT_DIR}/etc
+fi
+named-checkconf $NAMED_VIRT_DIROPT -z "$NAMED_CONF_FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
-  echo "Mmmmm, syntax error in $NAMED_CONF_FILESPEC"
+  echo "Mmmmm, syntax error in ${BUILDROOT}$NAMED_CONF_FILESPEC"
   echo "Error output:"
-  named-checkconf -z "$NAMED_CONF_FILESPEC" 
+  named-checkconf $NAMED_VIRT_DIROPT -l -z "$NAMED_CONF_FILESPEC" 
   exit $retsts
 fi
 echo ""
 
 echo "Use this file: "
-echo "     $NAMED_CONF_FILESPEC"
+echo "     ${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESPEC"
 echo "in your /etc/sysconfig/named or /etc/default/named for "
 echo "your configuration file startup of named daemon."
 
