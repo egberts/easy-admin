@@ -2,7 +2,8 @@
 # File: 510-dns-bind9-reset-config.sh
 # Title:  Restart Bind9 configuration from scratch
 
-source dns-bind9-common.sh
+BUILDROOT="${BUILDROOT:-build/}"
+source dns-isc-common.sh
 
 echo "Clearing out prior settings in $BUILDROOT"
 
@@ -19,9 +20,9 @@ if [ -d "$BUILDROOT" ]; then
 fi
 
 # Create skeleton subdirectory
-flex_mkdir "$ext_bind_dirspec"
-flex_chown root:bind "$ext_bind_dirspec"
-flex_chmod 0750      "$ext_bind_dirspec"
+flex_mkdir "$sysconfdir"
+flex_chown root:bind "$sysconfdir"
+flex_chmod 0750      "$sysconfdir"
 
 echo "Creating a new $BUILDBIND directory..."
 mkdir "$BUILDBIND"  # no flex_mkdir, this is an intermediate-build tmp directory
