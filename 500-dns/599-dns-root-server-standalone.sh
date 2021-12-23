@@ -34,26 +34,27 @@ ZONE_DB_DIRSPEC="${ZONE_DB_DIRSPEC:-/var/named}"  # typically /var/lib/bind or /
 KEYS_DIRSPEC="${KEYS_DB_DIRSPEC:-$ZONE_DB_DIRSPEC/keys}"   # typically /var/lib/bind/keys or /var/named/keys
 NAMED_CONF_FILESPEC="${sysconfdir}/standalone-named.conf"
 
-echo "This will write over your Bind9 settings."
-echo "Or you could define the following and rerun for a local daemon copy:"
-echo ""
-echo "    rundir=. sysconfdir=. NAMED_HOME_DIRSPEC=. \\"
-echo "        NAMED_DATA_DIRSPEC=. ZONE_DB_DIRSPEC=.  \\"
-echo "        KEYS_DIRSPEC=.  \\"
-echo "        ./dns-root-server-standalone.sh"
-echo "    named -4 -d65535 -g -c ${NAMED_CONF_FILESPEC} -T mkeytimers=1/6/180"
-echo ""
-echo " 'mkeytimers' for a 3-minute DNSSEC key rollover interval at root server-level"
-echo ""
-
-read -rp "Enter in 'yes' to contiinue: "
-if [ "$REPLY" != "yes" ]; then
-  echo "Aborted."
-  exit 2
-fi
-if [ "$USER" != "root" ]; then
-  echo "Must be root to run $0"
-  exit 9
+if [ "${BUILDROOT:0:1}" == "/" ]; then
+  echo "This will write over your Bind9 settings."
+  echo "Or you could define the following and rerun for a local daemon copy:"
+  echo ""
+  echo "    rundir=. sysconfdir=. NAMED_HOME_DIRSPEC=. \\"
+  echo "        NAMED_DATA_DIRSPEC=. ZONE_DB_DIRSPEC=.  \\"
+  echo "        KEYS_DIRSPEC=.  \\"
+  echo "        ./dns-root-server-standalone.sh"
+  echo "    named -4 -d65535 -g -c ${NAMED_CONF_FILESPEC} -T mkeytimers=1/6/180"
+  echo ""
+  echo " 'mkeytimers' for a 3-minute DNSSEC key rollover interval at root server-level"
+  echo ""
+  read -rp "Enter in 'yes' to contiinue: "
+  if [ "$REPLY" != "yes" ]; then
+    echo "Aborted."
+    exit 2
+  fi
+  if [ "$USER" != "root" ]; then
+    echo "Must be root to run $0"
+    exit 9
+  fi
 fi
 
 PRIVATE_TLD="my-root"  # could be 'home', 'private', 'lan', 'internal'
@@ -75,19 +76,19 @@ fi
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
-flex_mkdir $libdir
-flex_mkdir $libdir/dynamic
-flex_mkdir $libdir/keys
-flex_mkdir $libdir/data
-flex_mkdir $localstatedir
-flex_mkdir $sysconfdir
-flex_mkdir $sysconfdir/keys
+flex_mkdir "$libdir"
+flex_mkdir "$libdir/dynamic"
+flex_mkdir "$libdir/keys"
+flex_mkdir "$libdir/data"
+flex_mkdir "$localstatedir"
+flex_mkdir "$sysconfdir"
+flex_mkdir "$sysconfdir/keys"
 
 # In ALGORITHSM, the first entry is the input default
 echo "List of supported DNSSEC algorithms:"
 ALGORITHMS=("ecdsaP256Sha256" "ecdsaP384Sha384" "ed25519" "rsaSha256" "rsaSha512")
 idx=1
-for alg in ${ALGORITHMS[@]}; do
+for alg in ${ALGORITHMS[*]}; do
   echo "  $idx: $alg"
   ((idx++))
 done
@@ -112,18 +113,18 @@ TMP_ROOT_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.tmp"
 
 DSSET_FILESPEC="$ZONE_DB_DIRSPEC/dsset-root"
 
-if [ ! -d "$NAMED_HOME_DIRSPEC" ]; then
-  echo "named $HOME directory '$NAMED_HOME_DIRSPEC' does not exist; aborted."
+if [ ! -d "${BUILDROOT}${CHROOT_DIR}$NAMED_HOME_DIRSPEC" ]; then
+  echo "named $HOME directory '${BUILDROOT}${CHROOT_DIR}$NAMED_HOME_DIRSPEC' does not exist; aborted."
   exit 3
 fi
 
-if [ ! -d "$ZONE_DB_DIRSPEC" ]; then
-  echo "Zone database directory '$ZONE_DB_DIRSPEC' does not exist; aborted."
+if [ ! -d "${BUILDROOT}${CHROOT_DIR}$ZONE_DB_DIRSPEC" ]; then
+  echo "Zone database directory '${BUILDROOT}${CHROOT_DIR}$ZONE_DB_DIRSPEC' does not exist; aborted."
   exit 3
 fi
 
-if [ ! -d "$KEYS_DIRSPEC" ]; then
-  echo "Key directory '$KEYS_DIRSPEC' does not exist; aborted."
+if [ ! -d "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" ]; then
+  echo "Key directory '${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC' does not exist; aborted."
   exit 3
 fi
 
@@ -150,7 +151,7 @@ fi
 ZSK_KEY_FILESPEC="${KEYS_DIRSPEC}/${ZSK_ID}.key"
 ZSK_PRIVATE_FILESPEC="${KEYS_DIRSPEC}/${ZSK_ID}.private"
 flex_chmod 0644 "$ZSK_KEY_FILESPEC"
-flex_chown ${USER_NAME}:${GROUP_NAME} "$ZSK_KEY_FILESPEC" 
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$ZSK_KEY_FILESPEC" 
 flex_chcon named_cache_t "$ZSK_PRIVATE_FILESPEC" 
 
 echo "Creating Key-Signing-Key (KSK) files ..."
@@ -174,10 +175,10 @@ fi
 KSK_KEY_FILESPEC="${KEYS_DIRSPEC}/${KSK_ID}.key"
 KSK_PRIVATE_FILESPEC="${KEYS_DIRSPEC}/${KSK_ID}.private"
 flex_chmod 0644 "$KSK_KEY_FILESPEC"
-flex_chown ${USER_NAME}:${GROUP_NAME} "$KSK_KEY_FILESPEC"
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$KSK_KEY_FILESPEC"
 flex_chcon named_cache_t "$KSK_KEY_FILESPEC"
 flex_chmod 0600 "$KSK_PRIVATE_FILESPEC" 
-flex_chown ${USER_NAME}:${GROUP_NAME} "$KSK_PRIVATE_FILESPEC"
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$KSK_PRIVATE_FILESPEC"
 flex_chcon named_cache_t "$KSK_PRIVATE_FILESPEC" 
 echo ""
 
@@ -187,7 +188,7 @@ echo ""
 
 # Create SOA, NS, and A glue records
 echo "Creating SOA, NS, annd A glue record in ${ROOT_ZONE_FILESPEC} ..."
-cat << ROOT_ZONE_EOF > ${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC}
+cat << ROOT_ZONE_EOF > "${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC}"
 .		${DOMAIN_TTL}	IN	SOA	mname.invalid. nm.invalid. (
 						$SN	; Serial Number
 						$T1	; Refresh
@@ -209,6 +210,7 @@ ns.example.			A	10.10.0.1
 ROOT_ZONE_EOF
 
 # Append the big full zone transfer file after our SOA, NS, A header
+# shellcheck disable=SC2129
 cat "$TMP_ROOT_ZONE_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 
 # Append the DNSKEYs at the end of the zone file
@@ -217,7 +219,7 @@ cat "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$R
 
 echo "$ROOT_ZONE_FILESPEC created."
 flex_chmod 0644 "$ROOT_ZONE_FILESPEC" 
-flex_chown ${USER_NAME}:${GROUP_NAME} "$ROOT_ZONE_FILESPEC" 
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$ROOT_ZONE_FILESPEC" 
 flex_chcon named_zone_t "$ROOT_ZONE_FILESPEC" 
 rm "${BUILDROOT}${CHROOT_DIR}$TMP_ROOT_ZONE_FILESPEC"
 echo ""
@@ -248,13 +250,13 @@ fi
 mv "${BUILDROOT}${CHROOT_DIR}${ZONE_DB_DIRSPEC}/dsset-." "${BUILDROOT}${CHROOT_DIR}${ZONE_DB_DIRSPEC}/dsset-root"
 echo "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC created."
 flex_chmod 0644 "$DSSET_FILESPEC" 
-flex_chown ${USER_NAME}:${GROUP_NAME} "$DSSET_FILESPEC" 
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$DSSET_FILESPEC" 
 flex_chcon named_zone_t "$DSSET_FILESPEC" 
 
 SIGNED_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.signed"
 echo "$SIGNED_ZONE_FILESPEC created."
 flex_chmod 0644 "$SIGNED_ZONE_FILESPEC" 
-flex_chown ${USER_NAME}:${GROUP_NAME} "$SIGNED_ZONE_FILESPEC" 
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$SIGNED_ZONE_FILESPEC" 
 flex_chcon named_zone_t "$SIGNED_ZONE_FILESPEC" 
 
 # Create the view and its zone file
@@ -282,7 +284,7 @@ view "recursive" IN {
         !{ !{ localhost; 10.10.0.1; }; any; };
         // only localhost got past this point here
         // no one can update except localhost RNDC
-        key "rndc-key"; // only RNDC on localhost
+        key "rndc-key"; // only RNDC on localhost or 10.10.0.1
 
         };
     zone "." {
@@ -293,7 +295,7 @@ view "recursive" IN {
 };
 PARTIAL_NAMED_CONF_EOF
 flex_chmod 0640 "$VIEW_NAMED_CONF_FILESPEC" 
-flex_chown root:${GROUP_NAME} "$VIEW_NAMED_CONF_FILESPEC" 
+flex_chown "root:${GROUP_NAME}" "$VIEW_NAMED_CONF_FILESPEC" 
 flex_chcon named_conf_t "$VIEW_NAMED_CONF_FILESPEC" 
 
 OPTIONS_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-options-named.conf"
@@ -346,7 +348,7 @@ options {
 };
 PARTIAL_NAMED_CONF_EOF
 flex_chmod 0640 "$OPTIONS_NAMED_CONF_FILESPEC"
-flex_chown root:${GROUP_NAME} "$OPTIONS_NAMED_CONF_FILESPEC"
+flex_chown "root:${GROUP_NAME}" "$OPTIONS_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$OPTIONS_NAMED_CONF_FILESPEC"
 
 # And for the 'key' clause for RNDC of named configuration
@@ -361,7 +363,7 @@ cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$KEY_NAMED_CONF_FI
 include "/etc/rndc.key";
 PARTIAL_NAMED_CONF_EOF
 flex_chmod 0640 "$KEY_NAMED_CONF_FILESPEC"
-flex_chown root:${GROUP_NAME} "$KEY_NAMED_CONF_FILESPEC"
+flex_chown "root:${GROUP_NAME}" "$KEY_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$KEY_NAMED_CONF_FILESPEC"
 
 # And now for the 'managed-keys' clause of named configuration
@@ -401,7 +403,8 @@ printf '%s initial-key %s %s %s \"%s\";\n' \
    >> "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC"
 echo "};" >> "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC"
 flex_chmod 0640 "$TA_NAMED_CONF_FILESPEC"
-flex_chown root:${GROUP_NAME} "$TA_NAMED_CONF_FILESPEC"
+# shellcheck disable=SC2086
+flex_chown "root:${GROUP_NAME}" "$TA_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$TA_NAMED_CONF_FILESPEC"
 
 # A final named.conf to include all the above partial named.conf files
@@ -422,19 +425,27 @@ echo ""
 
 # Perform syntax-checking
 echo "Performing syntax-checking on newly created config files ..."
-if [ ! -z "${BUILDROOT}${CHROOT_DIR}" ]; then
-  NAMED_VIRT_DIROPT="-t $(realpath ${BUILDROOT}${CHROOT_DIR})"
-  cp /etc/rndc.key ${BUILDROOT}${CHROOT_DIR}/etc
+if [ ! -z "${BUILDROOT}${CHROOT_DIR}" ] && [ "${BUILDROOT:0:1}" != "/" ]; then
+  NAMED_VIRT_DIROPT="-t $(realpath "${BUILDROOT}${CHROOT_DIR}")"
+  cat << RNDC_KEY_EOF | tee "${BUILDROOT}${CHROOT_DIR}/etc/rndc.key"
+# Faux RNDC key for testing with $0
+key "rndc-key" {
+	algorithm hmac-sha256;
+	secret "x+cr8Uxj4pUPf9UwrZRGcoU6b9jQxBc0d+Zl5oJAgUQ=";
+};
+RNDC_KEY_EOF
 fi
+# shellcheck disable=SC2086
 named-checkconf $NAMED_VIRT_DIROPT -z "$NAMED_CONF_FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Mmmmm, syntax error in ${BUILDROOT}$NAMED_CONF_FILESPEC"
   echo "Error output:"
+  # shellcheck disable=SC2086
   named-checkconf $NAMED_VIRT_DIROPT -l -z "$NAMED_CONF_FILESPEC" 
   exit $retsts
 fi
-echo ""
+echo 
 
 echo "Use this file: "
 echo "     ${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESPEC"
