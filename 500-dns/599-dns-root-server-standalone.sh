@@ -27,12 +27,6 @@ echo ""
 source dns-isc-common.sh
 
 DOMAIN_TTL=86400
-sysconfdir="${sysconfdir:-/etc/named}"   # typically /etc/bind or /etc/named
-NAMED_DATA_DIRSPEC="${NAMED_DATA_DIRSPEC:-${NAMED_HOME_DIRSPEC}/data}"
-# Directory of Zone DBs are always a separate declaration than named's $HOME 
-ZONE_DB_DIRSPEC="${ZONE_DB_DIRSPEC:-/var/named}"  # typically /var/lib/bind or /var/named
-KEYS_DIRSPEC="${KEYS_DB_DIRSPEC:-$ZONE_DB_DIRSPEC/keys}"   # typically /var/lib/bind/keys or /var/named/keys
-NAMED_CONF_FILESPEC="${sysconfdir}/standalone-named.conf"
 
 if [ "${BUILDROOT:0:1}" == "/" ]; then
   echo "This will write over your Bind9 settings."
@@ -67,7 +61,6 @@ T4="86400"
 NS1_NAME="ns1.a.myroot-servers.${PRIVATE_TLD}."
 CONTACT="hostmaster.${PRIVATE_TLD}."
 
-BUILDROOT="${BUILDROOT:-build/}"
 if [ "${BUILDROOT:0:1}" != '/' ]; then
   mkdir -p build
 else
@@ -77,12 +70,45 @@ FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone.sh
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 flex_mkdir "$libdir"
-flex_mkdir "$libdir/dynamic"
-flex_mkdir "$libdir/keys"
-flex_mkdir "$libdir/data"
-flex_mkdir "$localstatedir"
+# DONT TOUCH libdir; too many distro-specific package maintainers veered off
+
+flex_mkdir "$DEFAULT_DYNAMIC_DIRSPEC"
+flex_chmod 0750 "$DEFAULT_DYNAMIC_DIRSPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$DEFAULT_DYNAMIC_DIRSPEC"
+flex_chcon named_cache_t "$DEFAULT_DYNAMIC_DIRSPEC"
+
+flex_mkdir "$DEFAULT_KEYS_DB_DIRSPEC"
+flex_chmod 0750 "$DEFAULT_KEYS_DB_DIRSPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$DEFAULT_KEYS_DB_DIRSPEC"
+flex_chcon named_cache_t "$DEFAULT_KEYS_DB_DIRSPEC"
+
+flex_mkdir "$DEFAULT_DATA_DIRSPEC"
+flex_chmod 0750 "$DEFAULT_DATA_DIRSPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$DEFAULT_DATA_DIRSPEC"
+flex_chcon named_cache_t "$DEFAULT_DATA_DIRSPEC"
+
+# DO NOT WORK on $localstatedir for its file perms/owners
+
+flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
+flex_chmod 0750 "$VAR_LIB_NAMED_DIRSPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$VAR_LIB_NAMED_DIRSPEC"
+flex_chcon named_zone_t "$VAR_LIB_NAMED_DIRSPEC"
+
+
 flex_mkdir "$sysconfdir"
-flex_mkdir "$sysconfdir/keys"
+flex_chmod 0755 "$sysconfdir"
+flex_chown root:root "$sysconfdir"
+flex_chcon named_conf_t "$sysconfdir"
+
+flex_mkdir "$extended_sysconfdir"
+flex_chmod 0755 "$extended_sysconfdir"
+flex_chown root:root "$extended_sysconfdir"
+flex_chcon named_conf_t "$extended_sysconfdir"
+
+flex_mkdir "$extended_sysconfdir/keys"
+flex_chmod 0755 "$extended_sysconfdir/keys"
+flex_chown "root:$GROUP_NAME" "$extended_sysconfdir/keys"
+flex_chcon named_cache_t "$extended_sysconfdir/keys"
 
 # In ALGORITHSM, the first entry is the input default
 echo "List of supported DNSSEC algorithms:"
@@ -107,7 +133,7 @@ fi
 
 
 DOMAIN_ROOT_PART="."  # must be the same as 1st field of SOA line in zone file
-ROOT_ZONE_FILESPEC="${ZONE_DB_DIRSPEC}/db.root.standalone"
+ROOT_ZONE_FILESPEC="${DEFAULT_ZONE_DB_DIRSPEC}/db.root.standalone"
 TMP_ROOT_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.tmp"
 
 
@@ -187,7 +213,7 @@ echo ""
 #sed -i "/^\.\s/d" "$TMP_ROOT_ZONE_FILESPEC"
 
 # Create SOA, NS, and A glue records
-echo "Creating SOA, NS, annd A glue record in ${ROOT_ZONE_FILESPEC} ..."
+echo "Creating SOA, NS, annd A glue record in ${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC} ..."
 cat << ROOT_ZONE_EOF > "${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC}"
 .		${DOMAIN_TTL}	IN	SOA	mname.invalid. nm.invalid. (
 						$SN	; Serial Number
@@ -211,17 +237,17 @@ ROOT_ZONE_EOF
 
 # Append the big full zone transfer file after our SOA, NS, A header
 # shellcheck disable=SC2129
-cat "$TMP_ROOT_ZONE_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
+#cat "$TMP_ROOT_ZONE_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 
 # Append the DNSKEYs at the end of the zone file
 cat "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 cat "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 
-echo "$ROOT_ZONE_FILESPEC created."
+echo "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC created."
 flex_chmod 0644 "$ROOT_ZONE_FILESPEC" 
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$ROOT_ZONE_FILESPEC" 
 flex_chcon named_zone_t "$ROOT_ZONE_FILESPEC" 
-rm "${BUILDROOT}${CHROOT_DIR}$TMP_ROOT_ZONE_FILESPEC"
+rm -f "${BUILDROOT}${CHROOT_DIR}$TMP_ROOT_ZONE_FILESPEC"
 echo ""
 
 rm -f "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC"
@@ -260,7 +286,7 @@ flex_chown "${USER_NAME}:${GROUP_NAME}" "$SIGNED_ZONE_FILESPEC"
 flex_chcon named_zone_t "$SIGNED_ZONE_FILESPEC" 
 
 # Create the view and its zone file
-VIEW_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-view-recursive-zone-root-named.conf"
+VIEW_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-view-recursive-zone-root-named.conf"
 echo "Creating $VIEW_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$VIEW_NAMED_CONF_FILESPEC" >/dev/null
 
@@ -298,7 +324,7 @@ flex_chmod 0640 "$VIEW_NAMED_CONF_FILESPEC"
 flex_chown "root:${GROUP_NAME}" "$VIEW_NAMED_CONF_FILESPEC" 
 flex_chcon named_conf_t "$VIEW_NAMED_CONF_FILESPEC" 
 
-OPTIONS_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-options-named.conf"
+OPTIONS_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-options-named.conf"
 echo "Creating $OPTIONS_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$OPTIONS_NAMED_CONF_FILESPEC" >/dev/null
 
@@ -352,7 +378,7 @@ flex_chown "root:${GROUP_NAME}" "$OPTIONS_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$OPTIONS_NAMED_CONF_FILESPEC"
 
 # And for the 'key' clause for RNDC of named configuration
-KEY_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-key-named.conf"
+KEY_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-key-named.conf"
 echo "Creating $KEY_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$KEY_NAMED_CONF_FILESPEC" >/dev/null
 
@@ -367,7 +393,7 @@ flex_chown "root:${GROUP_NAME}" "$KEY_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$KEY_NAMED_CONF_FILESPEC"
 
 # And now for the 'managed-keys' clause of named configuration
-TA_NAMED_CONF_FILESPEC="${sysconfdir}/standalone-trust-anchors-named.conf"
+TA_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-trust-anchors-named.conf"
 echo "Creating $TA_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC" >/dev/null
 
@@ -414,7 +440,7 @@ cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESP
 # Date: $(date +"%Y%M%D %H%M")"
 # Title: named configuration file for standalone CLOSED-NET root server
 
-# include "${sysconfdir}/logging-named.conf";
+# include "${extended_sysconfdir}/logging-named.conf";
 include "$KEY_NAMED_CONF_FILESPEC";
 include "$OPTIONS_NAMED_CONF_FILESPEC";
 include "$TA_NAMED_CONF_FILESPEC";
@@ -436,13 +462,13 @@ key "rndc-key" {
 RNDC_KEY_EOF
 fi
 # shellcheck disable=SC2086
-named-checkconf $NAMED_VIRT_DIROPT -z "$NAMED_CONF_FILESPEC" >/dev/null 2>&1
+${named_checkconf_bin} $NAMED_VIRT_DIROPT -z "$NAMED_CONF_FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Mmmmm, syntax error in ${BUILDROOT}$NAMED_CONF_FILESPEC"
   echo "Error output:"
   # shellcheck disable=SC2086
-  named-checkconf $NAMED_VIRT_DIROPT -l -z "$NAMED_CONF_FILESPEC" 
+  ${named_checkconf_bin} $NAMED_VIRT_DIROPT -l -z "$NAMED_CONF_FILESPEC" 
   exit $retsts
 fi
 echo 

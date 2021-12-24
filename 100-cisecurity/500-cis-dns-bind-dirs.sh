@@ -91,28 +91,174 @@ if [ $EUID -ne 0 ]; then
   sudo_bin=sudo
 fi
 
+# Use the 'which -a' which follows $PATH to pick up all 'named' binaries
+# choose the first one or choose the ones in SysV/systemd?
+# (or let the end-user choose it?)
+# Make the SysV/systemd-selected ones the default, then let user choose it
+# if there are more than one
+named_bins_a=()
+named_bins_a=($(which -a named | awk '{print $1}'))
+echo "Found 'named' in: $(echo ${named_bins_a[*]} | xargs)"
+
+# If there is more than one, use first one as the user-default
+if [ ${#named_bins_a[@]} -ge 2 ]; then
+  default_named_bin="${named_bins_a[0]}"
+  while true ; do
+    i=1
+    echo "Enter in 'named' index [default: $default_named_bin]: "
+    for o in "${named_bins_a[@]}"; do
+      echo "  $i) $o"
+      ((i++))
+    done
+    read -rp "The index to which 'named' binary to use? [$default_named_bin]: " 
+    if [ -z "$REPLY" ]; then
+        named_bin="${default_named_bin}"
+        break;
+    fi
+    if [[ "$REPLY" =~ ^-?[0-9]+$ ]]; then
+      if [ "$REPLY" -le "${#named_bins_a[@]}" ]; then
+        ((REPLY--))
+        echo "$REPLY= $REPLY"
+        named_bin="${named_bins_a[REPLY]}"
+        break;
+      fi
+    else
+      named_bin="$REPLY"
+      break;
+    fi
+  done
+  echo "'named' selected: ${named_bin}"
+else
+  named_bin="${named_bins_a[0]}"
+  echo "Only one 'named' found: $(echo ${named_bins_a[*]} | xargs)"
+fi
+echo "Using 'named' binary in: $named_bin"
+
+#  TODO
+
+# TODO: What to do with two binaries? (/usr/sbin and /usr/local/sbin)
+#
 named_checkconf_bin="$(whereis -b named-checkconf | awk '{print $2}')"
 if [ -z "$named_checkconf_bin" ]; then
   echo "named-checkconf is not found; Aborted."
   exit 1
 fi
 
-# Auto determine Distro of Linux
-lsb_release_result="$(whereis -b lsb_release | awk '{print $2}')"
-if [ -n "$lsb_release_result" ]; then
-  distro_name=$($lsb_release_result -s -i)
-  # if [ "$distro_name" = "Debian" ]; then
-  #   bind_groupname='bind'
-  # else
-  #   bind_groupname='named'
-  # fi
-else
-  distro_name='Unknown'
-  # bind_groupname='named'
+source /etc/os-release
+
+CHROOT_DIR="${CHROOT_DIR:-}"
+BUILDROOT="${BUILDROOT:-build}"
+
+# libdir and $HOME are two separate grouping (that Fedora, et. al. merged)
+case $ID in
+  debian)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-bind}"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    DEFAULT_LIB_NAMED_DIRNAME="${DEFAULT_LIB_CONF_DIRNAME:-bind}"
+    DEFAULT_LIB_NAMED_DIRSPEC="/var/lib/${DEFAULT_LIB_NAMED_DIRNAME}"
+    DEFAULT_NAMED_CONF_FILESPEC="/etc/bind/named.conf"
+    USER_NAME="bind"
+    GROUP_NAME="bind"
+    WHEEL_GROUP="sudo"
+    ;;
+  centos)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-named}"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    DEFAULT_LIB_NAMED_DIRNAME="${DEFAULT_LIB_CONF_DIRNAME:-named}"
+    DEFAULT_LIB_NAMED_DIRSPEC="/var/${DEFAULT_LIB_NAMED_DIRNAME}"
+    DEFAULT_NAMED_CONF_FILESPEC="/etc/named.conf"
+    USER_NAME="named"
+    GROUP_NAME="named"
+    WHEEL_GROUP="wheel"
+    ;;
+  redhat)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-named}"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    DEFAULT_LIB_NAMED_DIRNAME="${DEFAULT_LIB_CONF_DIRNAME:-named}"
+    DEFAULT_LIB_NAMED_DIRSPEC="/var/${DEFAULT_LIB_NAMED_DIRNAME}"
+    DEFAULT_NAMED_CONF_FILESPEC="/etc/named.conf"
+    USER_NAME="named"
+    GROUP_NAME="named"
+    WHEEL_GROUP="wheel"
+    ;;
+  fedora)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-named}"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    DEFAULT_LIB_NAMED_DIRNAME="${DEFAULT_LIB_CONF_DIRNAME:-named}"
+    DEFAULT_LIB_NAMED_DIRSPEC="/var/${DEFAULT_LIB_NAMED_DIRNAME}"
+    DEFAULT_NAMED_CONF_FILESPEC="/etc/named.conf"
+    USER_NAME="named"
+    GROUP_NAME="named"
+    WHEEL_GROUP="wheel"
+    ;;
+  *)
+    echo "Unknown Linux distro"
+    exit 3
+    ;;
+esac
+bind_username="$USER_NAME"
+bind_groupname="$GROUP_NAME"
+
+# Vendor-specific autotool/autoconf
+prefix="${prefix:-${DEFAULT_PREFIX}}"
+sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR}}"
+exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX}}"
+libdir="${libdir:-"${DEFAULT_LIB_NAMED_DIRSPEC}"}"
+libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"
+localstatedir="${localstatedir:-"$DEFAULT_LOCALSTATEDIR"}"
+datarootdir="${datarootdir:-"${prefix}/share"}"
+sharedstatedir="${sharedstatedir:-"${prefix}/com"}"
+bindir="${bindir:-"${exec_prefix}/bin"}"
+sbindir="${sbindir:-"${exec_prefix}/sbin"}"
+rundir="${rundir:-"${localstatedir}/run"}"
+
+# Package maintainer-specific
+named_conf_filespec="${NAMED_CONF:-${DEFAULT_NAMED_CONF_FILESPEC}"
+
+##########################################################################
+
+case $ID in
+  debian)
+    USER_NAME="bind"
+    GROUP_NAME="bind"
+    package_tarname="bind"
+    ;;
+  fedora)
+    USER_NAME="named"
+    GROUP_NAME="named"
+    package_tarname="bind"
+    ;;
+  redhat)
+    USER_NAME="named"
+    GROUP_NAME="named"
+    package_tarname="bind"
+    ;;
+  centos)
+    USER_NAME="named"
+    GROUP_NAME="named"
+    package_tarname="bind"
+    ;;
+esac
+
+if [ -z "$NAMED_HOME_DIRSPEC" ]; then
+  NAMED_HOME_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $6}')"
 fi
 
-selected_bind_username='bind'
-# Pick up the user/group names
+##########################################################################
+
+# Either we let distro pick the name or we try and pick up the user/group names
 known_bind_usernames="bind named"
 for bind_username in $known_bind_usernames; do
   found_bindname_A=("$(grep -E -- "^$bind_username" /etc/passwd)")
@@ -121,32 +267,34 @@ for bind_username in $known_bind_usernames; do
     echo "Aborted"
     exit 9
   elif [ -n "${found_bindname_A[0]}" ]; then
-    selected_bind_username="${bind_username}"
+    bind_username="${bind_username}"
     bind_home_dir="$(echo "${found_bindname_A[0]}" | awk -F: '{print $6}')"
   fi
 done
-echo "Bind9 user account name is automatically determined as: '$selected_bind_username'"
+echo "Bind9 user account name is automatically determined as: '$bind_username'"
 if [ -z "$bind_home_dir" ]; then
-  echo "User '$selected_bind_username' $HOME directory is undefined"
+  echo "User '$bind_username' $HOME directory is undefined"
   echo "Aborted."
   exit 123
 fi
-echo "User $selected_bind_username \$HOME=$bind_home_dir"
+echo "User $bind_username \$HOME=$bind_home_dir"
 
 # Now extract that Bind9 user $HOME directory (also varied across distros)
 # named needs a $HOME for statistics, dump-files, cache dumps.
 # named puts other files elsewhere depending on static/dynamic/write/read needs
 # Keyword: 'directory'
-find_bind_home="$(grep "$selected_bind_username" /etc/passwd | awk -F: '{print $6}')"
+find_bind_home="$(grep "$bind_username" /etc/passwd | awk -F: '{print $6}')"
 if [ -z "$find_bind_home" ]; then
-  echo "Unable to determine $HOME for '$selected_bind_username' user."
+  echo "Unable to determine \$HOME for '$bind_username' user."
   echo "Aborted"
   exit 123
 else
   DEFAULT_USER_HOME_DIRNAME="$find_bind_home"
 fi
-bind_shell="$(grep -e "^$selected_bind_username" /etc/passwd|awk -F: '{print $7}')"
-# Later, we can override USER_HOME with named.conf's 'directory' keyword,
+bind_shell="$(grep -e "^$bind_username" /etc/passwd|awk -F: '{print $7}')"
+
+
+# Later, we can override much of $HOME with named.conf's 'directory' keyword,
 # if any.
 # This override of USER_HOME shall occur before first usage of $USER_HOME
 
@@ -165,8 +313,10 @@ if [ ! -d $sysconfdir ]; then
     fi
   fi
 fi
+echo "sysconfdir: $sysconfdir"
 
-
+# TODO: Do we want to lift the default named.conf using
+#   'named -V | grep 'named configuration:' | awk '{print $2}' ???
 # Compiled-in default for named configuration filespec
 NAMED_FILENAME="named.conf"  # almost never changeable
 NAMED_FILEPATH="$sysconfdir"  # ./configure during autogen/build/autoreconf
@@ -188,19 +338,20 @@ if [ ! -f "$NAMED_FILESPEC" ]; then
   # might be hidden or suppressed by file permission, go sudo
   # might be a split horizon, named.conf could have gone named-*.conf
   RETSTS=$?
-  if [ $RETSTS -eq 0 ]; then
+  if [ $RETSTS -ne 0 ]; then
     echo "OK, we found the $NAMED_FILESPEC file but it requires SUDO operation."
     echo "to read it.  Rest of this script will use SUDO but for read-only operation."
     echo "...Alternatively, you can copy the configs to /tmp or set all"
     echo "...file permission to world-read."
     echo "No changes shall be made."
   else
-    read -rp "Enter in Bind9 config file: " -ei/etc/bind/named.conf
-    if [ ! -f "REPLY" ]; then
+    read -rp "Enter in Bind9 config file: " -ei${NAMED_FILESPEC}
+    if [ ! -f "$REPLY" ]; then
       echo "No such file: $REPLY"
       echo "Aborted."
       exit 111
     fi
+    NAMED_FILESPEC="$REPLY"
   fi
 fi
 
@@ -366,28 +517,30 @@ datadir=$DATAROOTDIR
 # TODO Need additional clarity with CHROOT
 # SYSROOT=/   # used with chroot?
 # CHROOT_DIR="/var/named"  # Bind9 ARM handbook
+# CHROOT_DIR="/var/named/chroot"  # Fedora 35
 
 # CIS-specific default???
 dynamic_dir="/var/lib/bind/dynamic"  # Debian 9,10,11
 
 # distro-specific default
-distro_name='Debian'
-if [ "$distro_name" = 'Debian' ]; then
-  prefix="/usr"
-  sysconfdir="/etc/bind"
-  localstatedir=""
-  # CHROOT_DIR="/var/lib/named"
+case $ID in
+  'debian')
+    prefix="/usr"
+    sysconfdir="/etc/bind"
+    localstatedir=""
+    # CHROOT_DIR="/var/lib/named"
+    dynamic_dir="/var/lib/bind/dynamic"  # Debian 9,10,11
+    ;;
 
-  dynamic_dir="/var/lib/bind/dynamic"  # Debian 9,10,11
+  'redhat'|'fedora'|'centos')
+    prefix="/usr"
+    sysconfdir="/etc/named"
+    localstatedir="/var"
+    CHROOT_DIR="/var/lib/named"
 
-elif [ "$distro_name" = 'Redhat' ]; then
-  prefix="/usr"
-  sysconfdir="/etc/bind"
-  localstatedir="/var"
-  # CHROOT_DIR="/var/lib/named"
-
-  dynamic_dir="/var/lib/bind/dynamic"  # TBD/TODO
-fi
+    dynamic_dir="/var/named/dynamic"  # TBD/TODO
+    ;;
+esac
 
 echo "final configure/autogen/autoreconf settings:"
 echo "  prefix:        $prefix"
@@ -625,11 +778,11 @@ keytab_filespec="$KEYTAB_DIR/$KEYTAB_FILENAME"
 # All zone files referenced in the configuration files regardless of DNS server
 # type
 zone_files_list="$(echo "${zone_file_statements_A[*]}" | xargs)"
-if [ ${#zone_clauses_A[*]} -gt 1 ]; then
-  =""
-else
-  ="managed-keys"
-fi
+#if [ ${#zone_clauses_A[*]} -gt 1 ]; then
+#  =""
+#else
+#  ="trust-anchors"
+#fi
 
 # Keyword: 'key-directory'
 # This action picks up both the 'options, key-directory' and
@@ -689,7 +842,7 @@ function its_dir_exist
 }
 
 
-bind_cfg_files="/etc/bind/*.conf"
+bind_cfg_files="$sysconfdir/*.conf"
 its_dir_exist "$bind_cfg_files"
 
 # in case of split-horizon
@@ -712,6 +865,7 @@ log_dir="/var/log/named"
 # systemd service TmpDir
 # TMPDIR environment variable
 TMPDIR="/tmp"  # system-default, man tmpfile(3)
+#TMPDIR="/var/tmp"  # system-default, man tmpfile(3), Fedora 35
 
 #  echo "Must have a key directory somewhere."
 #  echo "Keys are dynamically defined after daemon runs"
@@ -725,33 +879,46 @@ TMPDIR="/tmp"  # system-default, man tmpfile(3)
 
 echo "Based on $NAMED_FILESPEC settings..."
 echo ""
-echo "selected_bind_username: $selected_bind_username"
-echo "bind_shell:   $bind_shell"
-echo "config_files_list: $config_files_list"
-echo "zone_files_list:   $zone_files_list"
-echo "bind_home:    $bind_home"
-echo "CIS_RUNDIR:   $CIS_RUNDIR"
-echo "dynamic_dir:       $dynamic_dir"
-echo "slave_dir:     $slave_dir"
-echo "datadir:      $datadir"
-echo "log_dir:       $log_dir"
-echo "TMPDIR:       $TMPDIR"
-echo "key_dir_list   $key_dir_list"
-echo "BINDKEY:      $BINDKEY"
-echo "zone_clauses_A: ${zone_clauses_A[*]}"
-echo "zone_file_statements_A: ${zone_file_statements_A[*]}"
-echo "pid_filespec: $pid_filespec"
-echo "SESSION_KEY_FILESPEC: $SESSION_KEY_FILESPEC"
-echo "JOURNAL_DIR:          $JOURNAL_DIR"
-echo "lock_filespec:        $lock_filespec"
-echo "MANAGEDKEYS_DIR:      $MANAGEDKEYS_DIR"
-echo "MANAGEDKEYS_FILESPEC: $MANAGEDKEYS_FILESPEC"
-echo "random_filespec:      $random_filespec"
-echo "secroots_filespec:    $secroots_filespec"
-echo "dump_filespec:        $dump_filespec"
-echo "statistics_filespec:  $statistics_filespec"
-echo "memstatistics_filespec: $memstatistics_filespec"
-echo "keytab_filespec:      $keytab_filespec"
+echo "TMPDIR:		$TMPDIR"
+echo "datadir:		$datadir"
+echo "Bind username:		$bind_username"
+echo "Bind groupname:	$bind_groupname"
+echo "Bind shell:		$bind_shell"
+echo
+echo "SELinux name_zone_t group:"
+echo "Bind \$HOME:		$bind_home"
+echo "Zone files list:	$zone_files_list"
+echo "Zone clauses_A:	${zone_clauses_A[*]}"
+echo "Zone file statements_A:	${zone_file_statements_A[*]}"
+echo
+echo "SELinux name_cache_t group:"
+echo "DNSSEC Dynamic Dir:	$dynamic_dir"
+echo "Zone Slave Dir:		$slave_dir"
+echo "key_dir_list		$key_dir_list"
+echo "ManagedKeys filespec:	$MANAGEDKEYS_FILESPEC"
+echo "dump filespec:		$dump_filespec"
+echo "secroots filespec:	$secroots_filespec"
+echo "statistics filespec:	$statistics_filespec"
+echo "memstatistics filespec:	$memstatistics_filespec"
+echo "KRB5 keytab filespec:	$keytab_filespec"
+echo "Session Key:	$SESSION_KEY_FILESPEC"
+echo "Journal dir:		$JOURNAL_DIR"
+echo "Lock filespec:		$lock_filespec"
+echo "ManagedKeys Dir:	$MANAGEDKEYS_DIR"
+echo
+echo "SELinux name_conf_t group:"
+echo "Config files list:	$config_files_list"
+echo "BINDKEY:		$BINDKEY"
+echo 
+echo "SELinux name_log_t group:"
+echo "Log directory:		$log_dir"
+echo
+echo "SELinux name_var_run_t group:"
+echo "CIS_RUNDIR:		$CIS_RUNDIR"
+echo "PID file:		$pid_filespec"
+echo 
+echo "SELinux misc. group:"
+echo "random filespec:	$random_filespec"
 
 # Testing all directories for its file permission and file ownership settings
 
@@ -814,94 +981,139 @@ function file_perm_check
   fi
   unset filespec expected_fmod expected_groupname expected_username varnam
 }
-echo "selected_bind_username: $selected_bind_username"
 
 echo ""
 read -rp "CISecurity settings or Debian settings? (C/d): " -eiC
 REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
 
-if [ "$REPLY" != "c" ]; then
+case $REPLY in
+  'd')
   echo "Debian default settings..."
   file_perm_check bind_shell "755" "root" "root"
-  file_perm_check bind_home "775" "root" "$selected_bind_username"
+  file_perm_check bind_home "775" "root" "$bind_username"
   for config_file in $config_files_list; do
-    file_perm_check config_file "644" "root" "$selected_bind_username"
+    file_perm_check config_file "644" "root" "$bind_username"
   done
   for zone_file in $zone_files_list; do
     file_perm_check zone_file "644" "root" "root"
   done
-  file_perm_check CIS_RUNDIR "775" "root" "$selected_bind_username"
-  file_perm_check dynamic_dir "2750" "root" "$selected_bind_username"
-  file_perm_check slave_dir "770" "root" "$selected_bind_username"
-  file_perm_check datadir "770" "root" "$selected_bind_username"
-  file_perm_check log_dir "770" "root" "$selected_bind_username"
+  file_perm_check CIS_RUNDIR "755" "root" "$bind_username"
+  file_perm_check dynamic_dir "2750" "root" "$bind_username"
+  file_perm_check slave_dir "770" "root" "$bind_username"
+  file_perm_check datadir "770" "root" "$bind_username"
+  file_perm_check log_dir "770" "root" "$bind_username"
   for key_dir in $key_dir_list; do
-    file_perm_check key_dir "775" "root" "$selected_bind_username"
+    file_perm_check key_dir "775" "root" "$bind_username"
   done
   file_perm_check TMPDIR "1777" "root" "root"
   # Bind key file shall be world-read for general inspection of file permissions
   file_perm_check BINDKEY "644" "root" "root"
-  file_perm_check pid_filespec "644" "$selected_bind_username" "$selected_bind_username"
+  file_perm_check pid_filespec "644" "$bind_username" "$bind_username"
   # session-key only occurs when DHCP server is coordinating with this DNS
-  file_perm_check SESSION_KEY_FILESPEC "600" "$selected_bind_username" "$selected_bind_username"
-  file_perm_check JOURNAL_DIR "775" "root" "$selected_bind_username"
-  file_perm_check lock_filespec "640" "root" "$selected_bind_username"
-  file_perm_check MANAGEDKEYS_DIR "775" "root" "$selected_bind_username"
-  if [ -z "$" ]; then
-    file_perm_check MANAGEDKEYS_DIR "775" "root" "$selected_bind_username"
+  file_perm_check SESSION_KEY_FILESPEC "600" "$bind_username" "$bind_username"
+  file_perm_check JOURNAL_DIR "775" "root" "$bind_username"
+  file_perm_check lock_filespec "640" "root" "$bind_username"
+  file_perm_check MANAGEDKEYS_DIR "775" "root" "$bind_username"
+  if [ -z "$?" ]; then
+    file_perm_check MANAGEDKEYS_DIR "775" "root" "$bind_username"
   else
-    file_perm_check  "640" "root" "$selected_bind_username"
+    file_perm_check  "640" "root" "$bind_username"
   fi
   file_perm_check random_filespec "666" "root" "root"
-  file_perm_check secroots_filespec "640" "root" "$selected_bind_username"
-  file_perm_check dump_filespec "640" "root" "$selected_bind_username"
-  file_perm_check statistics_filespec "640" "root" "$selected_bind_username"
-  file_perm_check memstatistics_filespec "640" "root" "$selected_bind_username"
-  file_perm_check keytab_filespec "640" "root" "$selected_bind_username"
-  file_perm_check recursing_filespec  "640" "root" "$selected_bind_username"
+  file_perm_check secroots_filespec "640" "root" "$bind_username"
+  file_perm_check dump_filespec "640" "root" "$bind_username"
+  file_perm_check statistics_filespec "640" "root" "$bind_username"
+  file_perm_check memstatistics_filespec "640" "root" "$bind_username"
+  file_perm_check keytab_filespec "640" "root" "$bind_username"
+  file_perm_check recursing_filespec  "640" "root" "$bind_username"
+  ;;
 
-else
+  'c')
   echo ""
   echo "Recommended CIS settings..."
 
-  file_perm_check bind_home "770" "$selected_bind_username" "$selected_bind_username"
+  file_perm_check bind_home "770" "$bind_username" "$bind_username"
   # shellcheck disable=SC2034
   for config_file in $config_files_list; do
-    file_perm_check config_file "640" "root" "$selected_bind_username"
+    file_perm_check config_file "640" "root" "$bind_username"
   done
   # shellcheck disable=SC2034
   for zone_file in $zone_files_list; do
-    file_perm_check zone_file "640" "root" "$selected_bind_username"
+    file_perm_check zone_file "640" "root" "$bind_username"
   done
-  file_perm_check CIS_RUNDIR "2775" "root" "$selected_bind_username"
+  file_perm_check CIS_RUNDIR "2775" "root" "$bind_username"
   # Key directory shall be world-read for general inspection of file permissions
   # shellcheck disable=SC2034
   for key_dir in $key_dir_list; do
-    file_perm_check key_dir "770" "root" "$selected_bind_username"
+    file_perm_check key_dir "770" "root" "$bind_username"
   done
-  file_perm_check pid_filespec "640" "root" "$selected_bind_username"
-  file_perm_check SESSION_KEY_FILESPEC "600" "$selected_bind_username" "root"
-  file_perm_check JOURNAL_DIR "2750" "$selected_bind_username" "root"
-  if [ -z "$" ]; then
-    file_perm_check MANAGEDKEYS_DIR "2750" "$selected_bind_username" "root"
+  file_perm_check pid_filespec "640" "root" "$bind_username"
+  file_perm_check SESSION_KEY_FILESPEC "600" "$bind_username" "root"
+  file_perm_check JOURNAL_DIR "2750" "$bind_username" "root"
+  if [ -z "$?" ]; then
+    file_perm_check MANAGEDKEYS_DIR "2750" "$bind_username" "root"
   else
-    file_perm_check  "640" "$selected_bind_username" "root"
+    file_perm_check  "640" "$bind_username" "root"
   fi
 
 #########################
   file_perm_check TMPDIR "1777" "root" "root"
   # Bind key file shall be world-read for general inspection of file permissions
   file_perm_check BINDKEY "644" "root" "root"
-  file_perm_check lock_filespec "640" "root" "$selected_bind_username"
+  file_perm_check lock_filespec "640" "root" "$bind_username"
   file_perm_check random_filespec "666" "root" "root"
-  file_perm_check secroots_filespec "640" "root" "$selected_bind_username"
-  file_perm_check dump_filespec "640" "root" "$selected_bind_username"
-  file_perm_check statistics_filespec "640" "root" "$selected_bind_username"
-  file_perm_check memstatistics_filespec "640" "root" "$selected_bind_username"
-  file_perm_check keytab_filespec "640" "root" "$selected_bind_username"
-  file_perm_check recursing_filespec  "640" "root" "$selected_bind_username"
+  file_perm_check secroots_filespec "640" "root" "$bind_username"
+  file_perm_check dump_filespec "640" "root" "$bind_username"
+  file_perm_check statistics_filespec "640" "root" "$bind_username"
+  file_perm_check memstatistics_filespec "640" "root" "$bind_username"
+  file_perm_check keytab_filespec "640" "root" "$bind_username"
+  file_perm_check recursing_filespec  "640" "root" "$bind_username"
+  ;;
 
-fi
+  'f')
+    echo "Fedora default settings..."
+    file_perm_check bind_shell "755" "root" "root"
+
+    # Reason for o-rx in named $HOME:
+    #   dhcp-client needs access to named session-key
+    file_perm_check bind_home "1770" "root" "$bind_groupname"
+    for config_file in $config_files_list; do
+      file_perm_check config_file "640" "root" "$bind_groupname"
+    done
+    for zone_file in $zone_files_list; do
+      file_perm_check zone_file "640" "$bind_username" "$bind_groupname"
+    done
+    file_perm_check CIS_RUNDIR "775" "$bind_username" "$bind_groupname"
+    file_perm_check dynamic_dir "750" "$bind_username" "$bind_groupname"
+    file_perm_check slave_dir "750" "$bind_username" "$bind_groupname"
+    file_perm_check datadir "750" "$bind_username" "$bind_groupname"
+    file_perm_check log_dir "750" "$bind_username" "$bind_groupname"
+    for key_dir in $key_dir_list; do
+      file_perm_check key_dir "750" "$bind_username" "$bind_groupname"
+    done
+    file_perm_check TMPDIR "1777" "root" "root"
+    file_perm_check BINDKEY "644" "$bind_username" "$bind_groupname"
+    file_perm_check pid_filespec "644" "$bind_username" "$bind_groupname"
+    # session-key only occurs when DHCP server is coordinating with this DNS
+    file_perm_check SESSION_KEY_FILESPEC "600" "$bind_username" "$bind_groupname"
+    file_perm_check JOURNAL_DIR "750" "$bind_username" "$bind_groupname"
+    file_perm_check lock_filespec "640" "$bind_username" "$bind_groupname"
+    file_perm_check MANAGEDKEYS_DIR "750" "$bind_username" "$bind_groupname"
+    if [ -z "$?" ]; then
+      file_perm_check MANAGEDKEYS_DIR "750" "$bind_username" "$bind_groupname"
+    #else
+    #  file_perm_check  "640" "root" "$bind_groupname"
+    fi
+    file_perm_check random_filespec "666" "root" "root"
+    file_perm_check secroots_filespec "640" "$bind_username" "$bind_groupname"
+    file_perm_check dump_filespec "640" "$bind_username" "$bind_groupname"
+    file_perm_check statistics_filespec "640" "$bind_username" "$bind_groupname"
+    file_perm_check memstatistics_filespec "640" "$bind_username" "$bind_groupname"
+    file_perm_check keytab_filespec "640" "$bind_username" "$bind_groupname"
+    file_perm_check recursing_filespec  "640" "$bind_username" "$bind_groupname"
+    ;;
+
+esac
 
 echo "Total files:       $total_files"
 echo "File missing:          $total_file_missings"
