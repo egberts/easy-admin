@@ -118,6 +118,8 @@ DEFAULT_KEYS_DB_DIRSPEC="/var/named/keys"
 # DNSSEC-related & managed-keys/trust-anchors
 DEFAULT_DYNAMIC_DIRSPEC="/var/named/dynamic"
 
+# WHY WOULD WE WANT /etc/named/keys?  We have /var[/lib]/named/keys
+
 
 # Use the 'which -a' which follows $PATH to pick up all 'named' binaries
 # choose the first one or choose the ones in SysV/systemd?
@@ -131,7 +133,7 @@ named_bins_a=($(which -a named | awk '{print $1}'))
 if [ ${#named_bins_a[@]} -ge 2 ]; then
 
   # Quick and see if systemctl cat named.service can clue us to which binary
-  systemd_named_bin="$(systemctl cat named.service | grep "ExecStart="|awk -F= '{print $2}' | awk '{print $1}')"
+  systemd_named_bin="$(systemctl cat "$systemd_unitname.service" | grep "ExecStart="|awk -F= '{print $2}' | awk '{print $1}')"
   if [ $? -eq 0 ] && [ -n "$systemd_named_bin" ]; then
     default_named_bin="$systemd_named_bin"
     echo "Choosing systemd-default: $systemd_named_bin"
@@ -182,8 +184,31 @@ named_compilezone="${named_sbin_dirspec}/named-compilezone"
 named_journalprint="${named_sbin_dirspec}/named-journalprint"
 named_rrchecker="${named_bin_dirspec}/named-rrchecker"
 
-# Check for named.conf
-# if try in 'systemctl cat named.service'
-# else if try in SysV initrc '/etc/init.d/named'
+# Check for user-supplied named.conf
+# use 'named -V' to get default named.conf to use as a default
 # scan /etc/named/*.conf for any
 # Prompt for named.conf
+
+if [ -z "$NAMED_CONF" ]; then
+  # DEFAULT_NAMED_CONF_FILESPEC="/etc/named.conf"  # TODO: temporary
+  SYSTEMD_NAMED_CONF="$(systemctl cat "${systemd_unitname}.service"|egrep "Environment\s*=\s*NAMEDCONF\s*="|awk -F= '{print $3}')"
+  if [ -n "$SYSTEMD_NAMED_CONF" ]; then
+    echo "systemd ${systemd_unitname}.service unit uses this config file: $SYSTEMD_NAMED_CONF"
+  else
+    echo "No named.conf found in 'systemctl cat ${systemd_unitname}.service'"
+    # Execute 'named -V' to get 'named configuration' default setting
+    SBIN_NAMED_CONF_FILESPEC="$("$named_bin" -V|grep 'named configuration:'|awk '{print $3}')"
+    # Might be an older 'named -V' with no output
+    if [ -z "$SBIN_NAMED_CONF_FILESPEC" ]; then
+      echo "Older 'named' binary offered no named.conf default dirpath;"
+      NAMED_CONF_FILESPEC="$DEFAULT_NAMED_CONF_FILESPEC"
+      echo "Using ISC default named.conf: $DEFAULT_NAMED_CONF_FILESPEC"
+    else
+      echo "Binary 'named' built-in config default: $SBIN_NAMED_CONF_FILESPEC"
+      NAMED_CONF_FILESPEC="$SBIN_NAMED_CONF_FILESPEC"
+    fi
+  fi
+else
+  echo "User-defined named.conf: $NAMED_CONF"
+fi
+exit
