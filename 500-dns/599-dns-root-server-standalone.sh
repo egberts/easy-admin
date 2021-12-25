@@ -296,7 +296,6 @@ fi
 # dsset-. created
 # mv "$WEIRD_DSSET_FILESPEC" "${BUILDROOT}${CHROOT_DIR}${DSSET_FILESPEC}"
 echo "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC created."
-exit
 flex_chmod 0644 "$DSSET_FILESPEC" 
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$DSSET_FILESPEC" 
 flex_chcon named_zone_t "$DSSET_FILESPEC" 
