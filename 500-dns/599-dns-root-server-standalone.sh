@@ -26,6 +26,8 @@ echo ""
 
 source dns-isc-common.sh
 
+NAMED_CONF_FILESPEC="/etc/named/standalone-named.conf"
+
 DOMAIN_TTL=86400
 
 if [ "${BUILDROOT:0:1}" == "/" ]; then
@@ -94,11 +96,23 @@ flex_chmod 0750 "$VAR_LIB_NAMED_DIRSPEC"
 flex_chown "${USER_NAME}:$GROUP_NAME" "$VAR_LIB_NAMED_DIRSPEC"
 flex_chcon named_zone_t "$VAR_LIB_NAMED_DIRSPEC"
 
+flex_mkdir "$DEFAULT_ZONE_DB_DIRSPEC"
+flex_chmod 0750 "$DEFAULT_ZONE_DB_DIRSPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$DEFAULT_ZONE_DB_DIRSPEC"
+flex_chcon named_zone_t "$DEFAULT_ZONE_DB_DIRSPEC"
 
+flex_mkdir "$DEFAULT_KEYS_DB_DIRSPEC"
+flex_chmod 0750 "$DEFAULT_KEYS_DB_DIRSPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$DEFAULT_KEYS_DB_DIRSPEC"
+flex_chcon named_zone_t "$DEFAULT_KEYS_DB_DIRSPEC"
+
+flex_mkdir "/etc"
 flex_mkdir "$sysconfdir"
-flex_chmod 0755 "$sysconfdir"
-flex_chown root:root "$sysconfdir"
-flex_chcon named_conf_t "$sysconfdir"
+
+flex_mkdir "$extended_sysconfdir"
+flex_chmod 0755 "$extended_sysconfdir"
+flex_chown root:root "$extended_sysconfdir"
+flex_chcon named_conf_t "$extended_sysconfdir"
 
 flex_mkdir "$extended_sysconfdir"
 flex_chmod 0755 "$extended_sysconfdir"
@@ -137,8 +151,6 @@ ROOT_ZONE_FILESPEC="${DEFAULT_ZONE_DB_DIRSPEC}/db.root.standalone"
 TMP_ROOT_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.tmp"
 
 
-DSSET_FILESPEC="$ZONE_DB_DIRSPEC/dsset-root"
-
 if [ ! -d "${BUILDROOT}${CHROOT_DIR}$NAMED_HOME_DIRSPEC" ]; then
   echo "named $HOME directory '${BUILDROOT}${CHROOT_DIR}$NAMED_HOME_DIRSPEC' does not exist; aborted."
   exit 3
@@ -149,17 +161,15 @@ if [ ! -d "${BUILDROOT}${CHROOT_DIR}$ZONE_DB_DIRSPEC" ]; then
   exit 3
 fi
 
-if [ ! -d "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" ]; then
-  echo "Key directory '${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC' does not exist; aborted."
+if [ ! -d "${BUILDROOT}${CHROOT_DIR}$DEFAULT_KEYS_DB_DIRSPEC" ]; then
+  echo "Key directory '${BUILDROOT}${CHROOT_DIR}$DEFAULT_KEYS_DB_DIRSPEC' does not exist; aborted."
   exit 3
 fi
-
-#cd "$ZONE_DB_DIRSPEC" || exit 9
 
 
 echo "Creating Zone-Signing-Key (ZSK) files in $PWD PWD..."
 ZSK_ID="$(dnssec-keygen -T DNSKEY \
-    -K "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" \
+    -K "${BUILDROOT}${CHROOT_DIR}$DEFAULT_KEYS_DB_DIRSPEC" \
     -n ZONE \
     -p 3 \
     -a "${ALGORITHM}" \
@@ -174,15 +184,15 @@ if [ $RETSTS -ne 0 ]; then
   echo "Error creating Zone-Signed-Key (ZSK) files; aborted"
   exit 3
 fi
-ZSK_KEY_FILESPEC="${KEYS_DIRSPEC}/${ZSK_ID}.key"
-ZSK_PRIVATE_FILESPEC="${KEYS_DIRSPEC}/${ZSK_ID}.private"
+ZSK_KEY_FILESPEC="${DEFAULT_KEYS_DB_DIRSPEC}/${ZSK_ID}.key"
+ZSK_PRIVATE_FILESPEC="${DEFAULT_KEYS_DB_DIRSPEC}/${ZSK_ID}.private"
 flex_chmod 0644 "$ZSK_KEY_FILESPEC"
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$ZSK_KEY_FILESPEC" 
 flex_chcon named_cache_t "$ZSK_PRIVATE_FILESPEC" 
 
 echo "Creating Key-Signing-Key (KSK) files ..."
 KSK_ID="$(dnssec-keygen -T DNSKEY \
-    -K "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" \
+    -K "${BUILDROOT}${CHROOT_DIR}$DEFAULT_KEYS_DB_DIRSPEC" \
     -f KSK \
     -n ZONE \
     -p 3 \
@@ -198,11 +208,12 @@ if [ $RETSTS -ne 0 ]; then
   echo "Error creating Key-Signed-Key (KSK) files; aborted"
   exit 3
 fi
-KSK_KEY_FILESPEC="${KEYS_DIRSPEC}/${KSK_ID}.key"
-KSK_PRIVATE_FILESPEC="${KEYS_DIRSPEC}/${KSK_ID}.private"
+KSK_KEY_FILESPEC="${DEFAULT_KEYS_DB_DIRSPEC}/${KSK_ID}.key"
+KSK_PRIVATE_FILESPEC="${DEFAULT_KEYS_DB_DIRSPEC}/${KSK_ID}.private"
 flex_chmod 0644 "$KSK_KEY_FILESPEC"
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$KSK_KEY_FILESPEC"
 flex_chcon named_cache_t "$KSK_KEY_FILESPEC"
+
 flex_chmod 0600 "$KSK_PRIVATE_FILESPEC" 
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$KSK_PRIVATE_FILESPEC"
 flex_chcon named_cache_t "$KSK_PRIVATE_FILESPEC" 
@@ -250,13 +261,23 @@ flex_chcon named_zone_t "$ROOT_ZONE_FILESPEC"
 rm -f "${BUILDROOT}${CHROOT_DIR}$TMP_ROOT_ZONE_FILESPEC"
 echo ""
 
+# dnssec-keygen cannot write key files outside of this script's $PWD directory
+# there is no CLI option to redirect these key files
+# must do a change directory to keys DB directory then run dnssec-keygen
+####cd "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_NAMED_DIRSPEC" || exit 9
+
+# WEIRD_DSSET_FILESPEC="dsset-."
+DSSET_FILESPEC="$DEFAULT_KEYS_DB_DIRSPEC/dsset-root"
+# echo "CWD: $CWD"
+# echo "PWD: $PWD"
+
 rm -f "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC"
 # input directory -d
 # input directory -K
 # input file db.root
 dnssec-signzone \
-    -d "${BUILDROOT}${CHROOT_DIR}$ZONE_DB_DIRSPEC" \
-    -K "${BUILDROOT}${CHROOT_DIR}$KEYS_DIRSPEC" \
+    -d "${BUILDROOT}${CHROOT_DIR}$DEFAULT_KEYS_DB_DIRSPEC" \
+    -K "${BUILDROOT}${CHROOT_DIR}$DEFAULT_KEYS_DB_DIRSPEC" \
     -o "." \
     -R \
     -S \
@@ -273,8 +294,9 @@ if [ "$retsts" -ne 0 ]; then
 fi
 # $ROOT_ZONE_FILESPEC.signed created
 # dsset-. created
-mv "${BUILDROOT}${CHROOT_DIR}${ZONE_DB_DIRSPEC}/dsset-." "${BUILDROOT}${CHROOT_DIR}${ZONE_DB_DIRSPEC}/dsset-root"
+# mv "$WEIRD_DSSET_FILESPEC" "${BUILDROOT}${CHROOT_DIR}${DSSET_FILESPEC}"
 echo "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC created."
+exit
 flex_chmod 0644 "$DSSET_FILESPEC" 
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$DSSET_FILESPEC" 
 flex_chcon named_zone_t "$DSSET_FILESPEC" 
@@ -338,7 +360,7 @@ options {
     # Because it actually does LIVE change-directory while reading config
     # ISC has said WONTFIX on the shortcoming of this 'directory' statement.
     directory "${NAMED_HOME_DIRSPEC}";
-    key-directory "${KEYS_DIRSPEC}";
+    key-directory "${DEFAULT_KEYS_DB_DIRSPEC}";
 
     dump-file "${NAMED_DATA_DIRSPEC}/cache_dump.db";
     statistics-file "${NAMED_DATA_DIRSPEC}/named_stats.txt";
@@ -448,6 +470,7 @@ include "$VIEW_NAMED_CONF_FILESPEC";
 
 PARTIAL_NAMED_CONF_EOF
 echo ""
+exit
 
 # Perform syntax-checking
 echo "Performing syntax-checking on newly created config files ..."
