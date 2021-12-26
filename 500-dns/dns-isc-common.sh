@@ -5,8 +5,9 @@
 # Definable ENV variables
 #   BUILDROOT
 #   CHROOT_DIR
+#   INSTANCE
 #   NAMED_CONF
-#   VAR_LIB_NAMED_DIRNAME
+#   VAR_LIB_NAMED_DIRNAME - useful for multi-instances of 'named' daemons
 
 
 CHROOT_DIR="${CHROOT_DIR:-}"
@@ -15,6 +16,9 @@ BUILDROOT="${BUILDROOT:-build}"
 source installer.sh
 source os-distro.sh
 
+# ISC Bind9 configuration filename default
+NAMED_CONF_FILENAME="named.conf"
+NAMED_CONF_DIRSPEC="$extended_sysconfdir"
 
 case $ID in
   debian)
@@ -25,15 +29,20 @@ case $ID in
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="/var/cache/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-bind}"
-    VAR_LIB_NAMED_DIRSPEC="/var/lib/${VAR_LIB_NAMED_DIRNAME}"
-    if [ "$VERSION_ID" -ge 11 ]; then
-      DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/bind/named.conf}"
+    if [ -n "$INSTANCE" ]; then
+      VAR_LIB_NAMED_DIRSPEC="/var/lib/${VAR_LIB_NAMED_DIRNAME}/$INSTANCE"
     else
-      DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/named.conf}"
+      VAR_LIB_NAMED_DIRSPEC="/var/lib/$VAR_LIB_NAMED_DIRNAME"
+    fi
+    if [ "$VERSION_ID" -ge 11 ]; then
+      DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/bind/$NAMED_CONF_FILENAME}"
+    else
+      DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     fi
     package_tarname="bind9"
     systemd_unitname="bind"
     sysvinit_unitname="bind9"
+    default_chroot_dirspec="/var/lib/named"
     ;;
   fedora)
     USER_NAME="named"
@@ -44,10 +53,11 @@ case $ID in
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="/var/${VAR_LIB_NAMED_DIRNAME}"
-    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/named.conf}"
+    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     systemd_unitname="named"
     sysvinit_unitname="named"
+    default_chroot_dirspec="/var/named/chroot"
     ;;
   redhat)
     USER_NAME="named"
@@ -58,10 +68,11 @@ case $ID in
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="/var/${VAR_LIB_NAMED_DIRNAME}"
-    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/named.conf}"
+    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     systemd_unitname="named"
     sysvinit_unitname="named"
+    default_chroot_dirspec="/var/named/chroot"
     ;;
   centos)
     USER_NAME="named"
@@ -72,10 +83,11 @@ case $ID in
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="$libdir/${VAR_LIB_NAMED_DIRNAME}"
-    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/named.conf}"
+    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     systemd_unitname="named"
     sysvinit_unitname="named"
+    default_chroot_dirspec="/var/named/chroot"
     ;;
 esac
 
@@ -86,6 +98,9 @@ if [ -n "$ETC_SUB_DIRNAME" ]; then
 else
   extended_sysconfdir="${sysconfdir}"
 fi
+if [ -n "$INSTANCE" ]; then
+  extended_sysconfdir="${extended_sysconfdir}/$INSTANCE"
+fi
 
 if [  -z "$VAR_LIB_SUB_DIRNAME" ]; then
   libdir="/var/${DEFAULT_LIB_NAMED_DIRNAME}"
@@ -93,15 +108,12 @@ else
   libdir="/var/${DEFAULT_LIB_NAMED_DIRNAME}"
 fi
 
-if [ -z "$NAMED_HOME_DIRSPEC" ]; then
-  NAMED_HOME_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $6}')"
-fi
-if [ -z "$NAMED_SHELL_DIRSPEC" ]; then
-  NAMED_SHELL_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $7}')"
+if [ -z "$NAMED_SHELL_FILESPEC" ]; then
+  NAMED_SHELL_FILESPEC="$(grep named /etc/passwd | awk -F: '{print $7}')"
 fi
 
 # Data?  It's where statistics, memstatistics, dump, and secdata go into
-DEFAULT_DATA_DIRSPEC="${NAMED_HOME_DIRSPEC}/data"
+DEFAULT_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
 # $HOME is always treated separately from Zone DB; Only Fedora merges them
 #
@@ -111,14 +123,31 @@ DEFAULT_DATA_DIRSPEC="${NAMED_HOME_DIRSPEC}/data"
 # These three above things are ... three ... separate ... groups of files.
 #
 # Unmerging would make it easier for 'named' group to be doled out to
-# administrators' supplemental group IDlist (much to Fedora's detriments)
-DEFAULT_ZONE_DB_DIRSPEC="${DEFAULT_DATA_DIRSPEC}"
-DEFAULT_KEYS_DB_DIRSPEC="/var/named/keys"
+# administrators' supplemental group ID list (much to Fedora's detriments)
+# and restrict these administrators to just updates of zones.
+#
+if [ -z "$NAMED_HOME_DIRSPEC" ]; then
+  NAMED_HOME_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $6}')"
+fi
+
+# Furthermore, Zone DB directory is now being split into many subdirectories
+#  by their zone type (i.e., primary/secondary/hint/mirror/redirect/stub)
+#
+# Redhat/Fedora already uses 'slaves' zone type for a subdirectory 
+# (but that could change to 'secondaries')
+DEFAULT_ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
+DEFAULT_ZONE_DB_DIRNAME_A=("primaries", "secondaries", "hints", "mirrors", "redirects", "stubs", "masters", "slaves")
+DEFAULT_ZONE_DB_DIRNAME_ALT_A=("primary", "secondary", "hint", "mirror", "redirect", "stub")
 
 # DNSSEC-related & managed-keys/trust-anchors
-DEFAULT_DYNAMIC_DIRSPEC="/var/named/dynamic"
+DEFAULT_DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 
 # WHY WOULD WE WANT /etc/named/keys?  We have /var[/lib]/named/keys
+# I suspect that rndc, XFER, AXFR, and DDNS keys go into /etc/named/keys
+# and DNSSEC go into /var[/lib]/named/keys.
+
+DEFAULT_CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
+DEFAULT_KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 
 
 # Use the 'which -a' which follows $PATH to pick up all 'named' binaries
@@ -130,10 +159,10 @@ named_bins_a=()
 named_bins_a=($(which -a named | awk '{print $1}'))
 
 # If there is more than one, use first one as the user-default
-if [ ${#named_bins_a[@]} -ge 2 ]; then
+if [ ${#named_bins_a[@]} -ge 4 ]; then
 
   # Quick and see if systemctl cat named.service can clue us to which binary
-  systemd_named_bin="$(systemctl cat "$systemd_unitname.service" | grep "ExecStart="|awk -F= '{print $2}' | awk '{print $1}')"
+  systemd_named_bin="$(systemctl cat "${systemd_unitname}.service" | grep "ExecStart="|awk -F= '{print $2}' | awk '{print $1}')"
   if [ $? -eq 0 ] && [ -n "$systemd_named_bin" ]; then
     default_named_bin="$systemd_named_bin"
     echo "Choosing systemd-default: $systemd_named_bin"
@@ -178,11 +207,11 @@ named_sbin_dirspec="$(dirname "$named_bin")"
 tool_dirspec="$(dirname "$named_sbin_dirspec")"
 
 named_bin_dirspec="${tool_dirspec}/bin"
-named_checkconf="${named_sbin_dirspec}/named-checkconf"
-named_checkzone="${named_sbin_dirspec}/named-checkzone"
-named_compilezone="${named_sbin_dirspec}/named-compilezone"
-named_journalprint="${named_sbin_dirspec}/named-journalprint"
-named_rrchecker="${named_bin_dirspec}/named-rrchecker"
+named_checkconf_filespec="${named_bin_dirspec}/named-checkconf"
+named_checkzone_filespec="${named_bin_dirspec}/named-checkzone"
+named_compilezone_filespec="${named_bin_dirspec}/named-compilezone"
+named_journalprint_filespec="${named_bin_dirspec}/named-journalprint"
+named_rrchecker_filespec="${named_bin_dirspec}/named-rrchecker"
 
 # Check for user-supplied named.conf
 # use 'named -V' to get default named.conf to use as a default
@@ -211,4 +240,11 @@ if [ -z "$NAMED_CONF" ]; then
 else
   echo "User-defined named.conf: $NAMED_CONF"
 fi
-exit
+
+unset NAMED_CONF
+
+CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
+
+DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
+KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
+DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"

@@ -36,6 +36,15 @@ case $ID in
     dnf install bind
     dnf install bind-dnssec-utils
     dnf install bind-dlz-filesystem
+    # build from scratch
+    dnf install fstrm fstrm-devel
+    dnf install protobuf-c protobuf-c-devel
+    dnf install libmaxminddb
+    dnf install json-c jscon-devel
+    dnf install lmdb-libs lmdb-devel
+    dnf install libidn2-devel libidn2
+    # Some GSSAPI
+
     # dnf install bind-chroot
     # dnf -y install bind-doc --setopt=install_weak_deps=False
     ;;
