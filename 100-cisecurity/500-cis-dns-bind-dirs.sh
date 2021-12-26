@@ -245,7 +245,7 @@ else
 fi
 
 if [ -z "$NAMED_SHELL_FILESPEC" ]; then
-  NAMED_SHELL_FILESPEC="$(grep named /etc/passwd | awk -F: '{print $7}')"
+  NAMED_SHELL_FILESPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $7}')"
 fi
 
 # Data?  It's where statistics, memstatistics, dump, and secdata go into
@@ -263,7 +263,7 @@ DEFAULT_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 # and restrict these administrators to just updates of zones.
 #
 if [ -z "$NAMED_HOME_DIRSPEC" ]; then
-  NAMED_HOME_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $6}')"
+  NAMED_HOME_DIRSPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $6}')"
 fi
 
 # Furthermore, Zone DB directory is now being split into many subdirectories
@@ -558,10 +558,10 @@ find_config_value "directory"
 CV_BIND_DIRSPEC="$CONFIG_VALUE"
 if [ -n "$CV_BIND_DIRSPEC" ]; then
   HOME_DIR="$CV_BIND_DIRSPEC"
-  echo "Redefining 'directory' to $HOME_DIR"
+  echo "Extract 'directory' value as $HOME_DIR"
 else
   HOME_DIR="$DEFAULT_USER_HOME_DIRNAME"
-  echo "Keeping 'directory' at $HOME_DIR"
+  echo "Keeping 'directory' value at $HOME_DIR"
 fi
 
 echo "final configure/autogen/autoreconf settings:"
@@ -642,7 +642,7 @@ CV_STATS_FILE="$CONFIG_VALUE"
 if [ -n "$CV_STATS_FILE" ]; then
   STATISTICS_DIR="$(dirname "$CV_STATS_FILE")"
   STATISTICS_FILENAME="$(basename "$CV_STATS_FILE")"
-  echo "Redefining 'statistics-file' to $STATISTICS_DIR/$STATISTICS_FILENAME"
+  echo "Extracting 'statistics-file' as $STATISTICS_DIR/$STATISTICS_FILENAME"
 else
   STATISTICS_DIR="$DEFAULT_STATISTICS_DIRNAME"
   STATISTICS_FILENAME="$DEFAULT_STATISTICS_FILENAME"
@@ -656,7 +656,7 @@ CV_MEMSTATS_FILESPEC="$CONFIG_VALUE"
 if [ -n "$CV_MEMSTATS_FILESPEC" ]; then
   MEMSTATISTICS_DIR="$(dirname "$CV_MEMSTATS_FILESPEC")"
   MEMSTATISTICS_FILENAME="$(basename "$CV_MEMSTATS_FILESPEC")"
-  echo "Redefining 'memstatistics-file' to $MEMSTATISTICS_DIR/$MEMSTATISTICS_FILENAME"
+  echo "Extracting 'memstatistics-file' as $MEMSTATISTICS_DIR/$MEMSTATISTICS_FILENAME"
 else
   MEMSTATISTICS_DIR="$DEFAULT_MEMSTATISTICS_DIRNAME"
   MEMSTATISTICS_FILENAME="$DEFAULT_MEMSTATISTICS_FILENAME"
@@ -672,7 +672,7 @@ CV_lock_filespec="$CONFIG_VALUE"
 if [ -n "$CV_lock_filespec" ]; then
   LOCK_DIR="$(dirname "$CV_lock_filespec")"
   LOCK_FILENAME="$(basename "$CV_lock_filespec")"
-  echo "Redefining 'lock-file' to $LOCK_DIR/$LOCK_FILENAME"
+  echo "Extracting 'lock-file' as $LOCK_DIR/$LOCK_FILENAME"
 else
   LOCK_DIR="$DEFAULT_LOCKFILE_DIRNAME"
   LOCK_FILENAME="$DEFAULT_LOCKFILE_FILENAME"
@@ -688,7 +688,7 @@ CV_MKEYS_DIRSPEC="$CONFIG_VALUE"
 if [ -n "$CV_MKEYS_DIRSPEC" ]; then
   # This becomes a directory, from a filespec
   MANAGEDKEYS_DIR="$CV_MKEYS_DIRSPEC"
-  echo "Redefining 'managed-keys-directory' to $MANAGEDKEYS_DIR"
+  echo "Extracting 'managed-keys-directory' as $MANAGEDKEYS_DIR"
 else
   MANAGEDKEYS_DIR="$DEFAULT_MANAGED_KEYS_DIRNAME"
 fi
@@ -698,7 +698,7 @@ fi
 if [ "$zone_clauses_count" -ge 10 ]; then
 # Break out filename by numbers of zones greater than 1
   MANAGEDKEYS_FILENAME="<not-a-file>"
-  echo "Redefining default 'managed-keys-file' to $MANAGEDKEYS_FILENAME"
+  echo "Extracting default 'managed-keys-file' as $MANAGEDKEYS_FILENAME"
 else
   MANAGEDKEYS_FILENAME="$DEFAULT_MANAGED_KEYS_FILENAME"
 fi
@@ -710,7 +710,7 @@ CV_random_filespec="$CONFIG_VALUE"
 if [ -n "$CV_random_filespec" ]; then
   RANDOM_DIR="$(dirname "$CV_random_filespec")"
   RANDOM_FILENAME="$(basename "$CV_random_filespec")"
-  echo "Redefining 'random-device' to $RANDOM_DIR/$RANDOM_FILENAME"
+  echo "Extracting 'random-device' as $RANDOM_DIR/$RANDOM_FILENAME"
 else
   RANDOM_DIR="$DEFAULT_RANDOM_DIRNAME"
   RANDOM_FILENAME="$DEFAULT_RANDOM_FILENAME"
@@ -723,7 +723,7 @@ CV_pid_filespec="$CONFIG_VALUE"
 if [ -n "$CV_pid_filespec" ]; then
   PID_DIR="$(dirname "$CV_pid_filespec")"
   PID_FILENAME="$(basename "$CV_pid_filespec")"
-  echo "Redefining 'pid-file' to $PID_DIR/$PID_FILENAME"
+  echo "Extracting 'pid-file' as $PID_DIR/$PID_FILENAME"
 else
   PID_DIR="$DEFAULT_PIDFILE_DIRNAME"
   PID_FILENAME="$DEFAULT_PIDFILE_FILENAME"
@@ -736,7 +736,7 @@ CV_RECURSE_FILESPEC="$CONFIG_VALUE"
 if [ -n "$CV_RECURSE_FILESPEC" ]; then
   RECURSING_DIR="$(dirname "$CV_RECURSE_FILESPEC")"
   RECURSING_FILENAME="$(basename "$CV_RECURSE_FILESPEC")"
-  echo "Redefining 'recursing-file' to $RECURSING_DIR/$RECURSING_FILENAME"
+  echo "Extracting 'recursing-file' as $RECURSING_DIR/$RECURSING_FILENAME"
 else
   RECURSING_DIR="$DEFAULT_RECURSING_DIRNAME"
   RECURSING_FILENAME="$DEFAULT_RECURSING_FILENAME"
@@ -750,7 +750,7 @@ CV_SECROOT_FILESPEC="$CONFIG_VALUE"
 if [ -n "$CV_SECROOT_FILESPEC" ]; then
   SECROOTS_DIR="$(dirname "$CV_SECROOT_FILESPEC")"
   SECROOTS_FILENAME="$(basename "$CV_SECROOT_FILESPEC")"
-  echo "Redefining 'secroots-file' to $SECROOTS_DIR/$SECROOTS_FILENAME"
+  echo "Extracting 'secroots-file' as $SECROOTS_DIR/$SECROOTS_FILENAME"
 else
   SECROOTS_DIR="$DEFAULT_SECROOTS_DIRNAME"
   SECROOTS_FILENAME="$DEFAULT_SECROOTS_FILENAME"
@@ -763,7 +763,7 @@ CV_BINDKEYS_FILESPEC="$CONFIG_VALUE"
 if [ -n "$CV_BINDKEYS_FILESPEC" ]; then
   BINDKEY_DIR="$(dirname "$CV_BINDKEYS_FILESPEC")"
   BINDKEY_FILENAME="$(basename "$CV_BINDKEYS_FILESPEC")"
-  echo "Redefining 'bindkeys-file' to $BINDKEY_DIR/$BINDKEY_FILENAME"
+  echo "Extracting 'bindkeys-file' as $BINDKEY_DIR/$BINDKEY_FILENAME"
 else
   BINDKEY_DIR="$DEFAULT_BINDKEY_DIRNAME"
   BINDKEY_FILENAME="$DEFAULT_BINDKEY_FILENAME"
@@ -776,7 +776,7 @@ CV_SESSKEY_FILESPEC="$CONFIG_VALUE"
 if [ -n "$CV_SESSKEY_FILESPEC" ]; then
   SESSION_KEY_DIR="$(dirname "$CV_SESSKEY_FILESPEC")"
   SESSION_KEY_FILENAME="$(basename "$CV_SESSKEY_FILESPEC")"
-  echo "Redefining 'session-file' to $SESSION_KEY_DIR/$SESSION_KEY_FILENAME"
+  echo "Extracting 'session-file' as $SESSION_KEY_DIR/$SESSION_KEY_FILENAME"
 else
   SESSION_KEY_DIR="$DEFAULT_SESSION_KEYFILE_DIRNAME"
   SESSION_KEY_FILENAME="$DEFAULT_SESSION_KEYFILE_FILENAME"
@@ -789,7 +789,7 @@ CV_GSSAPI_KEYTAB="$CONFIG_VALUE"
 if [ -n "$CV_GSSAPI_KEYTAB" ]; then
   KEYTAB_DIR="$(dirname "$CV_GSSAPI_KEYTAB")"
   KEYTAB_FILENAME="$(basename "$CV_GSSAPI_KEYTAB")"
-  echo "Redefining 'tkey-gssapi-keytab' to $KEYTAB_DIR/$KEYTAB_FILENAME"
+  echo "Extracting 'tkey-gssapi-keytab' as $KEYTAB_DIR/$KEYTAB_FILENAME"
 else
   KEYTAB_DIR="$DEFAULT_GSSAPI_KEYTAB_DIRNAME"
   KEYTAB_FILENAME="$DEFAULT_GSSAPI_KEYTAB_FILENAME"
@@ -814,7 +814,7 @@ find_config_value "key-directory"
 CV_KEY_DIRPATH="$CONFIG_VALUE"
 if [ -n "$CV_KEY_DIRPATH" ]; then
   KEYDIR="$CV_KEY_DIRPATH"
-  echo "Redefining 'key-directory' to $KEYDIR"
+  echo "Extracting 'key-directory' as $KEYDIR"
 else
   # defaults to one directory
   KEYDIR="$DEFAULT_KEY_DIRNAME"
@@ -896,32 +896,31 @@ TMPDIR="/tmp"  # system-default, man tmpfile(3)
 
 echo "Based on $NAMED_CONF_FILESPEC settings..."
 echo ""
-echo "TMPDIR:		$TMPDIR"
+echo "TMPDIR:			$TMPDIR"
 echo "Bind username:		$USER_NAME"
 echo "Bind groupname:		$GROUP_NAME"
 echo "Bind shell:		$NAMED_SHELL_FILESPEC"
+echo "random filespec:	$random_filespec"
+echo "KRB5 keytab filespec:	$keytab_filespec"
 echo
 echo "SELinux name_zone_t group:"
 echo "Bind \$HOME:		$NAMED_HOME_DIRSPEC"
 echo "Zone files list:	$zone_files_list"
-echo "Zone clauses_A:	${zone_clauses_A[*]}"
+echo "Zone clauses_A:	${zone_clauses_A[@]}"
 echo "Zone file statements_A:	${zone_file_statements_A[*]}"
 echo
 echo "SELinux name_cache_t group:"
 echo "DNSSEC Dynamic Dir:	$DYNAMIC_DIRSPEC"
 echo "Zone Slave Dir:		$slave_dir"
 echo "key_dir_list		$key_dir_list"
+echo "ManagedKeys Dir:	$MANAGEDKEYS_DIR"
 echo "ManagedKeys filespec:	$MANAGEDKEYS_FILESPEC"
-echo "dump filespec:		$dump_filespec"
 echo "Bind data dir:		$DATA_DIRSPEC"
+echo "dump filespec:		$dump_filespec"
 echo "secroots filespec:	$secroots_filespec"
 echo "statistics filespec:	$statistics_filespec"
 echo "memstatistics filespec:	$memstatistics_filespec"
-echo "KRB5 keytab filespec:	$keytab_filespec"
-echo "Session Key:		$SESSION_KEY_FILESPEC"
 echo "Journal dir:		$JOURNAL_DIR"
-echo "Lock filespec:		$lock_filespec"
-echo "ManagedKeys Dir:	$MANAGEDKEYS_DIR"
 echo
 echo "SELinux name_conf_t group:"
 echo "Config files list:	$config_files_list"
@@ -933,9 +932,9 @@ echo
 echo "SELinux name_var_run_t group:"
 echo "CIS_RUNDIR:		$CIS_RUNDIR"
 echo "PID file:		$pid_filespec"
+echo "Session Key:		$SESSION_KEY_FILESPEC"
+echo "Lock filespec:		$lock_filespec"
 echo 
-echo "SELinux misc. group:"
-echo "random filespec:	$random_filespec"
 
 # Testing all directories for its file permission and file ownership settings
 
@@ -1000,134 +999,167 @@ function file_perm_check
 }
 
 echo ""
-read -rp "CISecurity settings or Debian settings? (C/d): " -eiC
+read -rp "CISecurity, Fedora, or Debian settings? (C/f/d): " -eiC
 REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
 
 case $REPLY in
   'd')
-  echo "Debian default settings..."
-  file_perm_check NAMED_SHELL_FILESPEC "755" "root" "root"
-  file_perm_check NAMED_HOME_DIRSPEC "775" "root" "$GROUP_NAME"
-  for config_file in $config_files_list; do
-    file_perm_check config_file "644" "root" "$GROUP_NAME"
-  done
-  for zone_file in $zone_files_list; do
-    file_perm_check zone_file "644" "root" "root"
-  done
-  file_perm_check CIS_RUNDIR "755" "root" "$GROUP_NAME"
-  file_perm_check DYNAMIC_DIRSPEC "2750" "root" "$GROUP_NAME"
-  file_perm_check slave_dir "770" "root" "$GROUP_NAME"
-  file_perm_check DATA_DIRSPEC "770" "root" "$GROUP_NAME"
-  file_perm_check log_dir "770" "root" "$GROUP_NAME"
-  for key_dir in $key_dir_list; do
-    file_perm_check key_dir "775" "root" "$GROUP_NAME"
-  done
-  file_perm_check TMPDIR "1777" "root" "root"
-  # Bind key file shall be world-read for general inspection of file permissions
-  file_perm_check BINDKEY "644" "root" "root"
-  file_perm_check pid_filespec "644" "$USER_NAME" "$GROUP_NAME"
-  # session-key only occurs when DHCP server is coordinating with this DNS
-  file_perm_check SESSION_KEY_FILESPEC "600" "$USER_NAME" "$GROUP_NAME"
-  file_perm_check JOURNAL_DIR "775" "root" "$GROUP_NAME"
-  file_perm_check lock_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check MANAGEDKEYS_DIR "775" "root" "$GROUP_NAME"
-  if [ -z "$?" ]; then
+    echo "Debian default settings..."
+    file_perm_check TMPDIR "1777" "root" "root"
+    file_perm_check NAMED_SHELL_FILESPEC "755" "root" "root"
+    file_perm_check random_filespec "666" "root" "root"
+    file_perm_check keytab_filespec "640" "root" "$GROUP_NAME"
+
+    # SELinux named_zone_t
+    file_perm_check NAMED_HOME_DIRSPEC "775" "root" "$GROUP_NAME"
+    for zone_file in $zone_files_list; do
+      file_perm_check zone_file "644" "root" "root"
+    done
+
+    # SELinux named_cache_t
+    file_perm_check DYNAMIC_DIRSPEC "2750" "root" "$GROUP_NAME"
+    file_perm_check slave_dir "770" "root" "$GROUP_NAME"
+    for key_dir in $key_dir_list; do
+      file_perm_check key_dir "775" "root" "$GROUP_NAME"
+    done
     file_perm_check MANAGEDKEYS_DIR "775" "root" "$GROUP_NAME"
-  else
-    file_perm_check  "640" "root" "$GROUP_NAME"
-  fi
-  file_perm_check random_filespec "666" "root" "root"
-  file_perm_check secroots_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check dump_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check statistics_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check memstatistics_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check keytab_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check recursing_filespec  "640" "root" "$GROUP_NAME"
+    if [ -z "$?" ]; then
+      file_perm_check MANAGEDKEYS_DIR "775" "root" "$GROUP_NAME"
+    else
+      file_perm_check MANAGEDKEYS_FILE "640" "root" "$GROUP_NAME"
+    fi
+    file_perm_check DATA_DIRSPEC "770" "root" "$GROUP_NAME"
+    file_perm_check dump_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check secroots_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check statistics_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check memstatistics_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check JOURNAL_DIR "775" "root" "$GROUP_NAME"
+
+    # SELinux named_conf_t
+    for config_file in $config_files_list; do
+      file_perm_check config_file "644" "root" "$GROUP_NAME"
+    done
+    file_perm_check BINDKEY "644" "root" "root"
+
+    # SELinux named_var_run_t
+    file_perm_check CIS_RUNDIR "755" "root" "$GROUP_NAME"
+    # Bind key file shall be world-read for general inspection of file permissions
+    file_perm_check pid_filespec "644" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check SESSION_KEY_FILESPEC "600" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check lock_filespec "640" "root" "$GROUP_NAME"
+
+    file_perm_check recursing_filespec  "640" "root" "$GROUP_NAME"
+
+    # SELinux named_var_t
+    file_perm_check log_dir "770" "root" "$GROUP_NAME"
   ;;
 
   'c')
-  echo ""
-  echo "Recommended CIS settings..."
+    echo "Recommended CIS settings..."
+    file_perm_check TMPDIR "1777" "root" "root"
+    #file_perm_check NAMED_SHELL_FILESPEC "755" "root" "root"
+    file_perm_check random_filespec "666" "root" "root"
+    file_perm_check keytab_filespec "640" "root" "$GROUP_NAME"
 
-  file_perm_check NAMED_HOME_DIRSPEC "770" "$USER_NAME" "$GROUP_NAME"
-  # shellcheck disable=SC2034
-  for config_file in $config_files_list; do
-    file_perm_check config_file "640" "root" "$GROUP_NAME"
-  done
-  # shellcheck disable=SC2034
-  for zone_file in $zone_files_list; do
-    file_perm_check zone_file "640" "root" "$GROUP_NAME"
-  done
-  file_perm_check CIS_RUNDIR "2775" "root" "$GROUP_NAME"
-  # Key directory shall be world-read for general inspection of file permissions
-  # shellcheck disable=SC2034
-  for key_dir in $key_dir_list; do
-    file_perm_check key_dir "770" "root" "$GROUP_NAME"
-  done
-  file_perm_check pid_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check SESSION_KEY_FILESPEC "600" "$USER_NAME" "root"
-  file_perm_check JOURNAL_DIR "2750" "$USER_NAME" "root"
-  if [ -z "$?" ]; then
-    file_perm_check MANAGEDKEYS_DIR "2750" "$USER_NAME" "root"
-  else
-    file_perm_check  "640" "$USER_NAME" "root"
-  fi
+    # SELinux named_zone_t
+    file_perm_check NAMED_HOME_DIRSPEC "770" "$USER_NAME" "$GROUP_NAME"
+    # shellcheck disable=SC2034
+    for zone_file in $zone_files_list; do
+      file_perm_check zone_file "640" "root" "$GROUP_NAME"
+    done
 
-#########################
-  file_perm_check TMPDIR "1777" "root" "root"
-  # Bind key file shall be world-read for general inspection of file permissions
-  file_perm_check BINDKEY "644" "root" "root"
-  file_perm_check lock_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check random_filespec "666" "root" "root"
-  file_perm_check secroots_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check dump_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check statistics_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check memstatistics_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check keytab_filespec "640" "root" "$GROUP_NAME"
-  file_perm_check recursing_filespec  "640" "root" "$GROUP_NAME"
-  ;;
+    # SELinux named_cache_t
+    file_perm_check DYNAMIC_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check slave_dir "750" "$USER_NAME" "$GROUP_NAME"
+    # shellcheck disable=SC2034
+    for key_dir in $key_dir_list; do
+      file_perm_check key_dir "770" "root" "$GROUP_NAME"
+    done
+    file_perm_check MANAGEDKEYS_FILESPEC "2750" "root" "$GROUP_NAME"
+    if [ -z "$?" ]; then
+      file_perm_check MANAGEDKEYS_DIR "2750" "$USER_NAME" "root"
+    else
+      file_perm_check mANAGEDKEYS_DIR "640" "$USER_NAME" "root"
+    fi
+    file_perm_check DATA_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check dump_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check secroots_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check statistics_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check memstatistics_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check JOURNAL_DIR "2750" "$USER_NAME" "root"
 
-  'f')
-    echo "Fedora default settings..."
-    file_perm_check NAMED_SHELL_FILESPEC "755" "root" "root"
-
-    # Reason for o-rx in named $HOME:
-    #   dhcp-client needs access to named session-key
-    file_perm_check NAMED_HOME_DIRSPEC "1770" "root" "$GROUP_NAME"
+    # SELinux named_conf_t
+    # shellcheck disable=SC2034
     for config_file in $config_files_list; do
       file_perm_check config_file "640" "root" "$GROUP_NAME"
     done
+    file_perm_check BINDKEY "644" "root" "root"
+
+    # SELinux named_var_run_t
+    file_perm_check CIS_RUNDIR "2775" "root" "$GROUP_NAME"
+    file_perm_check pid_filespec "640" "root" "$GROUP_NAME"
+    file_perm_check SESSION_KEY_FILESPEC "600" "$USER_NAME" "root"
+    file_perm_check lock_filespec "640" "root" "$GROUP_NAME"
+
+    file_perm_check recursing_filespec  "640" "root" "$GROUP_NAME"
+
+    # SELinux named_log_t
+    file_perm_check log_dir "750" "$USER_NAME" "$GROUP_NAME"
+    ;;
+
+  # Fedora
+  'f')
+    echo "Fedora default settings..."
+    file_perm_check TMPDIR "1777" "root" "root"
+    file_perm_check NAMED_SHELL_FILESPEC "755" "root" "root"
+    file_perm_check random_filespec "666" "root" "root"
+    file_perm_check keytab_filespec "640" "$USER_NAME" "$GROUP_NAME"
+
+    # unwanted reason for o-rx in named $HOME:
+    #   dhcp-client needs access to named session-key
+    #   Another good reason for relocating session-key to /var/run/named
+
+    # SELinux named_zone_t
+    file_perm_check NAMED_HOME_DIRSPEC "1770" "root" "$GROUP_NAME"
     for zone_file in $zone_files_list; do
       file_perm_check zone_file "640" "$USER_NAME" "$GROUP_NAME"
     done
-    file_perm_check CIS_RUNDIR "755" "$USER_NAME" "$GROUP_NAME"
+
+    # SELinux named_cache_t
     file_perm_check DYNAMIC_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
     file_perm_check slave_dir "750" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check DATA_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check log_dir "750" "$USER_NAME" "$GROUP_NAME"
     for key_dir in $key_dir_list; do
       file_perm_check key_dir "750" "$USER_NAME" "$GROUP_NAME"
     done
-    file_perm_check TMPDIR "1777" "root" "root"
+    file_perm_check MANAGEDKEYS_FILESPEC "2750" "root" "$GROUP_NAME"
+    if [ -z "$?" ]; then
+      file_perm_check MANAGEDKEYS_DIR "750" "$USER_NAME" "$GROUP_NAME"
+    else
+      file_perm_check MANAGEDKEYS_DIR  "640" "root" "$GROUP_NAME"
+    fi
+    file_perm_check DATA_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check dump_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check secroots_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check statistics_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check memstatistics_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check JOURNAL_DIR "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check recursing_filespec  "640" "$USER_NAME" "$GROUP_NAME"
+
+    # SELinux named_conf_t
+    for config_file in $config_files_list; do
+      file_perm_check config_file "640" "root" "$GROUP_NAME"
+    done
     file_perm_check BINDKEY "644" "$USER_NAME" "$GROUP_NAME"
+
+    # named_var_run_t
+    file_perm_check CIS_RUNDIR "755" "$USER_NAME" "$GROUP_NAME"
     file_perm_check pid_filespec "644" "$USER_NAME" "$GROUP_NAME"
     # session-key only occurs when DHCP server is coordinating with this DNS
     file_perm_check SESSION_KEY_FILESPEC "600" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check JOURNAL_DIR "750" "$USER_NAME" "$GROUP_NAME"
     file_perm_check lock_filespec "640" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check MANAGEDKEYS_DIR "750" "$USER_NAME" "$GROUP_NAME"
-    if [ -z "$?" ]; then
-      file_perm_check MANAGEDKEYS_DIR "750" "$USER_NAME" "$GROUP_NAME"
-    #else
-    #  file_perm_check  "640" "root" "$GROUP_NAME"
-    fi
-    file_perm_check random_filespec "666" "root" "root"
-    file_perm_check secroots_filespec "640" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check dump_filespec "640" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check statistics_filespec "640" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check memstatistics_filespec "640" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check keytab_filespec "640" "$USER_NAME" "$GROUP_NAME"
-    file_perm_check recursing_filespec  "640" "$USER_NAME" "$GROUP_NAME"
+
+    # named_log_t
+    file_perm_check log_dir "750" "$USER_NAME" "$GROUP_NAME"
     ;;
 
 esac
