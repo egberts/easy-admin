@@ -16,7 +16,7 @@
 #   rundir
 #   sysconfdir
 #   NAMED_HOME_DIRSPEC (defaults to os-distro-selected named/bind $HOME)
-#   NAMED_DATA_DIRSPEC
+#   DATA_DIRSPEC
 #   ZONE_DB_DIRSPEC
 #   KEYS_DIRSPEC
 
@@ -35,7 +35,7 @@ if [ "${BUILDROOT:0:1}" == "/" ]; then
   echo "Or you could define the following and rerun for a local daemon copy:"
   echo ""
   echo "    rundir=. sysconfdir=. NAMED_HOME_DIRSPEC=. \\"
-  echo "        NAMED_DATA_DIRSPEC=. ZONE_DB_DIRSPEC=.  \\"
+  echo "        DATA_DIRSPEC=. ZONE_DB_DIRSPEC=.  \\"
   echo "        KEYS_DIRSPEC=.  \\"
   echo "        ./dns-root-server-standalone.sh"
   echo "    named -4 -d65535 -g -c ${NAMED_CONF_FILESPEC} -T mkeytimers=1/6/180"
@@ -361,9 +361,9 @@ options {
     directory "${NAMED_HOME_DIRSPEC}";
     key-directory "${DEFAULT_KEYS_DB_DIRSPEC}";
 
-    dump-file "${NAMED_DATA_DIRSPEC}/cache_dump.db";
-    statistics-file "${NAMED_DATA_DIRSPEC}/named_stats.txt";
-    memstatistics-file "${NAMED_DATA_DIRSPEC}/named.memstats";
+    dump-file "${DATA_DIRSPEC}/cache_dump.db";
+    statistics-file "${DATA_DIRSPEC}/named_stats.txt";
+    memstatistics-file "${DATA_DIRSPEC}/named.memstats";
 
     session-keyfile "${rundir}/named-session.key";
     pid-file none;
