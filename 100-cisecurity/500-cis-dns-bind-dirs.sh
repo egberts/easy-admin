@@ -508,7 +508,7 @@ function find_file_statement()
     zone_files_list="$zone_files_list $add_file"
     ((tmp_fidx+=1))
   fi
-  echo "zone_idx_tmp: ${zone_idx_tmp}"
+  # echo "zone_idx_tmp: ${zone_idx_tmp}"
   zone_file_statements_A[$zone_idx_tmp]="$zone_files_list"
   unset regex_file_statements t tmp_fidx zone_files_list zone_idx_tmp
 }
@@ -547,7 +547,7 @@ find_zone_clauses()
   done
   idx=0
   while [ "$idx" -lt "$ZONE_IDX" ]; do
-    echo "find_file_statement $idx '${named_conf_by_zone_a[$idx]}'"
+    # echo "find_file_statement $idx '${named_conf_by_zone_a[$idx]}'"
     find_file_statement $idx "${named_conf_by_zone_a[$idx]}"
     ((idx+=1))
   done
@@ -645,9 +645,8 @@ DEFAULT_JOURNAL_DIRNAME="$cwd_dir"
 
 # Find all 'zone' clauses in config file
 find_zone_clauses "$named_conf_all_includes"
-echo "zone_clauses_A[*]: ${zone_clauses_A[*]}"
-echo "zone_file_statements_A[*]: ${zone_file_statements_A[*]}"
-exit
+# echo "zone_clauses_A[*]: ${zone_clauses_A[*]}"
+# echo "zone_file_statements_A[*]: ${zone_file_statements_A[*]}"
 zone_clauses_count=${#zone_clauses_A[*]}
 
 # Some settings which might be wiped-out by named.conf, selectively.
