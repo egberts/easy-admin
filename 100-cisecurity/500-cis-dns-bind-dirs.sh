@@ -26,6 +26,9 @@
 # Environment variables
 #   NAMED_HOME_DIRSPEC
 
+echo "Checking file permissions/ownership/security-context for ISC Bind9"
+echo
+
 function cmd_show_syntax_usage {
     cat << USAGE_EOF
 Usage:  $0
@@ -90,7 +93,7 @@ done
 sudo_bin=
 if [ $EUID -ne 0 ]; then
   echo "WARN: User $UID is not root; may need 'sudo' evocation"
-  echo "Will user-prompt before any writing operation is needed."
+  echo "May user-prompt before any read-protected operation is needed."
   sudo_bin=sudo
 fi
 
@@ -379,7 +382,8 @@ if [ -z "$NAMED_CONF" ]; then
 else
   echo "User-defined named.conf: $NAMED_CONF"
 fi
-echo "Using 'named' binary in: $named_bin"
+echo
+NAMED_CONF_FILESPEC="$NAMED_CONF"
 
 CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
 
@@ -391,7 +395,7 @@ DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
 ##################################################################
 
-echo ""
+echo
 
 if [ ! -f "$NAMED_CONF_FILESPEC" ]; then
   # might be hidden or suppressed by file permission, go sudo
@@ -427,7 +431,8 @@ fi
 function find_include_clauses
 {
   local val
-  echo "Scanning for 'include' clauses..."
+  echo "INFO: May prompt for sudo to perform protected read-only activities"
+  echo "Begin scanning for 'include' clauses..."
   val="$($sudo_bin cat "$NAMED_CONF_FILESPEC" | grep -E -- "^\s*[\s\{]*\s*include\s*")"
   val="$(echo "$val" | awk '{print $2}' | tr -d ';')"
   val="${val//\"/}"
@@ -436,21 +441,24 @@ function find_include_clauses
   unset val
 }
 
-# List of primary configuration file and all included configuration files.
+# make a list of all configuration files using 'include' clause as a
+# search extender
 config_files_list="$NAMED_CONF_FILESPEC"
 find_include_clauses
-config_files_list="$NAMED_CONF_FILESPEC $CONFIG_VALUE"
+config_files_list="$config_files_list $CONFIG_VALUE"
 
 
-# Read the entire config file
-echo ""
+# Reconstruct a entire configuration file by including all configuration 
+# files mentioned by its 'include' clause using 'named-checkconf -p -x'
+echo
 echo "Reading in $NAMED_CONF_FILESPEC..."
-echo "May need access via sudo..."
 # Capture non-STDERR output of named-checkconf, if any
 # shellcheck disable=SC2086
 named_conf_all_includes="$($sudo_bin $named_checkconf_filespec $ncc_opt -p -x "$NAMED_CONF_FILESPEC" 2>/dev/null)$"
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
+  echo "User $UID has no read-access to $NAMED_CONF_FILESPEC;"
+  echo "May prompt for root access via sudo to just read the $NAMED_CONF_FILESPEC..."
   # capture only STDERR output of named-checkconf
   # shellcheck disable=SC2086
   errmsg="$($sudo_bin $named_checkconf_filespec $ncc_opt -p -x "$NAMED_CONF_FILESPEC" )"
@@ -466,7 +474,7 @@ echo "Content of $NAMED_CONF_FILESPEC Syntax OK."
 function find_config_value
 {
   local val
-  echo "Scanning for '$1' ..."
+  # echo "Scanning for '$1' ..."
   # named_conf_all_includes="$($sudo_bin named-checkconf -p -x $NAMED_CONF_FILESPEC 2>/dev/null)$"
   val="$(echo "$named_conf_all_includes" | grep -E -- "^\s*[\s\{]*\s*${1}\s*")"
   val="$(echo "$val" | awk '{print $2}' | tr -d ';')"
@@ -484,18 +492,23 @@ function find_file_statement()
   regex_file_statements='[^file]file[\n[:space:]]*"([a-zA-Z0-9\_\-\/\.]{1,64})"[\n[:space:]]*;[\n[:space:]]'
   # Don't while loop this one, we are grabbing first 'file' in 'zone'
   # named-checkconf will error out if multiple 'file' statements are found
+  # echo "regex_file_statements: '$regex_file_statements'"
   if [[ $t =~ $regex_file_statements ]]; then
 
     # BASH_REMATCH is a bash internal variable to [[ regex ]]
     add_file="${BASH_REMATCH[1]}"
+    t=${t#*"${BASH_REMATCH[0]}"}
     t=${t#*"${BASH_REMATCH[1]}"}
     t=${t#*"${BASH_REMATCH[2]}"}
     if [[ -z "${BASH_REMATCH[1]}" ]]; then
       return
     fi
+    # echo "BASH_REMATCH: ${BASH_REMATCH[@]}"
+    # echo "Zone file: ${BASH_REMATCH[1]}"
     zone_files_list="$zone_files_list $add_file"
     ((tmp_fidx+=1))
-fi
+  fi
+  echo "zone_idx_tmp: ${zone_idx_tmp}"
   zone_file_statements_A[$zone_idx_tmp]="$zone_files_list"
   unset regex_file_statements t tmp_fidx zone_files_list zone_idx_tmp
 }
@@ -506,14 +519,26 @@ find_zone_clauses()
   zone_clauses_A=()
   local s=$1 named_conf_by_zone_a=()
   # If you added any more pairs of (), you must add BASH_REMATCH[n+1] below
-  regex_zone_clauses='[^zone]*zone[\n[:space:]]*(\S{1,64})[\n[:space:]]*\S{0,6}[\n[:space:]]*(\{[\n[:space:]]*)[^zone]*'
-  #echo "find_zone_clauses: called"
+  regex_zone_clauses='[^zone]*zone[\n[:space:]]*"(\S{1,80})"[\n[:space:]]*\S{0,6}[\n[:space:]]*(\{[\n[:space:]]*)[^zone]*'
+  # echo "find_zone_clauses: called"
   while [[ $s =~ $regex_zone_clauses ]]; do
+    # echo "RegedRegexRegexRegexRegexRegexRegexRegex"
+    # echo "'$regex_zone_clauses'"
+    # echo "+++++++++++++++++++++++++++++++++++++++"
+    # echo "s: '$s'"
+    # echo "---------------------------------------"
+    # echo "ZONE_IDX: '$ZONE_IDX'"
+    # echo "BASH_REMATCH[0]: ${BASH_REMATCH[0]} "
+    # echo "Found Zone name: ${BASH_REMATCH[1]} idx: $ZONE_IDX"
+    # echo "BASH_REMATCH[2]: ${BASH_REMATCH[2]} "
     zone_clauses_A[$ZONE_IDX]="$(echo "${BASH_REMATCH[1]}" | xargs)"
     # BASH_REMATCH is a bash internal variable to [[ regex ]]
-    s=${s#*"${BASH_REMATCH[1]}"}
-    s=${s#*"${BASH_REMATCH[2]}"}
+    s=${s#*"${BASH_REMATCH[0]}"}
     named_conf_by_zone_a[$ZONE_IDX]="$s" # echo "$s" | xargs )"
+    s=${s#*"${BASH_REMATCH[1]}"}
+    # echo "s(1): $s"
+    #s=${s#*"${BASH_REMATCH[2]}"}
+    ## echo "s(2): $s"
     ((ZONE_IDX+=1))
     if [[ -z "${BASH_REMATCH[1]}" ]]; then
       break
@@ -522,6 +547,7 @@ find_zone_clauses()
   done
   idx=0
   while [ "$idx" -lt "$ZONE_IDX" ]; do
+    echo "find_file_statement $idx '${named_conf_by_zone_a[$idx]}'"
     find_file_statement $idx "${named_conf_by_zone_a[$idx]}"
     ((idx+=1))
   done
@@ -563,6 +589,7 @@ else
   HOME_DIR="$DEFAULT_USER_HOME_DIRNAME"
   echo "Keeping 'directory' value at $HOME_DIR"
 fi
+echo 
 
 echo "final configure/autogen/autoreconf settings:"
 echo "  prefix:        $prefix"
@@ -620,6 +647,7 @@ DEFAULT_JOURNAL_DIRNAME="$cwd_dir"
 find_zone_clauses "$named_conf_all_includes"
 echo "zone_clauses_A[*]: ${zone_clauses_A[*]}"
 echo "zone_file_statements_A[*]: ${zone_file_statements_A[*]}"
+exit
 zone_clauses_count=${#zone_clauses_A[*]}
 
 # Some settings which might be wiped-out by named.conf, selectively.
@@ -895,7 +923,7 @@ TMPDIR="/tmp"  # system-default, man tmpfile(3)
 
 
 echo "Based on $NAMED_CONF_FILESPEC settings..."
-echo ""
+echo
 echo "TMPDIR:			$TMPDIR"
 echo "Bind username:		$USER_NAME"
 echo "Bind groupname:		$GROUP_NAME"
@@ -954,7 +982,7 @@ function file_perm_check
   $sudo_bin ls -1 "$filespec" >/dev/null 2>&1
   RETSTS=$?
   if [ $RETSTS -ne 0 ]; then
-    echo "$filespec ($varnam): is missing."
+    echo "...skipping unused $filespec ($varnam)."
     ((total_file_missings+=1))
   else
     local err_per_file msg_a this_fmod this_username this_groupname
@@ -998,7 +1026,7 @@ function file_perm_check
   unset filespec expected_fmod expected_groupname expected_username varnam
 }
 
-echo ""
+echo
 read -rp "CISecurity, Fedora, or Debian settings? (C/f/d): " -eiC
 REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
 
@@ -1166,6 +1194,6 @@ esac
 
 echo "Total files:       $total_files"
 echo "File missing:          $total_file_missings"
-echo "File errors:           $total_file_errors"
+echo "Skipped files:        $total_file_errors"
 echo "Permission errors:         $total_perm_errors"
 
