@@ -7,7 +7,7 @@
 #       drop 'EDITOR.bash'
 #       chmod a+x $HOME/.bashrc.d/*.bashrc/EDITOR.bash
 
-TRY_EDITORS="nano vi vim emacs neovim ed nvi mcedit ne pico vile ex elvis"
+TRY_EDITORS="nano vi vim emacs nvim ed nvi mcedit ne pico vile ex elvis"
 
 BASHRC_DROPIN_DIRNAME=".bashrc.d"
 BASHRC_DROPIN_PATHNAME="$HOME"
