@@ -53,19 +53,10 @@ DEFAULT_ETC_CONF_DIRNAME="ssh"
 
 source ssh-openssh-common.sh
 
-SSH_CONFIG_FILENAME="ssh_config"
-SSH_CONFIG_FILESPEC="${sysconfdir}/$SSH_CONFIG_FILENAME"
-
-SSH_CONFIGD_DIRNAME="ssh_config.d"
-SSH_CONFIGD_DIRSPEC="${sysconfdir}/$SSH_CONFIGD_DIRNAME"
-
-REPO_DIR="$PWD/$SSH_CONFIGD_DIRNAME"
-
-TEST_SSH_CONFIG_FILESPEC="build/${SSH_CONFIG_FILENAME}.build-test-only"
-TEST_SSH_CONFIGD_DIRSPEC="build/${SSH_CONFIGD_DIRNAME}"
-
 FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
 rm "$FILE_SETTINGS_FILESPEC"
+
+REPO_DIR="$PWD/$ssh_configd_dirname"
 
 # Check if anyone has 'sudo' group access on this host
 SUDO_USERS_BY_GROUP="$(grep $WHEEL_GROUP /etc/group | awk -F: '{ print $4; }')"
@@ -84,12 +75,12 @@ fi
 echo ""
 
 # Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "$SSH_GROUP" /etc/group | awk -F: '{ print $4; }')"
+SSH_USERS_BY_GROUP="$(grep "$GROUP_NAME" /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SSH_USERS_BY_GROUP" ]; then
   echo "There is no one in the 'ssh' group; "
   echo "no remote access possible."
   echo "To add remote access, run:"
-  echo "  usermod -a -G $SSH_GROUP <your-user-name>"
+  echo "  usermod -a -G $GROUP_NAME <your-user-name>"
   exit 1
 fi
 
@@ -100,10 +91,10 @@ if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
   echo "We are backing up old SSH settings"
   # Only the first copy is saved as the backup
-  if [ ! -f "${SSH_CONFIG_FILESPEC}.backup" ]; then
+  if [ ! -f "${ssh_config_filespec}.backup" ]; then
     BACKUP_FILENAME=".backup-$(date +'%Y%M%d%H%M')"
     echo "Moving /etc/ssh/* to /etc/ssh/${BACKUP_FILENAME}/ ..."
-    mv "$SSH_CONFIG_FILESPEC" "${SSH_CONFIG_FILESPEC}.backup"
+    mv "$ssh_config_filespec" "${ssh_config_filespec}.backup"
     retsts=$?
     if [ $retsts -ne 0 ]; then
       echo "ERROR: Failed to create a backup of /etc/ssh/*"
@@ -124,12 +115,15 @@ else
   } >> "$FILE_SETTINGS_FILESPEC"
 fi
 
-mkdir -p "$BUILDROOT$SSH_CONFD_DIRSPEC"
+mkdir -p "$BUILDROOT$ssh_configd_dirspec"
 
 
 
 # Update the SSH server settings
 #
+
+TEST_SSH_CONFIG_FILESPEC="build/${ssh_config_filename}.build-test-only"
+TEST_SSH_CONFIGD_DIRSPEC="build/${ssh_configd_dirname}"
 
 DATE="$(date)"
 echo "Creating $TEST_SSH_CONFIG_FILESPEC ..."
@@ -137,8 +131,8 @@ cat << TEST_SSH_EOF | tee "$TEST_SSH_CONFIG_FILESPEC" >/dev/null
 include "${TEST_SSH_CONFIGD_DIRSPEC}/*.conf"
 TEST_SSH_EOF
 
-echo "Creating ${BUILDROOT}$SSH_CONFIG_FILESPEC ..."
-cat << SSH_EOF | tee "${BUILDROOT}${SSH_CONFIG_FILESPEC}" >/dev/null
+echo "Creating ${BUILDROOT}$ssh_config_filespec ..."
+cat << SSH_EOF | tee "${BUILDROOT}${ssh_config_filespec}" >/dev/null
 #
 # File: $SSH_CONFIG_FILENAME
 # Path: $sysconfdir
@@ -158,32 +152,31 @@ cat << SSH_EOF | tee "${BUILDROOT}${SSH_CONFIG_FILESPEC}" >/dev/null
 # follows (note that keywords are case-insensitive and
 # arguments are case-sensitive):
 
-include "${SSH_CONFIGD_DIRSPEC}/*.conf"
+include "${ssh_configd_dirspec}/*.conf"
 SSH_EOF
+flex_chmod 640 "$ssh_config_filespec"
+flex_chown "root:$GROUP_NAME" "$ssh_config_filespec"
 
 if [ ! -d "$REPO_DIR" ]; then
   echo "Repo directory $REPO_DIR missing; aborted."
   exit 9
 fi
-flex_mkdir ${SSH_CONFIGD_DIRSPEC}
-cp ${REPO_DIR}/* "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
+flex_mkdir ${ssh_configd_dirspec}
+cp ${REPO_DIR}/* "${BUILDROOT}${ssh_configd_dirspec}/"
 
-flex_chmod 640 "$SSH_CONFIG_FILESPEC"
-flex_chown root:ssh "$SSH_CONFIG_FILESPEC"
-
-flex_chmod 750 "$SSH_CONFIGD_DIRSPEC"
-flex_chown root:ssh "$SSH_CONFIGD_DIRSPEC"
+flex_chmod 750 "$ssh_configd_dirspec"
+flex_chown "root:$GROUP_NAME" "$ssh_configd_dirspec"
 
 CONF_LIST="$(find "${REPO_DIR}" -maxdepth 1 -name "*.conf")"
 for this_subconf_file in $CONF_LIST; do
   base_name="$(basename "$this_subconf_file")"
-  cp "$this_subconf_file" "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
-  flex_chmod 640 "${SSH_CONFIGD_DIRSPEC}/$base_name"
-  flex_chown root:ssh "${SSH_CONFIGD_DIRSPEC}/$base_name"
+  cp "$this_subconf_file" "${BUILDROOT}${ssh_configd_dirspec}/"
+  flex_chmod 640 "${ssh_configd_dirspec}/$base_name"
+  flex_chown "root:$GROUP_NAME" "${ssh_configd_dirspec}/$base_name"
 done
 
 
-echo "Checking ${BUILDROOT}${SSH_CONFIG_FILESPEC} for any syntax error ..."
+echo "Checking ${BUILDROOT}${ssh_config_filespec} for any syntax error ..."
 $OPENSSH_SSH_BIN_FILESPEC -G \
     -F ${TEST_SSH_CONFIG_FILESPEC} \
     localhost \
@@ -204,7 +197,7 @@ echo ""
 # Check if non-root user has 'ssh' supplementary group membership
 
 FOUND=0
-USERS_IN_SSH_GROUP="$(grep "$SSH_GROUP" /etc/group | awk -F: '{ print $4 }')"
+USERS_IN_SSH_GROUP="$(grep "$GROUP_NAME" /etc/group | awk -F: '{ print $4 }')"
 for THIS_USERS in $USERS_IN_SSH_GROUP; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
     if [ "${this_user}" == "${USER}" ]; then
@@ -216,17 +209,17 @@ done
 
 if [ $FOUND -eq 0 ]; then
   echo "No one will be able to SSH outward of this box:"
-  echo "No user in '$SSH_GROUP' group."
+  echo "No user in '$GROUP_NAME' group."
   echo "User ${USER} cannot access this SSH server here."
   echo "Must execute:"
-  echo "  usermod -a -G ${SSH_GROUP} ${USER}"
+  echo "  usermod -a -G ${GROUP_NAME} ${USER}"
   exit 1
 else
   echo "Only these users can use 'ssh' tools: '$USERS_IN_SSH_GROUP'"
   echo ""
   echo "If you have non-root apps that also uses 'ssh', then add that user"
-  echo "to the '$SSH_GROUP' supplemental group; run:"
-  echo "  usermod -a -G ${SSH_GROUP} <app-username>"
+  echo "to the '$GROUP_NAME' supplemental group; run:"
+  echo "  usermod -a -G ${GROUP_NAME} <app-username>"
 fi
 echo ""
 
