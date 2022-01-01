@@ -109,7 +109,7 @@ else
 fi
 
 if [ -z "$NAMED_SHELL_FILESPEC" ]; then
-  NAMED_SHELL_FILESPEC="$(grep named /etc/passwd | awk -F: '{print $7}')"
+  NAMED_SHELL_FILESPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $7}')"
 fi
 
 # Data?  It's where statistics, memstatistics, dump, and secdata go into
@@ -127,7 +127,7 @@ DEFAULT_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 # and restrict these administrators to just updates of zones.
 #
 if [ -z "$NAMED_HOME_DIRSPEC" ]; then
-  NAMED_HOME_DIRSPEC="$(grep named /etc/passwd | awk -F: '{print $6}')"
+  NAMED_HOME_DIRSPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $6}')"
 fi
 
 # Furthermore, Zone DB directory is now being split into many subdirectories
