@@ -2,49 +2,51 @@
 # File: os-distro.sh
 # Title: Determine OS distro
 #
+#   prefix [/usr]
+#   sysconfdir [/etc]
+#   exec_prefix [/usr]
+#   libdir [/var/lib]
 #   DEFAULT_PKG_NAME=
 #   DEFAULT_ETC_CONF_DIRNAME=
 #
-SSH_GROUP="ssh"
 
 source /etc/os-release
-DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-}"
 
+# Probably should have 'source distro-package-specific' scripting go here
+# Needs to deal with 'DEFAULT_ETC_CONF_DIRNAME' there.
+
+# libdir and $HOME are two separate grouping (that Fedora, et. al. merged)
 case $ID in
   debian)
-    DEFAULT_PREFIX=""
+    DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
     DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-    # No USER_NAME
-    # No GROUP_NAME
-    WHEEL_GROUP="ssh"
+    DEFAULT_SYSCONFDIR="/etc"
+    DEFAULT_LIB_DIRSPEC="/var/lib"
+    WHEEL_GROUP="sudo"
     ;;
   centos)
-    DEFAULT_PREFIX=""
+    DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR="/var"
-    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-    # No USER_NAME
-    # No GROUP_NAME
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc"
+    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
   redhat)
-    DEFAULT_PREFIX=""
+    DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR="/var"
-    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-    # No USER_NAME
-    # No GROUP_NAME
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc"
+    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
   fedora)
-    DEFAULT_PREFIX=""
+    DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR="/var"
-    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-    # No USER_NAME
-    # No GROUP_NAME
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc"
+    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
   *)
@@ -57,13 +59,13 @@ esac
 prefix="${prefix:-${DEFAULT_PREFIX}}"
 sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR}}"
 exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX}}"
-libdir="${libdir:-"${exec_prefix}/lib"}"
+libdir="${libdir:-"${DEFAULT_LIB_DIRSPEC}"}"
 libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"
 localstatedir="${localstatedir:-"$DEFAULT_LOCALSTATEDIR"}"
 datarootdir="${datarootdir:-"${prefix}/share"}"
 sharedstatedir="${sharedstatedir:-"${prefix}/com"}"
 bindir="${bindir:-"${exec_prefix}/bin"}"
-sbindir="${bindir:-"${exec_prefix}/sbin"}"
+sbindir="${sbindir:-"${exec_prefix}/sbin"}"
 rundir="${rundir:-"${localstatedir}/run"}"
 
 # Package maintainer-specific
