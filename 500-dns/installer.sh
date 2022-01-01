@@ -69,7 +69,7 @@ function flex_mkdir() {
 ################################################################
 function flex_chown() {
 
-  destdir_filespec="${CHROOT_DIR}${2}"
+  destdir_filespec="$(realpath -m ${CHROOT_DIR}${2})"
 
   # chown is driven by no $BUILDROOT and 'root' UID, or not at all
   if [ -z "${BUILDROOT}" ] &&
@@ -102,7 +102,7 @@ function flex_chown() {
 ################################################################
 function flex_chmod() {
 
-  destdir_filespec="${CHROOT_DIR}${2}"
+  destdir_filespec="$(realpath -m ${CHROOT_DIR}${2})"
 
   # chmod is driven by $BUILDROOT$CHROOT_DIR, or 'root' UID, or not at all
   if [ -z "${BUILDROOT}" ] &&
@@ -137,7 +137,7 @@ function flex_chmod() {
 
 function flex_touch() {
 
-  destdir_filespec="${CHROOT_DIR}${1}"
+  destdir_filespec="$(realpath -m ${CHROOT_DIR}${1})"
 
   # touch is driven by $BUILDROOT$CHROOT_DIR, or 'root' UID, or not at all
   if [ -z "${BUILDROOT}" ] &&
@@ -171,6 +171,8 @@ function flex_touch() {
 
 function flex_chcon() {
 
+  destdir_filespec="$(realpath -m ${CHROOT_DIR}${2})"
+
   # chcon is driven by $BUILDROOT$CHROOT_DIR, or 'root' UID, or not at all
   if [ -z "${BUILDROOT}" ] &&
     [ "$UID" -eq 0 ]; then
@@ -178,7 +180,6 @@ function flex_chcon() {
     selinuxenabled
     retsts=$?
     if [ "$retsts" -eq 0 ]; then
-      destdir_filespec="${CHROOT_DIR}${2}"
 
       echo "chmcon system_u:object_r:$1:s0 to ${BUILDROOT}${CHROOT_DIR}$destdir_filespec ..."
       chmod "$1" "${BUILDROOT}${CHROOT_DIR}$destdir_filespec"
