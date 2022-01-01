@@ -381,9 +381,9 @@ if [ -z "$NAMED_CONF" ]; then
   fi
 else
   echo "User-defined named.conf: $NAMED_CONF"
+  NAMED_CONF_FILESPEC="$NAMED_CONF"
 fi
 echo
-NAMED_CONF_FILESPEC="$NAMED_CONF"
 
 CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
 
@@ -1147,7 +1147,7 @@ case $REPLY in
     #   Another good reason for relocating session-key to /var/run/named
 
     # SELinux named_zone_t
-    file_perm_check NAMED_HOME_DIRSPEC "1770" "root" "$GROUP_NAME"
+    file_perm_check NAMED_HOME_DIRSPEC "2750" "$USER_NAME" "$GROUP_NAME"
     for zone_file in $zone_files_list; do
       file_perm_check zone_file "640" "$USER_NAME" "$GROUP_NAME"
     done
