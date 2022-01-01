@@ -57,7 +57,7 @@ fi
 NAMESERVERS_LIST="$(grep '^\s*nameserver\s' /etc/resolv.conf | awk '{print $2}' | sort -u | xargs)"
 if [ -z "$NAMESERVERS_LIST" ]; then
   echo "No nameservers found in /etc/resolv.conf"
-  reply -rp "Do you have a list of nameservers on hand? (N\y): " -eiN
+  read -rp "Do you have a list of nameservers on hand? (N\y): " -eiN
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ -z "$REPLY" ] || [ "$REPLY" != 'y' ]; then
     echo "Aborted."
