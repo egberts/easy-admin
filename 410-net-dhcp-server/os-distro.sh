@@ -5,7 +5,6 @@
 #   DEFAULT_PKG_NAME=
 #   DEFAULT_ETC_CONF_DIRNAME=
 #
-SSH_GROUP="ssh"
 
 source /etc/os-release
 DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-}"
@@ -18,7 +17,7 @@ case $ID in
     DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
     # No USER_NAME
     # No GROUP_NAME
-    WHEEL_GROUP="ssh"
+    WHEEL_GROUP="sudo"
     ;;
   centos)
     DEFAULT_PREFIX=""
