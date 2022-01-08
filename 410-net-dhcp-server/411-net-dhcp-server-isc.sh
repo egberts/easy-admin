@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # File: 410-net-dhcp-server-isc.sh
 # Title: Configure ISC DHCP Server
@@ -47,10 +46,8 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   rm "$FILE_SETTINGS_FILESPEC"
 fi
 
-source installer.sh
-
-DEFAULT_ETC_CONF_DIRNAME="dhcp"
-source os-distro.sh
+declare sysconfdir  # assigned in os-distro.sh/dhcp-isc-common.sh
+source ./dhcp-isc-common.sh
 
 dhcpd_dirspec="$sysconfdir"
 if [ "${BUILDROOT:0:1}" != "/" ]; then
@@ -77,14 +74,14 @@ DHCPD_CONF_EOF
 
 # TODO: Prompt for server-identifier?
 # TODO: Prompt for server-name?
-dhcpd_conf_filename="dhcpd.conf.options"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_options_filename="dhcpd.conf.options"
+dhcpd_options_filespec="${dhcpd_dirspec}/$dhcpd_options_filename"
+flex_chown root:root "${dhcpd_options_filespec}"
+flex_chmod 0644 "${dhcpd_options_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_options_filespec ..."
+cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_options_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_options_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server Options configuration file
 
@@ -340,14 +337,14 @@ class "white" {
 DHCPD_CONF_EOF
 
 
-dhcpd_conf_filename="dhcpd.conf.pool.10.22.0-vir"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_pool1_filename="dhcpd.conf.pool.10.22.0-vir"
+dhcpd_pool1_filespec="${dhcpd_dirspec}/$dhcpd_pool1_filename"
+flex_chown root:root "${dhcpd_pool1_filename}"
+flex_chmod 0644 "${dhcpd_pool1_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_pool1_filespec ..."
+cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pool1_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_pool1_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server Pool configuration file for Virtual-Net
 
@@ -370,14 +367,14 @@ subnet 10.22.0.0 netmask 255.255.255.0
 }
 DHCPD_CONF_EOF
 
-dhcpd_conf_filename="dhcpd.conf.pool.172.17-docker"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_pool2_filename="dhcpd.conf.pool.172.17-docker"
+dhcpd_pool2_filespec="${dhcpd_dirspec}/$dhcpd_pool2_filename"
+flex_chown root:root "${dhcpd_pool2_filespec}"
+flex_chmod 0644 "${dhcpd_pool2_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_pool2_filespec ..."
+cat << DHCPD_POOL2_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pool2_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_pool2_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server Pool configuration file for Docker-Net
 #
@@ -432,16 +429,16 @@ subnet 172.17.0.0  netmask 255.255.0.0
     }
 
 }
-DHCPD_CONF_EOF
+DHCPD_POOL2_EOF
 
-dhcpd_conf_filename="dhcpd.conf.pool.192.168.12-resinet"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_pool3_filename="dhcpd.conf.pool.192.168.12-resinet"
+dhcpd_pool3_filespec="${dhcpd_dirspec}/$dhcpd_pool3_filename"
+flex_chown root:root "${dhcpd_pool3_filespec}"
+flex_chmod 0644 "${dhcpd_pool3_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_pool3_filespec ..."
+cat << DHCPD_POOL3_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pool3_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_pool3_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server Pool configuration file for Residential-Net
 #
@@ -563,16 +560,16 @@ shared-network "resinet" {
 #     # ddns-hostname = concat(binary-to-ascii(10, 8, "-", leased-address), "unknown");
 
 }
-DHCPD_CONF_EOF
+DHCPD_POOL3_EOF
 
-dhcpd_conf_filename="dhcpd.conf.pool.172.32-dmz2"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_pool4_filename="dhcpd.conf.pool.172.32-dmz2"
+dhcpd_pool4_filespec="${dhcpd_dirspec}/$dhcpd_pool4_filename"
+flex_chown root:root "${dhcpd_pool4_filespec}"
+flex_chmod 0644 "${dhcpd_pool4_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_pool4_filespec ..."
+cat << DHCPD_POOL4_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pool4_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_pool4_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server Pool configuration file for DMZ-Net
 #
@@ -633,16 +630,16 @@ shared-network "dmz2" {
 
   }
 }
-DHCPD_CONF_EOF
+DHCPD_POOL4_EOF
 
-dhcpd_conf_filename="dhcpd.conf.pool.192.168.15-wlan"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_pool5_filename="dhcpd.conf.pool.192.168.15-wlan"
+dhcpd_pool5_filespec="${dhcpd_dirspec}/$dhcpd_pool5_filename"
+flex_chown root:root "${dhcpd_pool5_filespec}"
+flex_chmod 0644 "${dhcpd_pool5_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_pool5_filespec ..."
+cat << DHCPD_POOL5_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pool5_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_pool5_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server Pool configuration file for Wireless-Net
 #
@@ -662,16 +659,16 @@ subnet 192.168.15.0 netmask 255.255.255.0
 
     # log-facility local7;
 }
-DHCPD_CONF_EOF
+DHCPD_POOL5_EOF
 
-dhcpd_conf_filename="dhcpd.conf.pools"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_pools_filename="dhcpd.conf.pools"
+dhcpd_pools_filespec="${dhcpd_dirspec}/$dhcpd_pools_filename"
+flex_chown root:root "${dhcpd_pools_filespec}"
+flex_chmod 0644 "${dhcpd_pools_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_pools_filespec ..."
+cat << DHCPD_POOLS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pools_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_pools_filename}
 # Path: ${dhcpd_dirspec}
 # Title: ISC DHCP Server configuration for all DHCP pools
 #
@@ -685,8 +682,8 @@ DHCPD_CONF_EOF
 
 dhcpd_conf_filename="dhcpd.conf.reserved"
 dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
+flex_chown root:root "${dhcpd_conf_filespec}"
+flex_chmod 0644 "${dhcpd_conf_filespec}"
 echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
 cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
 #
@@ -887,16 +884,16 @@ group white {
     }
 }
 
-DHCPD_CONF_EOF
+DHCPD_POOLS_EOF
 
-dhcpd_conf_filename="dhcpd.conf.zones"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_filespec}"
-flex_chmod 0644 "${dhcpd_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_zones_filename="dhcpd.conf.zones"
+dhcpd_zones_filespec="${dhcpd_dirspec}/$dhcpd_zones_filename"
+flex_chown root:root "${dhcpd_zones_filespec}"
+flex_chmod 0644 "${dhcpd_zones_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_zones_filespec ..."
+cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_zones_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
+# File: ${dhcpd_zones_filename}
 # Path: ${dhcpd_dirspec}
 # Title: DHCP Server to ISC Bind path for Zone file updates
 #

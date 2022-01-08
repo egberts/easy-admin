@@ -72,7 +72,7 @@ if [ "$REPLY" != 'y' ]; then
   echo "...No loopback access to chronyd daemon netdev."
 
   # Turn off network port
-  CMD_NET_ACL_NEEDED=0
+  # CMD_NET_ACL_NEEDED=0
   # Usually we say 'cmddeny all' here, but this here is DEFAULT-DENY approach
 
   # Turn off UNIX socket
@@ -134,14 +134,14 @@ else
     # encrypted)
     echo "...Deny 127.0.0.1 access to chronyd daemon."
     CHRONY_CONF_A+=("cmddeny 127.0.0.1")  # local-only
-    USER_VIA_LOOPBACK='none'
+    # USER_VIA_LOOPBACK='none'
   else
     # Since the loopback is wide open, we don't care to set up
     # for the UNIX file permissions approach for the 'chronyc' tool.
     COMM_NET_LOOPBACK_NEEDED=y
     echo "...Allow 127.0.0.1 access to chronyd daemon."
     CHRONY_CONF_A+=("cmdallow 127.0.0.1")  # local-only
-    USER_VIA_LOOPBACK='any'
+    # USER_VIA_LOOPBACK='any'
   fi
 
   if [ "$COMM_NET_LOOPBACK_NEEDED" != "y" ]; then
@@ -197,14 +197,14 @@ else
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
   if [ "$REPLY" != 'y' ]; then
 
-    CMD_NET_ACL_NEEDED=0
+    # CMD_NET_ACL_NEEDED=0
     # Strictly UNIX socket are only used for NTP admin commands.
     # Turn off network port
     echo "...Only for NTP admin commands, turning off that network port 323..."
     CHRONY_CONF_A+=("cmddeny all")
   else
 
-    CMD_NET_ACL_NEEDED=1
+    # CMD_NET_ACL_NEEDED=1
     # There be some NTP admin commands going over networking
     echo "...Turning ON network port 323 for NTP admin commands..."
     CHRONY_CONF_A+=("cmdport 323")

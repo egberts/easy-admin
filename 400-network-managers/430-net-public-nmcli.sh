@@ -34,7 +34,7 @@ echo "REPLY: $REPLY"
 echo "interface_name: $interface_name"
 
 # Check if interface is already up and dynamic, then abort
-intf_status="$(ip -4 -o addr show dev $interface_name | awk '{print $9}')"
+intf_status="$(ip -4 -o addr show dev "$interface_name" | awk '{print $9}')"
 if [ "$intf_status" == "dynamic" ]; then
   echo "Interface $interface_name is already set up; aborted."
   exit 3
@@ -47,13 +47,13 @@ if [ "$REPLY" != 'continue' ]; then
 fi
 
 # Hide any error messages during deletion
-sudo nmcli c delete $interface_name >/dev/null 2>&1
+sudo nmcli c delete "$interface_name" >/dev/null 2>&1
 
-sudo nmcli c add type ethernet ifname $interface_name con-name "$interface_name"
-sudo nmcli c mod $interface_name ipv4.method auto
+sudo nmcli c add type ethernet ifname "$interface_name" con-name "$interface_name"
+sudo nmcli c mod "$interface_name" ipv4.method auto
 
-sudo nmcli c down $interface_name
-sudo nmcli c up $interface_name
+sudo nmcli c down "$interface_name"
+sudo nmcli c up "$interface_name"
 
 sudo systemctl try-restart NetworkManager.service
 echo ""

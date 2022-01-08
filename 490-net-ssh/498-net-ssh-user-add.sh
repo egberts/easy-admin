@@ -21,7 +21,7 @@ fi
 echo ""
 
 # check if user already has that supplemental group ID
-USER_HAS_GID="$(egrep "^${SSH_USER}:" /etc/group | wc -l)"
+USER_HAS_GID="$(grep -E -c "^${SSH_USER}:" /etc/group )"
 if [ "$USER_HAS_GID" -ge 1 ]; then
   echo "User $SSH_USER already has $SSH_GROUP GID"
   echo ""

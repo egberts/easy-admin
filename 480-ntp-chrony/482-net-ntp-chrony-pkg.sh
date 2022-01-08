@@ -42,8 +42,6 @@ DROPIN_CONF_FILESPEC="$CHRONY_CONFD_DIRPATH/$DEFAULT_DROPIN_CONF_FILENAME"
 # its Debian's dynamic '/run/chrony-dhcp'
 CHRONY_DHCP_DIRPATH="$(realpath -m "$localstatedir/run/chrony-dhcp")"
 
-SRC_SUFFIX="sources"
-
 ####################################################################
 # Defensive coding between NTP clients
 ####################################################################

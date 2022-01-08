@@ -38,17 +38,12 @@ if [ "$ID" != "debian" ]; then
 fi
 
 sysconfdir="/etc"
-localstatedir="/"
 
 DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
-DEFAULT_CHRONY_SOURCESD_DIRPATH="$CHRONY_CONF_DIRPATH/sources.d"
-
 
 CHRONY_CONF_DIRPATH="$sysconfdir/chrony"
 
 CHRONY_CONF_FILESPEC="$CHRONY_CONF_DIRPATH/$DEFAULT_CHRONY_CONF_FILENAME"
-
-SRC_SUFFIX="sources"
 
 echo "This script patches the Debian-version of Chrony configuration file."
 echo "It simply relocates the 'pool' directive from the main"
@@ -117,6 +112,7 @@ echo "Found ${#RELOCATE_POOL_DIRECTIVES_A[*]} 'pool' directives..."
 echo ""
 # Find all 'sourcedir' directives in chrony.conf
 echo "Searching for 'sourcedir' directives..."
+# shellcheck disable=SC2207
 SOURCES_DIRPATHS_A=($(grep -E '^(\s*(~#)*\s*sourcedir\s)' "$CHRONY_CONF_FILESPEC" | awk '{print $2}'| xargs))
 echo "Number of 'sourcedir' directives found: ${#SOURCES_DIRPATHS_A[@]}"
 echo "Sourced dirs found: ${SOURCES_DIRPATHS_A[*]}"
@@ -125,7 +121,7 @@ echo "Sourced dirs found: ${SOURCES_DIRPATHS_A[*]}"
 CHRONY_SOURCES_DIRPATHS_A=()
 for this_src_dir in ${SOURCES_DIRPATHS_A[*]}; do
   #echo "Testing $this_src_dir..."
-  DIR_USER="$(stat -c '%U' $this_src_dir)"
+  DIR_USER="$(stat -c '%U' "$this_src_dir")"
   if [ "$DIR_USER" == "$CHRONY_USER" ]; then
     if [[ "$this_src_dir" = *"dhcp"* ]]; then
       echo "Skipping $this_src_dir as too DHCP-related..."
@@ -203,7 +199,7 @@ for this_line in "${RELOCATE_POOL_DIRECTIVES_A[@]}"; do
      "${CHRONY_CONF_FILESPEC}"
   echo ""
 done
-echo "" >> $DROPIN_SOURCE_FILESPEC
+echo "" >> "$DROPIN_SOURCE_FILESPEC"
 
 echo "Reverifying syntax of configuration/sources files..."
 # Verify the configuration files to be correct, syntax-wise.

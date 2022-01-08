@@ -13,7 +13,7 @@ nologin_pattern="nologin"
 NOLOGIN_BIN="$(whereis -b "$nologin_pattern" | awk '{print $2}')"
 echo "$NOLOGIN_BIN"
 if [ -z "$NOLOGIN_BIN" ]; then
-  echo "Unable to find '"$nologin_pattern"' binary."
+  echo "Unable to find '$nologin_pattern' binary."
   echo "CIS-Bind9.11-2.2: FAIL"
   exit 5
 fi
