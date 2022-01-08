@@ -8,7 +8,7 @@ toward ssh and sshd.
 
 Authorization Types 
 -------------------
-Authorization is a simply permission method of
+Authorization is a simple permission method of
 under what condition should arise before a new SSH session get started
 before we get to the user-specific part of the SSH protocol.
 
@@ -31,10 +31,10 @@ Authentication types are:
 Outbound SSH Session - Authorization
 ====================
 The first line of OpenSSH defense is outbound of SSH connection.
-It may not be the weakest link but it is surely the easiest to prevent
-a hacker's movement and the hardest to trackdown to.
+It may not be the weakest link, but it is surely the easiest to prevent
+a hacker's movement, and the hardest to track down to.
 
-Most default installations left these features wide-open.  And most of you will
+Most default installations left these features wide-open.  Most of you will
 continue to do so.
 
 Several file permission methods for restricting SSH usages within the
@@ -44,13 +44,13 @@ outbound SSH session are:
 2. Public Key restriction (against outbound ssh client)
 
 
-For file-permission restriction against binary file, we can run:
+For file-permission restriction against a binary file, we can run:
 
     chmod 0700 /usr/bin/ssh
     chgrp root /usr/bin/ssh
 
-And naively let only root use 'ssh client', which is rare; 
-End-user may have no business using this host as a SSH jump-point.
+then naively let only root use 'ssh client', which is rare; 
+End-user may have no business using this host as an SSH jump-point.
 
 
 Or we can run:
@@ -58,14 +58,14 @@ Or we can run:
     chmod 0750 /usr/bin/ssh
     chgrp ssh /usr/bin/ssh
 
-And basically let only users who have 'ssh' supplementary group use 'ssh
+which basically let only users who have 'ssh' supplementary group use 'ssh
 client'.  One can add user(s) to the 'ssh' group as needed.
 
     usermod -a -G ssh <username>
 
 Useful for multi-user environment.
 
-In summary, outbound SSH authorization comprises of:
+In summary, outbound SSH authorization consisting of:
 1.  No group name for SSH, all root-owned
 2.  Single 'ssh' group
 3.  Both 'ssh' and 'sshkey' groups
@@ -88,12 +88,12 @@ options.  They're nice to have but impractical.
 Good for a small-time admin; large user pool, not so much.  Downside of this
 SSH-specific setting is that there is no ease of data-entry for new users.  One
 would have to go delve into the `sshd_config`, wade through the many options, and
-carefully insert in a new user name. Then run a syntax checker:
+carefully insert in a new username. Then run a syntax checker:
 
    ssh -T -t -f /etc/ssh/sshd\_config
    echo $?
 
-to make sure that its configuration file did not break: shell exit code for 
+to make sure that its configuration file did not break: performs a shell exit code for 
 success is zero(0).
 
 PubkeyAuthentication Only
