@@ -1,0 +1,13 @@
+
+# directive: confdir
+# variable name: 
+# multiple option:  last one overwrites
+# default value: none
+# Authenticate Method: password
+# Channel type: auth (pre-channel)
+# CLI option: -o
+# Process context: main
+# Process context: server configuration parser
+# (W) CNF_Parse()/main()
+# (R) CNF_Parse()/CNF_ParseLine()/CNF_ReadFile()/search_dirs()/parse_confdir()/CNF_Parse()/main()
+

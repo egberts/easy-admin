@@ -1,0 +1,100 @@
+Status: EVOLVING ROUGH DRAFT
+Effort: Code Review
+Description:
+The configurations are organized by first-read in execution order
+
+Which code stage read this configurable option firstly as a useful actionable item?
+=====================================================
+
+CONFIGURATION STAGE
+authselectmode (during configuration and reconfiguration only)
+
+PRV_Initialise (09-prv-*)
+
+INITIALIZATION STAGE (10-lcl-*)
+clockprecision (LCL_Initialise)
+maxdrift (LCL_Initialise)
+
+SCH_Initialise (11-sch)
+
+SCK_Initialise (12-sck)
+
+NKS_PreInitialise (13-nks)
+
+SYS_Initialise (14-sys-*)
+maxslewrate
+
+RTC_Initialise (15-rtc-*)
+
+CLOCK REFINEMENT (16-source-*?)
+combinelimit (SRC_Initialise)
+stratumweight (SRC_Initialise)
+maxjitter (SRC_Initialise)
+maxdistance (SRC_Initialise)
+
+RCL_Initialise (23-rcl-*)
+initstepslew
+leapsectz
+log
+
+KEY_Initialise (25-key-*)
+keyfile (KEY_Initialise)
+
+CAM_Initialise
+
+NIO_Initialise NETWORK I/O (20-nio-*)
+bindaddress (NIO_Initialise)
+bindcmdaddress (NIO_Initialise)
+bindacqaddress (NIO_Initialise)
+binddevice (NIO_Initialise)
+acquisitionport (NIO_Initialise)
+bindcmddevice (NIO_Initialise)
+cmdport (NIO_Initialise)
+hwtimestamp (NIO_Initialise)
+
+NCR_Initialise (21-ncr-*)
+maxdistance (NCR_Initialise)
+
+CNF_SetupAccessRestriction
+
+sched_priority
+
+SYS_LockMemory()
+lock_all (lock_memory/CNF_GetLockMemory())
+
+REFERENCE CLOCK (30-ref-*)
+corrtimeratio (REF_Initialise)
+driftfile (REF_Initialise)
+fallbackdrift (REF_Initialise)
+leapsectz (RCL_Initialise)
+
+LOG STAGE (70-log-*?)
+clientloglimit (CRL_Initialise)
+
+SYS_EnableSystemCallFilter
+mailonchange
+
+
+REAL-TIME CLOCK TIMER (60-rtc-timer-*)
+hwclockfile (RTC_TimeInit)
+
+SST_Initialise (62-sst-*)
+log (SST_Initialise)
+
+NSR_Initialise (64-nsr-*)
+NSD_Initialise (66-nsd-*)
+NNS_Initialise (68-nns-*)
+NKS_Initialise (70-nks-*)
+CLG_Initialise (72-clg-*)
+MNL_Initialise (74-mnl-*)
+TMC_Initialise (76-tmc-*)
+SMT_Initialise (78-smt-*)
+
+SCH_MainLoop SCHEDULER MAIN LOOP (80-sch-*?)
+NAU_* (authentication)
+
+UNUSED STATE
+broadcast
+
+
+
