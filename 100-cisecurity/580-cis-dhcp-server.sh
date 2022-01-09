@@ -3,6 +3,15 @@
 # Title: Disable DHCP server
 #
 
+echo "CIS recommendation for removal of DHCP Server daemon service"
+echo
+
+SYSTEMCTL_BIN="$(which systemctl)"
+if [ -z "$SYSTEMCTL_BIN" ]; then
+  echo "No systemd installed; exiting ..."
+  exit 1
+fi
+
 # checking if we need to prompt for 'disabling DHCP server'...
 
 
