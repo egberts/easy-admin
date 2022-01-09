@@ -34,7 +34,7 @@ case $ID in
     WHEEL_GROUP="wheel"
     ;;
   *)
-    echo "Unknown Linux distro"
+    echo "Unknown Operating System; undefined action; aborted."
     exit 3
     ;;
 esac
@@ -42,8 +42,8 @@ esac
 # Vendor-specific autotool/autoconf
 prefix="${prefix:-${DEFAULT_PREFIX}}"
 sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR}}"
-exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX}}"
-libdir="${libdir:-"${DEFAULT_LIB_DIRSPEC}"}"
+exec_prefix="${exec_prefix:-${prefix:-$DEFAULT_EXEC_PREFIX}}"
+libdir="${libdir:-$DEFAULT_LIB_DIRSPEC}"
 libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"
 localstatedir="${localstatedir:-"$DEFAULT_LOCALSTATEDIR"}"
 datarootdir="${datarootdir:-"${prefix}/share"}"

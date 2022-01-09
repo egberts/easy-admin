@@ -17,7 +17,7 @@ source /etc/os-release
 
 # libdir and $HOME are two separate grouping (that Fedora, et. al. merged)
 case $ID in
-  debian)
+  debian|devuan)
     DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
     DEFAULT_LOCALSTATEDIR=""
@@ -25,23 +25,7 @@ case $ID in
     DEFAULT_LIB_DIRSPEC="/var/lib"
     WHEEL_GROUP="sudo"
     ;;
-  centos)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
-    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
-    WHEEL_GROUP="wheel"
-    ;;
-  redhat)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
-    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
-    WHEEL_GROUP="wheel"
-    ;;
-  fedora)
+  centos|fedora|redhat)
     DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
     DEFAULT_LOCALSTATEDIR=""
