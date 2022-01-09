@@ -88,6 +88,8 @@ fi
 SSH_USERS_BY_GROUP="$(grep "^${GROUP_NAME}:" /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SSH_USERS_BY_GROUP" ]; then
   echo "There is no one in the '$GROUP_NAME' group; "
+  echo "Anyone can ssh outward."
+  echo "Anyone can ssh inbound."
   echo "no remote access possible by UNIX group."
   echo "To add remote access by UNIX group, run:"
   echo "  usermod --append --groups $GROUP_NAME <your-user-name>"
@@ -109,7 +111,7 @@ fi
 # Update the SSH server settings
 #
 
-echo "Creating $sshd_config_filespec ..."
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$sshd_config_filespec ..."
 cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
 #
 # File: $sshd_config_filename

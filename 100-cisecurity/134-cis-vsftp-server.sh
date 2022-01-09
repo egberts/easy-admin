@@ -13,7 +13,6 @@ fi
 
 # checking if we need to prompt for 'disabling FTP server'...
 
-
 echo "Checking if FTP server is running..."
 vsfptd_active="$(systemctl is-active vsftpd.service)"
 if [ "$vsfptd_active" != 'inactive' ]; then

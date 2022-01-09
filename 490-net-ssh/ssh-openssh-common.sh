@@ -66,7 +66,7 @@ sshd_confd_dirspec="$extended_sysconfdir/sshd_config.d"
 echo "Detected $ID distro."
 
 case $ID in
-  debian)
+  debian|devuan)
     USER_NAME="ssh"
     GROUP_NAME="ssh"
     WHEEL_GROUP="sudo"

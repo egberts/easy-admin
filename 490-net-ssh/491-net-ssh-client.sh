@@ -33,7 +33,7 @@ function check_redhat_crypto_policy()
 source ./ssh-openssh-common.sh
 
 case $ID in
-  debian)
+  debian|devuan)
     ;;
   centos)
     check_redhat_crypto_policy
@@ -54,7 +54,7 @@ DEFAULT_ETC_CONF_DIRNAME="ssh"
 source ssh-openssh-common.sh
 
 FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
-rm "$FILE_SETTINGS_FILESPEC"
+rm -f "$FILE_SETTINGS_FILESPEC"
 
 REPO_DIR="$PWD/$ssh_configd_dirname"
 
