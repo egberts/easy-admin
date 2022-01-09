@@ -27,6 +27,39 @@ echo ""
 echo "Cleaning up temporary files ..."
 popd 
 rm -rf /tmp/fonts-ibm-plex
+rm -f /tmp/master.zip
+
+echo "Creating /etc/X11/xorg.conf.d/80-fonts-local.conf ..."
+cat << LOCAL_FONT_CACHE_EOF | sudo tee /etc/X11/xorg.conf.d/80-fonts-local.conf
+
+# File: 80-fonts-local.conf
+# Path: /etc/X11/xorg.conf.d
+# Title: IBM Plex font files for X11
+
+Section "files"
+    FontPath "/usr/share/fonts/local"
+    FontPath "/usr/local/share/fonts"
+    FontPath "/usr/local/share/fonts/truetype"
+    FontPath "/usr/local/share/fonts/truetype/ibm-plex"
+EndSection
+LOCAL_FONT_CACHE_EOF
+
+echo "Creating /etc/fonts/local.conf ..."
+cat << ETC_FONT_CONF_EOF | sudo tee -a /etc/fonts/local.conf
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+
+<dir>/usr/local/share/fonts/</dir>
+
+</fontconfig>
+ETC_FONT_CONF_EOF
+echo
+
+echo "Update font cache ..."
+sudo fc-cache -f -v
+sudo fc-cache
+echo
 
 echo "Done."
 
