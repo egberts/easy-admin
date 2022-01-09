@@ -38,7 +38,6 @@ sshd_configd_dirspec="${extended_sysconfdir}/$sshd_configd_dirname"
 ssh_configd_dirname="ssh_config.d"
 ssh_configd_dirspec="${extended_sysconfdir}/$ssh_configd_dirname"
 
-
 # Build area
 
 if [ "${BUILDROOT:0:1}" != '/' ]; then
@@ -63,12 +62,23 @@ sshd_config_filespec="${openssh_config_dirspec}/$sshd_config_filename"
 ssh_confd_dirspec="$extended_sysconfdir/ssh_config.d"
 sshd_confd_dirspec="$extended_sysconfdir/sshd_config.d"
 
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-ssh-common.sh"
+rm -f "$FILE_SETTINGS_FILESPEC"
+
 echo "Detected $ID distro."
 
 case $ID in
   debian|devuan)
     USER_NAME="ssh"
     GROUP_NAME="ssh"
+    SSH_USER_NAME="ssh"  # future proofing
+    SSH_GROUP_NAME="ssh"  # future proofing
+    SSHD_USER_NAME="sshd"  # future proofing
+    SSHD_GROUP_NAME="sshd"  # future proofing
+    SSHKEY_USER_NAME="ssh_keys"  # future proofing
+    SSHKEY_GROUP_NAME="ssh_keys"  # future proofing
+    SSH_SFTP_USER_NAME="sftpusers"
+    SSH_SFTP_GROUP_NAME="sftponly"
     WHEEL_GROUP="sudo"
     package_tarname="openssh"
     package_tarname="openssh"
@@ -85,6 +95,14 @@ case $ID in
   fedora)
     USER_NAME="sshd"
     GROUP_NAME="sshd"  # there is also 'ssh_keys' group
+    SSH_USER_NAME="ssh"
+    SSH_GROUP_NAME="ssh"
+    SSHD_USER_NAME="sshd"
+    SSHD_GROUP_NAME="sshd"
+    SSHKEY_USER_NAME="ssh_keys"
+    SSHKEY_GROUP_NAME="ssh_keys"
+    SSH_SFTP_USER_NAME="sftpusers"
+    SSH_SFTP_GROUP_NAME="sftponly"
     WHEEL_GROUP="wheel"
     clients_package_tarname="openssh-clients"
     server_package_tarname="openssh-server"
@@ -102,6 +120,14 @@ case $ID in
   redhat)
     USER_NAME="sshd"
     GROUP_NAME="sshd"  # there is also 'ssh_keys' group
+    SSH_USER_NAME="ssh"
+    SSH_GROUP_NAME="ssh"
+    SSHD_USER_NAME="sshd"
+    SSHD_GROUP_NAME="sshd"
+    SSHKEY_USER_NAME="ssh_keys"
+    SSHKEY_GROUP_NAME="ssh_keys"
+    SSH_SFTP_USER_NAME="sftpusers"
+    SSH_SFTP_GROUP_NAME="sftponly"
     WHEEL_GROUP="wheel"
     clients_package_tarname="openssh-clients"
     server_package_tarname="openssh-server"
@@ -119,6 +145,14 @@ case $ID in
   centos)
     USER_NAME="sshd"
     GROUP_NAME="sshd"  # there is also 'ssh_keys' group
+    SSH_USER_NAME="ssh"
+    SSH_GROUP_NAME="ssh"
+    SSHD_USER_NAME="sshd"
+    SSHD_GROUP_NAME="sshd"
+    SSHKEY_USER_NAME="ssh_keys"
+    SSHKEY_GROUP_NAME="ssh_keys"
+    SSH_SFTP_USER_NAME="sftpusers"
+    SSH_SFTP_GROUP_NAME="sftponly"
     WHEEL_GROUP="wheel"
     clients_package_tarname="openssh-clients"
     server_package_tarname="openssh-server"
@@ -135,7 +169,15 @@ case $ID in
     ;;
   arch)
     USER_NAME="sshd"
-    GROUP_NAME="sshd"  # there is also 'ssh_keys' group
+    GROUP_NAME="sshd"
+    SSH_USER_NAME="ssh"
+    SSH_GROUP_NAME="ssh"
+    SSHD_USER_NAME="sshd"
+    SSHD_GROUP_NAME="sshd"
+    SSHKEY_USER_NAME="ssh_keys"
+    SSHKEY_GROUP_NAME="ssh_keys"
+    SSH_SFTP_USER_NAME="sftpusers"
+    SSH_SFTP_GROUP_NAME="sftponly"
     WHEEL_GROUP="wheel"
     package_tarname="openssh"
     systemd_unitname="sshd.service"
@@ -155,4 +197,11 @@ fi
 if [ "$HAS_SSH_CONFIG_D" -ne 0 ]; then
   flex_mkdir "$ssh_configd_dirspec"
 fi
+
+ssh_bin_filespec="$( whereis ssh | awk '{print $2}')"
+sshd_bin_filespec="$( whereis sshd | awk '{print $2}')"
+  
+
+sshd_home_dirspec="$( egrep "^${SSHD_USER_NAME}:" /etc/passwd | awk -F: '{print $6 }')"
+echo "sshd_home_dirspec: $sshd_home_dirspec"
 

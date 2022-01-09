@@ -68,7 +68,7 @@ Useful for multi-user environment.
 In summary, outbound SSH authorization consisting of:
 1.  No group name for SSH, all root-owned
 2.  Single 'ssh' group
-3.  Both 'ssh' and 'sshkey' groups
+3.  Both 'ssh' and 'ssh\_keys' groups
 
 
 Inbound SSH Session - Authorization
@@ -77,7 +77,7 @@ Inbound SSH Session - Authorization
 Different methods of authorizing inbound SSH session are:
 
 * `AllowGroups`/`AllowUsers`
-* `sshkey` UNIX group name by accessibility to `/etc/ssh/ssh\_host_*_keys` file
+* `ssh_keys` UNIX group name by accessibility to `/etc/ssh/ssh_host_*_key` files
 * `ssh` UNIX group name by accessibility to `/etc/ssh/ssh_config` file
 
 AllowGroup/AllowUsers
@@ -90,8 +90,10 @@ SSH-specific setting is that there is no ease of data-entry for new users.  One
 would have to go delve into the `sshd_config`, wade through the many options, and
 carefully insert in a new username. Then run a syntax checker:
 
-   ssh -T -t -f /etc/ssh/sshd\_config
+```bash
+   ssh -T -t -f /etc/ssh/sshd_config
    echo $?
+```
 
 to make sure that its configuration file did not break: performs a shell exit code for 
 success is zero(0).
@@ -106,13 +108,15 @@ If your SSH server declines the `PasswordAuthentication` option and uses
 `PubkeyAuthentication` instead, then this file-permission approach against 
 public key usages is for you; we can run:
 
-    chmod 0640 /etc/ssh/ssh_host_*_keys.pub   # note '.pub' file suffix?
-    chgrp sshkey /etc/ssh/ssh_host_*_keys.pub
+```bash
+    chmod 0640 /etc/ssh/ssh_host_*_key   # note absence of '.pub' file suffix?
+    chgrp ssh_keys /etc/ssh/ssh_host_*_key
+```
 
 This prevents SSH session from using any SSH publickey, unless that user 
-is also in the supplemental 'sshkey' group as well.
+is also in the supplemental 'ssh\_keys' group as well.
 
-TIP: It is the norm to create another SSH Unix group name/ID like 'sshkey' 
+TIP: It is the norm to create another SSH Unix group name/ID like 'ssh\_keys' 
 to help restrict reading these public key files.  We keep the existing
 'ssh' group for:
 
@@ -126,8 +130,8 @@ Authentication
 Inbound SSH session are supposed to be the most heavily fortified leg of 
 the SSH protocol; but sadly no.
 
-Evolutionarily, OpenSSH configures out the weakness of SSH protocol.  Most
-options are now gone such as:
+Evolutionarily, OpenSSH configures out the weakness of SSH protocol. 
+Options that are long gone:
 
 *  GSSAPICleanupCredentials
 *  KeepAlive

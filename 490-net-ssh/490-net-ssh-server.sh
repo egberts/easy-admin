@@ -72,36 +72,47 @@ if [ -z "$SUDO_USERS_BY_GROUP" ]; then
   fi
 fi
 
+# Check if 'sshd' group exist
+SSHD_GROUP_FOUND="$(grep -c "^${SSHD_GROUP_NAME}:" /etc/group)"
+if [ "$SSHD_GROUP_FOUND" -eq 0 ]; then
+  echo "There is no '$SSHD_GROUP_NAME' group; "
+  echo "Other process may view memory of SSH daemon process"
+  echo "To add daemon access by UNIX group, run:"
+  echo "  groupadd --system $SSHD_GROUP_NAME"
+  echo 
+  echo "Aborted."
+  exit 1
+fi
+
 # Check if 'ssh' group exist
-SSH_GROUP_FOUND="$(grep -c "^${GROUP_NAME}:" /etc/group)"
+SSH_GROUP_FOUND="$(grep -c "^${SSH_GROUP_NAME}:" /etc/group)"
 if [ "$SSH_GROUP_FOUND" -eq 0 ]; then
-  echo "There is no '$GROUP_NAME' group; "
+  echo "There is no '$SSH_GROUP_NAME' group; "
   echo "no remote access possible by this UNIX group name."
   echo "To add remote access by UNIX group, run:"
-  echo "  groupadd --system $GROUP_NAME"
+  echo "  groupadd --system $SSH_GROUP_NAME"
   echo 
   echo "Aborted."
   exit 1
 fi
 
 # Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "^${GROUP_NAME}:" /etc/group | awk -F: '{ print $4; }')"
+SSH_USERS_BY_GROUP="$(grep "^${SSH_GROUP_NAME}:" /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SSH_USERS_BY_GROUP" ]; then
   echo "There is no one in the '$GROUP_NAME' group; "
   echo "Anyone can ssh outward."
   echo "Anyone can ssh inbound."
   echo "no remote access possible by UNIX group."
   echo "To add remote access by UNIX group, run:"
-  echo "  usermod --append --groups $GROUP_NAME <your-user-name>"
+  echo "  usermod --append --groups $SSH_GROUP_NAME <your-user-name>"
   echo "or"
-  echo "  usermod -a -G $GROUP_NAME <your-user-name>"
+  echo "  usermod -a -G $SSH_GROUP_NAME <your-user-name>"
   echo 
   echo "Aborted."
   exit 1
 fi
 
-
-  # Only the first copy is saved as the backup
+# Only the first copy is saved as the backup
 if [ ! -f "${sshd_config_filespec}.backup" ]; then
   if [ "$BUILD_ABSOLUTE" -eq 1 ]; then
     mv "$sshd_config_filespec" "${sshd_config_filespec}.backup"
@@ -115,7 +126,7 @@ echo "Creating ${BUILDROOT}${CHROOT_DIR}$sshd_config_filespec ..."
 cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
 #
 # File: $sshd_config_filename
-# Path: $sysconfdir
+# Path: $extended_sysconfdir
 # Title: SSH server configuration file
 #
 # Edition: sshd(8) v8.4p1 compiled-default
@@ -161,7 +172,7 @@ cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
 
 SSHD_EOF
 flex_chmod 640 "$sshd_config_filespec"
-flex_chown "root:$GROUP_NAME" "$sshd_config_filespec"
+flex_chown "root:$SSHD_GROUP_NAME" "$sshd_config_filespec"
 
 
 if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
@@ -172,7 +183,7 @@ if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
 SSHD_EOF
 
   flex_mkdir "$sshd_configd_dirspec"
-  flex_chown "root:$GROUP_NAME" "$sshd_configd_dirspec"
+  flex_chown "root:$SSHD_GROUP_NAME" "$sshd_configd_dirspec"
   flex_chmod 750 "$sshd_configd_dirspec"
 
   cp "${sshd_configd_dirname}"/*.conf "$BUILDROOT$sshd_configd_dirspec"/
@@ -181,7 +192,7 @@ SSHD_EOF
   conf_list="$(find . -maxdepth 1 -name "*.conf")"
   popd
   for this_subconf_file in $conf_list; do
-    flex_chown "root:$GROUP_NAME" "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
+    flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
     flex_chmod 640 "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
   done
 else
@@ -193,7 +204,7 @@ else
   for this_subconf_file in $conf_list; do
     cat "$this_subconf_file" >> "$BUILDROOT$sshd_config_filespec"
   done
-  flex_chown "root:$GROUP_NAME" "$sshd_config_filespec"
+  flex_chown "root:$SSHD_GROUP_NAME" "$sshd_config_filespec"
   flex_chmod 640 "$sshd_config_filespec"
 fi
 
@@ -224,7 +235,7 @@ rm "${TEMP_THROWAWAY_KEY}.pub"
 # Check if non-root user has 'ssh' supplementary group membership
 
 FOUND=0
-USERS_IN_SSH_GROUP="$(grep "$GROUP_NAME" /etc/group | awk -F: '{ print $4 }')"
+USERS_IN_SSH_GROUP="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4 }')"
 for this_users in $USERS_IN_SSH_GROUP; do
   for this_user in $(echo "$this_users" | sed 's/,/ /g' | xargs -n1); do
     if [ "$this_user" == "$USER" ]; then
@@ -237,10 +248,31 @@ done
 if [ $FOUND -eq 0 ]; then
   echo "User ${USER} cannot access this SSH server here."
   echo "Must execute:"
-  echo "  usermod -a -G $GROUP_NAME ${USER}"
+  echo "  usermod -a -G $SSH_GROUP_NAME ${USER}"
   exit 1
 fi
-echo 
+
+# check keys
+ssh_keys_group_found="$(egrep '^${SSHKEY_GROUP_NAME}:' /etc/group)"
+if [ -n "$ssh_keys_group_found" ]; then
+  file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed2559_key"
+  for this_file in $file_list; do
+    key_file="${this_file}.key"
+    flex_chmod 640 "$key_file"
+    flex_chown "root:$SSHKEY_GROUP_NAME" "$this_file"
+    flex_chmod 644 "$this_file"
+    flex_chown "root:root" "$this_file"
+  done
+else
+  echo "Warning: No $SSHKEY_GROUP_NAME group name found in /etc/group"
+  echo "Probably leftover from Redhat/Fedora/CentOS distro"
+  echo "To fix this, execute"
+  echo "  usermod -a -G $SSHKEY_GROUP_NAME ${USER}"
+  echo "And add a one-shot 'sshd-keygen@.service' evoking "
+  echo "  /usr/libexec/openssh/sshd-keygen"
+  echo "or ignore this '${SSHKEY_GROUP_NAME}' group all together"
+fi
+echo
 
 echo "Done."
 

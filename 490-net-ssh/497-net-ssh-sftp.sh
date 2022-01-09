@@ -18,8 +18,6 @@ echo ""
 
 source ./ssh-openssh-common.sh
 
-SSH_SFTP_GROUP="sftpusers"
-
 # We are forcing no-root login permitted here
 # so let us check to ensure that SOMEONE can
 # log back in as non-root and become root
@@ -44,29 +42,30 @@ if [[ "$ROOT_LOGIN_PWD" == *'*'* ]]; then
 fi
 
 # Check if anyone has 'sudo' group access on this host
-SUDO_USERS_BY_GROUP="$(grep sudo /etc/group | awk -F: '{ print $4; }')"
+SUDO_USERS_BY_GROUP="$(grep "$WHEEL_NAME" /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SUDO_USERS_BY_GROUP" ]; then
-  echo "There is no user account involving with the 'sudo' group; "
+  echo "There is no user account involving with the '$WHEEL_NAME' group; "
   echo "... You may want to add 'ssh' supplemental group to various users."
 
   # Well, no direct root and no sudo-able user account, this is rather bad.
   if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
     echo "no root access possible from non-root"
     echo "Run:"
-    echo "  usermod -a -G sudo <your-user-name>"
+    echo "  usermod -a -G $WHEEL_NAME <your-user-name>"
     exit 1
   fi
 fi
 echo ""
 
-# Check if 'sftpusers' group exist
-FOUND_SFTPUSERS_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $1; }')"
+# Check if 'sftponly' group exist
+FOUND_SFTPUSERS_GROUP="$(grep "$SSH_SFTP_GROUP_NAME" /etc/group | awk -F: '{ print $1; }')"
 if [ -z "$FOUND_SFTPUSERS_GROUP" ]; then
-  echo "There is no one in the '$SSH_SFTP_GROUP' group; "
+  echo "There is no one in the '$SSH_SFTP_GROUP_NAME' group; "
   echo "ALL remote file copy possible by ALL users."
   echo ""
   echo "To restrict sftp, run:"
-  echo "  sudo groupadd --system $SSH_SFTP_GROUP"
+  echo "  sudo groupadd --system $SSH_SFTP_GROUP_NAME"
+  echo "  sudo useradd -a -G $SSH_SFTP_GROUP_NAME <username>"
   echo ""
   echo "Aborted."
   exit 1
@@ -98,17 +97,17 @@ else
 fi
 
 # Create the build script file before checking if anyone is using it.
-flex_chown root:${SSH_SFTP_GROUP} "$SFTP_SERVER_BINSPEC"
+flex_chown root:${SSH_SFTP_GROUP_NAME} "$SFTP_SERVER_BINSPEC"
 flex_chmod 0750 "$SFTP_SERVER_BINSPEC"
 
 # Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $4; }')"
+SSH_USERS_BY_GROUP="$(grep "$SSH_SFTP_GROUP_NAME" /etc/group | awk -F: '{ print $4; }')"
 if [ -z "$SSH_USERS_BY_GROUP" ]; then
-  echo "There is no one in the '$SSH_SFTP_GROUP' group; "
+  echo "There is no one in the '$SSH_SFTP_GROUP_NAME' group; "
   echo "no remote file copy possible."
   echo ""
   echo "To add remote file copy by a user, run:"
-  echo "  sudo usermod -a -G $SSH_SFTP_GROUP <your-user-name>"
+  echo "  sudo usermod -a -G $SSH_SFTP_GROUP_NAME <your-user-name>"
   echo ""
   echo "Aborted."
   exit 1

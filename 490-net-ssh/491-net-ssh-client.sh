@@ -21,12 +21,15 @@ OPENSSH_SSH_BIN_FILESPEC="/usr/bin/ssh"
 
 function check_redhat_crypto_policy()
 {
-  if [ -f /etc/ssh/ssh_config.d/05-redhat.conf ]; then
-    echo "Ummmmm, Redhat Crypto Policy in effect."
-    echo "Check /etc/ssh/ssh_config.d/05-redhat.conf if this is what you want"
-    echo "Otherwise, remove/rename that file and re-run $0"
-    echo "Aborted."
-    exit 3
+  sestatus_bin="$(whereis sestatus | awk '{print $2;}')"
+  if [ -n "$sestatus_bin" ] && [ -e "$sestatus_bin" ]; then
+    if [ -f /etc/ssh/ssh_config.d/05-redhat.conf ]; then
+      echo "Ummmmm, Redhat Crypto Policy in effect."
+      echo "Check /etc/ssh/ssh_config.d/05-redhat.conf if this is what you want"
+      echo "Otherwise, remove/rename that file and re-run $0"
+      echo "Aborted."
+      exit 3
+    fi
   fi
 }
 
@@ -46,9 +49,6 @@ case $ID in
     ;;
 esac
 
-echo "Check the OpenSSH client for appropriate file permission settings"
-echo ""
-
 DEFAULT_ETC_CONF_DIRNAME="ssh"
 
 source ssh-openssh-common.sh
@@ -59,14 +59,39 @@ rm -f "$FILE_SETTINGS_FILESPEC"
 REPO_DIR="$PWD/$ssh_configd_dirname"
 
 
-# Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "$GROUP_NAME" /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SSH_USERS_BY_GROUP" ]; then
-  echo "There is no one in the 'ssh' group; "
-  echo "no remote access possible."
-  echo "To add remote access, run:"
-  echo "  usermod -a -G $GROUP_NAME <your-user-name>"
-  exit 1
+echo "Check the OpenSSH client for appropriate file permission settings"
+echo ""
+
+if [ -z "$ssh_bin_filespec" ]; then
+  echo "SSH client binary is not found; aborted."
+  exit 9
+fi
+
+# Check if 'ssh' client is useable at file permission level
+ssh_bin_filespec="$(whereis ssh|awk '{print $2;}')"
+ssh_bin_group="$(stat -c%G $ssh_bin_filespec)"
+ssh_perm="$(stat -c%a $ssh_bin_filespec)"
+if [ "$ssh_perm" -gt "750" ]; then
+  echo "But the $ssh_bin_filespec has sufficient $ssh_perm file permission;"
+  echo "so anyone can use 'ssh'"
+  echo "INFO: Perhaps, you really want to restrict 'ssh' binary being limited"
+  echo "to just the users having supplemental '$ssh_bin_group' group for "
+  echo "      limiting these outbound ssh sessions?"
+  echo "To add group-privilege for remote SSH access, run:"
+  echo "  usermod -a -G $ssh_bin_group <your-user-name>"
+  echo "  chmod o-rwx $ssh_bin_filespec"
+else
+  # Check if anyone has 'ssh' (client) group access on this host
+  SSH_USERS_BY_GROUP="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4; }' | xargs -n1 )"
+  if [ -z "$SSH_USERS_BY_GROUP" ]; then
+    echo "There is no one in the '$SSH_GROUP_NAME' group; "
+    echo "The $ssh_bin_filespec has restrictive $ssh_perm file permission;"
+    echo "Only user with '$ssh_bin_group' supplemental group can use this 'ssh' client binary"
+    echo "no remote access possible."
+    echo "To add remote access, run:"
+    echo "  usermod -a -G $ssh_bin_group <your-user-name>"
+    exit 1
+  fi
 fi
 
 # Even if we are root, we abide by BUILDROOT directive as to
@@ -120,7 +145,7 @@ echo "Creating ${BUILDROOT}$ssh_config_filespec ..."
 cat << SSH_EOF | tee "${BUILDROOT}${ssh_config_filespec}" >/dev/null
 #
 # File: $SSH_CONFIG_FILENAME
-# Path: $sysconfdir
+# Path: $openssh_config_dirspec
 # Title: SSH client configuration file
 #
 # Edition: ssh(8) v8.4p1 compiled-default
@@ -140,7 +165,7 @@ cat << SSH_EOF | tee "${BUILDROOT}${ssh_config_filespec}" >/dev/null
 include "${ssh_configd_dirspec}/*.conf"
 SSH_EOF
 flex_chmod 640 "$ssh_config_filespec"
-flex_chown "root:$GROUP_NAME" "$ssh_config_filespec"
+flex_chown "root:$SSH_GROUP_NAME" "$ssh_config_filespec"
 
 if [ ! -d "$REPO_DIR" ]; then
   echo "Repo directory $REPO_DIR missing; aborted."
@@ -150,14 +175,14 @@ flex_mkdir ${ssh_configd_dirspec}
 cp ${REPO_DIR}/* "${BUILDROOT}${ssh_configd_dirspec}/"
 
 flex_chmod 750 "$ssh_configd_dirspec"
-flex_chown "root:$GROUP_NAME" "$ssh_configd_dirspec"
+flex_chown "root:$SSH_GROUP_NAME" "$ssh_configd_dirspec"
 
 CONF_LIST="$(find "${REPO_DIR}" -maxdepth 1 -name "*.conf")"
 for this_subconf_file in $CONF_LIST; do
   base_name="$(basename "$this_subconf_file")"
   cp "$this_subconf_file" "${BUILDROOT}${ssh_configd_dirspec}/"
   flex_chmod 640 "${ssh_configd_dirspec}/$base_name"
-  flex_chown "root:$GROUP_NAME" "${ssh_configd_dirspec}/$base_name"
+  flex_chown "root:$SSH_GROUP_NAME" "${ssh_configd_dirspec}/$base_name"
 done
 
 
@@ -182,7 +207,7 @@ echo ""
 # Check if non-root user has 'ssh' supplementary group membership
 
 FOUND=0
-USERS_IN_SSH_GROUP="$(grep "$GROUP_NAME" /etc/group | awk -F: '{ print $4 }')"
+USERS_IN_SSH_GROUP="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4 }' | xargs -n1)"
 for THIS_USERS in $USERS_IN_SSH_GROUP; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
     if [ "${this_user}" == "${USER}" ]; then
@@ -194,17 +219,17 @@ done
 
 if [ $FOUND -eq 0 ]; then
   echo "No one will be able to SSH outward of this box:"
-  echo "No user in '$GROUP_NAME' group."
+  echo "No user in '$SSH_GROUP_NAME' group."
   echo "User ${USER} cannot access this SSH server here."
   echo "Must execute:"
-  echo "  usermod -a -G ${GROUP_NAME} ${USER}"
+  echo "  usermod -a -G ${SSH_GROUP_NAME} ${USER}"
   exit 1
 else
-  echo "Only these users can use 'ssh' tools: '$USERS_IN_SSH_GROUP'"
+  echo "Only these users can use '${SSH_GROUP_NAME}' tools: '$USERS_IN_SSH_GROUP'"
   echo ""
-  echo "If you have non-root apps that also uses 'ssh', then add that user"
-  echo "to the '$GROUP_NAME' supplemental group; run:"
-  echo "  usermod -a -G ${GROUP_NAME} <app-username>"
+  echo "If you have non-root apps that also uses '$ssh_bin_filespec', then add that user"
+  echo "to the '$SSH_GROUP_NAME' supplemental group; run:"
+  echo "  usermod -a -G ${SSH_GROUP_NAME} <username>"
 fi
 echo ""
 

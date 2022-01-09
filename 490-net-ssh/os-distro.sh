@@ -41,6 +41,14 @@ case $ID in
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
+  arch)
+    DEFAULT_PREFIX="/usr"
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc"
+    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
+    WHEEL_GROUP="wheel"
+    ;;
   *)
     echo "Unknown Linux distro"
     exit 3
