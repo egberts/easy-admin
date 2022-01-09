@@ -133,6 +133,17 @@ case $ID in
     fi
     echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
     ;;
+  arch)
+    USER_NAME="sshd"
+    GROUP_NAME="sshd"  # there is also 'ssh_keys' group
+    WHEEL_GROUP="wheel"
+    package_tarname="openssh"
+    systemd_unitname="sshd.service"
+    sysvinit_unitname="sshd"
+    HAS_SSH_CONFIG_D=1
+    HAS_SSHD_CONFIG_D=1
+    echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
+    ;;
 esac
 
 flex_mkdir "$sysconfdir"

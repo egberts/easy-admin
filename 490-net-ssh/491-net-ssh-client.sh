@@ -58,21 +58,6 @@ rm "$FILE_SETTINGS_FILESPEC"
 
 REPO_DIR="$PWD/$ssh_configd_dirname"
 
-# Check if anyone has 'sudo' group access on this host
-SUDO_USERS_BY_GROUP="$(grep $WHEEL_GROUP /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SUDO_USERS_BY_GROUP" ]; then
-  echo "There is no user account involving with the '$WHEEL_GROUP' group; "
-  echo "... You may want to add 'ssh' supplemental group to various users."
-
-  # Well, no direct root and no sudo-able user account, this is rather bad.
-  if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
-    echo "no root access possible from non-root"
-    echo "Run:"
-    echo "  usermod -a -G $WHEEL_GROUP <your-user-name>"
-    exit 1
-  fi
-fi
-echo ""
 
 # Check if anyone has 'ssh' group access on this host
 SSH_USERS_BY_GROUP="$(grep "$GROUP_NAME" /etc/group | awk -F: '{ print $4; }')"

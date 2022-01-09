@@ -46,6 +46,15 @@ case $ID in
     GROU_NAME="dhcpd"
     WHEEL_GROUP="wheel"
     ;;
+  arch)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    USER_NAME="dhcp"
+    GROU_NAME="dhcp"
+    WHEEL_GROUP="wheel"
+    ;;
   *)
     echo "Unknown Linux distro"
     exit 3

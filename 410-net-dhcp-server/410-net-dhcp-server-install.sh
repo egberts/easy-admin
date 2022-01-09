@@ -17,4 +17,7 @@ case $ID in
   centos)
     dnf install dhcp-server
     ;;
+  arch)
+    pacman -S dhcp
+    ;;
 esac

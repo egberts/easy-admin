@@ -67,38 +67,6 @@ ARG1_CHRONY_CONF=${1}
 #   sysconfdir/sysconfdir
 #   localstatedir/localstatedir
 
-DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
-if [ "$DISTRO_MANUF" == "Debian" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR=""  # '/'
-  EXTENDED_SYSCONFDIR_DIRNAME="chrony"
-elif [ "$DISTRO_MANUF" == "Redhat" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR="/var"
-  EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
-else
-  DEFAULT_PREFIX="/usr"
-  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
-  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
-fi
-prefix="${prefix:-$DEFAULT_PREFIX}"
-sysconfdir="${sysconfdir:-$prefix/etc}"
-exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
-libdir="${libdir:-$exec_prefix/lib}"
-libexecdir=${libexecdir:-$exec_prefix/libexec}
-localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
-datarootdir=${datarootdir:-$prefix/share}
-# sharedstatedir=${prefix:-${prefix}/com}
-# bindir="$exec_prefix/bin"
-### runstatedir="$(realpath -m "$localstatedir/run")"
-runstatedir="$localstatedir/run"
-# sbindir="$exec_prefix/sbin"
-
-# bind9 maintainer tweaks
-expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
-
 # Useful directories that autoconf/configure/autoreconf does not offer.
 VARDIR="$prefix/var"
 STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}

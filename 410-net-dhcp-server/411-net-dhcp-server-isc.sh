@@ -49,26 +49,26 @@ fi
 declare sysconfdir  # assigned in os-distro.sh/dhcp-isc-common.sh
 source ./dhcp-isc-common.sh
 
-dhcpd_dirspec="$sysconfdir"
 if [ "${BUILDROOT:0:1}" != "/" ]; then
-  mkdir -p "${BUILDROOT}/$dhcpd_dirspec"
+  mkdir -p "${BUILDROOT}/$etc_dhcp_dirspec"
 fi
+flex_mkdir "$etc_dhcp_dirspec"
 
 dhcpd_conf_filename="dhcpd.conf"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
+dhcpd_conf_filespec="${etc_dhcp_dirspec}/$dhcpd_conf_filename"
 flex_chown root:root "${dhcpd_conf_filespec}"
 flex_chmod 0644 "${dhcpd_conf_filespec}"
 echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
 cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
 #
 # File: ${dhcpd_conf_filename}
-# Path: ${dhcpd_dirspec}
+# Path: ${etc_dhcp_dirspec}
 # Title: DhCP IPv4 configuration file
 
-include "${dhcpd_dirspec}/dhcpd.conf.options";
-include "${dhcpd_dirspec}/dhcpd.conf.pools";
-include "${dhcpd_dirspec}/dhcpd.conf.zones";
-include "${dhcpd_dirspec}/dhcpd.conf.reserved";
+include "${etc_dhcp_dirspec}/dhcpd.conf.options";
+include "${etc_dhcp_dirspec}/dhcpd.conf.pools";
+include "${etc_dhcp_dirspec}/dhcpd.conf.zones";
+include "${etc_dhcp_dirspec}/dhcpd.conf.reserved";
 
 DHCPD_CONF_EOF
 
@@ -678,17 +678,17 @@ include "/etc/dhcp/dhcpd.conf.pool.192.168.15-wlan";
 include "/etc/dhcp/dhcpd.conf.pool.172.32-dmz2";
 include "/etc/dhcp/dhcpd.conf.pool.10.22.0-vir";
 
-DHCPD_CONF_EOF
+DHCPD_POOLS_EOF
 
-dhcpd_conf_filename="dhcpd.conf.reserved"
-dhcpd_conf_filespec="${dhcpd_dirspec}/$dhcpd_conf_filename"
-flex_chown root:root "${dhcpd_conf_filespec}"
-flex_chmod 0644 "${dhcpd_conf_filespec}"
-echo "Creating ${CHROOT_DIR}$dhcpd_conf_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_conf_filespec" >/dev/null
+dhcpd_reserved_filename="dhcpd.conf.reserved"
+dhcpd_reserved_filespec="${dhcpd_dirspec}/$dhcpd_reserved_filename"
+flex_chown root:root "${dhcpd_reserved_filespec}"
+flex_chmod 0644 "${dhcpd_reserved_filespec}"
+echo "Creating ${CHROOT_DIR}$dhcpd_reserved_filespec ..."
+cat << DHCPD_RESERVED_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_reserved_filespec" >/dev/null
 #
-# File: ${dhcpd_conf_filename}
-# Path: ${dhcpd_dirspec}
+# File: ${dhcpd_reserved_filename}
+# Path: ${etc_dhcp_dirspec}
 # Title: ISC DHCP Server configuration for reserved IP addresses
 #
 #
@@ -884,14 +884,14 @@ group white {
     }
 }
 
-DHCPD_POOLS_EOF
+DHCPD_RESERVED_EOF
 
 dhcpd_zones_filename="dhcpd.conf.zones"
 dhcpd_zones_filespec="${dhcpd_dirspec}/$dhcpd_zones_filename"
 flex_chown root:root "${dhcpd_zones_filespec}"
 flex_chmod 0644 "${dhcpd_zones_filespec}"
 echo "Creating ${CHROOT_DIR}$dhcpd_zones_filespec ..."
-cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_zones_filespec" >/dev/null
+cat << DHCPD_ZONES_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_zones_filespec" >/dev/null
 #
 # File: ${dhcpd_zones_filename}
 # Path: ${dhcpd_dirspec}
@@ -910,7 +910,7 @@ zone 130.28.172.in-addr.arpa. {
         key DDNS_UPDATER;
     }
 
-DHCPD_CONF_EOF
+DHCPD_ZONES_EOF
 
 echo ""
 echo "Done."
