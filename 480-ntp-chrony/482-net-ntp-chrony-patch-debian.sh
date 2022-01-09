@@ -26,9 +26,13 @@
 #   /etc/chrony/sources.d/*
 #
 DEFAULT_DROPIN_CONF_FILENAME="debian-stock-pool.sources"
+
+
 echo "Relocate debian-assigned pool fron chrony.conf into sources.d/ subdir"
 echo ""
-source /etc/os-release
+
+source ./chrony-ntp-common.sh
+
 if [ "$ID" != "debian" ]; then
   echo "This is for a Debian distro."
   echo "Not applicable."
@@ -99,7 +103,7 @@ fi
 echo ""
 echo "Reading ${CHRONY_CONF_FILESPEC}..."
 TMPFILE=/tmp/junk
-grep -E '^\s*pool' $CHRONY_CONF_FILESPEC > $TMPFILE
+grep -E '^\s*pool' "$CHRONY_CONF_FILESPEC" > $TMPFILE
 readarray -t  RELOCATE_POOL_DIRECTIVES_A < $TMPFILE
 rm $TMPFILE
 
@@ -134,15 +138,15 @@ for this_src_dir in ${SOURCES_DIRPATHS_A[*]}; do
   fi
 done
 
-CHRONY_SOURCESD_DIRPATH="${CHRONY_SOURCES_DIRPATHS_A[0]}"
+CHRONY_SOURCESD_DIRSPEC="${CHRONY_SOURCES_DIRPATHS_A[0]}"
 # Choose first dirpath found
 if [ ${#CHRONY_SOURCES_DIRPATHS_A[@]} -gt 1 ]; then
   echo "Too many Chrony sources.d subdirectories to choose from..."
 fi
-echo "Choosing '$CHRONY_SOURCESD_DIRPATH' subdirectory..."
+echo "Choosing '$CHRONY_SOURCESD_DIRSPEC' subdirectory..."
 
 # if Debian, Comment out all pools from stock Debian config
-if [ -z "$CHRONY_SOURCESD_DIRPATH" ]; then
+if [ -z "$CHRONY_SOURCESD_DIRSPEC" ]; then
   echo "This is not the latest Debian chrony, for there are no 'chrony.d' subdir."
   echo "Aborted."
   exit 9
@@ -150,7 +154,7 @@ fi
 echo ""
 
 echo "New drop-in filename: $DEFAULT_DROPIN_CONF_FILENAME"
-DROPIN_SOURCE_FILESPEC="$CHRONY_SOURCESD_DIRPATH/$DEFAULT_DROPIN_CONF_FILENAME"
+DROPIN_SOURCE_FILESPEC="$CHRONY_SOURCESD_DIRSPEC/$DEFAULT_DROPIN_CONF_FILENAME"
 
 
 
@@ -178,7 +182,7 @@ echo "Creating '$DROPIN_SOURCE_FILESPEC' drop-in config file..."
 cat << DROPIN_EOF | sudo tee "$DROPIN_SOURCE_FILESPEC" >/dev/null
 #
 # File: $(basename "$DEFAULT_DROPIN_CONF_FILENAME")
-# Path: $(dirname "$CHRONY_SOURCESD_DIRPATH")
+# Path: $(dirname "$CHRONY_SOURCESD_DIRSPEC")
 # Title: 'pool' directives for Chrony sources file
 # Creator: $(basename "$0")
 # Date: $(date)

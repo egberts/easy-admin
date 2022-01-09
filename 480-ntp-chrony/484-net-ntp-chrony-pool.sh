@@ -34,10 +34,6 @@
 #   util-linux (whereis)
 #   coreutils (basename, cat, chmod, chown, date, touch)
 
-# shellcheck disable=SC2034
-package_tarname="chrony"
-
-BINDROOT=${BINDROOT:-/}
 SUDO_BIN=
 
 NTP_POOL_SOURCES_MAX=4  # in case the DNS_based anycast got too big of a pool!
@@ -45,89 +41,12 @@ IBURST_MAX_HOPS_CUTOFF=3  # try to stay within local/home LAN
 DEFAULT_NTP_SERVER="pool.ntp.org"
 
 
+source ./chrony-ntp-common.sh
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
 
 ######################################
-BUILDROOT="/"
 
 ARG1_CHRONY_CONF=${1}
-
-# configure/autogen/autoreconf -------------------------------------
-# most configurable variables used here are found in
-# configure/autogen/autoconf but are capitalized for readablity here
-#
-# maintainer default (Chrony)
-#   prefix=/usr/local
-#   libexecdir=$prefix/libexec
-#   datarootdir=$prefix/share
-#   sysconfdir=$prefix/etc
-#   localstatedir=$prefix/var
-#   libdir=$exec_prefix/lib
-#   bindir=$exec_prefix/bin
-#   sbindir=$exec_prefix/sbin
-#   datadir=$datarootdir
-
-# Debian maintainer however applies this:
-#   libdir=/usr/lib
-#   SYSROOT=/
-#   libexecdir=/usr/lib
-
-# All we are really concern about are:
-#   prefix/prefix
-#   sysconfdir/sysconfdir
-#   localstatedir/localstatedir
-
-DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
-if [ "$DISTRO_MANUF" == "Debian" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR=""  # '/'
-  EXTENDED_SYSCONFDIR_DIRNAME="chrony"
-elif [ "$DISTRO_MANUF" == "Redhat" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR="/var"
-  EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
-else
-  DEFAULT_PREFIX="/usr"
-  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
-  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
-fi
-prefix="${prefix:-$DEFAULT_PREFIX}"
-sysconfdir="${sysconfdir:-$prefix/etc}"
-exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
-libdir="${libdir:-$exec_prefix/lib}"
-libexecdir=${libexecdir:-$exec_prefix/libexec}
-localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
-datarootdir=${datarootdir:-$prefix/share}
-sharedstatedir=${prefix:-${prefix}/com}
-bindir="$exec_prefix/bin"
-### runstatedir="$(realpath -m "$localstatedir/run")"
-runstatedir="$localstatedir/run"
-sbindir="$exec_prefix/sbin"
-
-# bind9 maintainer tweaks
-expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
-
-
-# Useful directories that autoconf/configure/autoreconf does not offer.
-VARDIR="$prefix/var"
-STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
-LOG_DIR="$VARDIR/log"  # /var/log
-
-DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
-DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
-
-CHRONY_CONF_DIR="$expanded_sysconfdir"
-CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
-
-CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
-CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
-
-CHRONY_SOURCESD_DIR="$CHRONY_CONF_DIR/sources.d"
-CHRONY_CONFD_DIR="$CHRONY_CONF_DIR/conf.d"  # /etc/chrony/conf.d
-CHRONY_KEYS_FILESPEC="$CHRONY_CONF_DIR/chrony.keys"
-
-CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
 
 # User supplied chrony.conf variants (offline testing)
 if [ -n "$ARG1_CHRONY_CONF" ]; then
@@ -136,15 +55,9 @@ if [ -n "$ARG1_CHRONY_CONF" ]; then
   CONF_PATHNAME="$(dirname "$REAL_CONF")"
 else
   CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
-  CONF_PATHNAME="$expanded_sysconfdir"
+  CONF_PATHNAME="$extended_sysconfdir"
 fi
-CONF_FILESPEC="$(realpath -m "${BUILDROOT}$CONF_PATHNAME/$CONF_FILENAME")"
-
-# /run/chrony-dhcp/* is populated by /etc/dhcp/dhclient-exit-hooks.d/chrony
-# script and executed by 'dhclient' daemon.
-DHCP_CHRONY_PATHNAME="$runstatedir/chrony-dhcp/"
-
-
+CONF_FILESPEC="$(realpath -m "${BUILDROOT}${CONF_PATHNAME}/$CONF_FILENAME")"
 
 if [ ! -e "$CONF_FILESPEC" ]; then
   echo "$CONF_FILESPEC does not exist; aborted."
@@ -764,8 +677,8 @@ echo "NTP server count: $NTP_SERVERS_LIST_COUNT"
 # Ask for ISO Country code for pool settings?  i.e., US.pool.ntp.org
 
 FILENAME="ntp_pools.sources"
-FILEPATH="$CHRONY_SOURCESD_DIR"
-FILESPEC="$(realpath "$BINDROOT$FILEPATH/$FILENAME")"
+FILEPATH="$CHRONY_SOURCESD_DIRSPEC"
+FILESPEC="$(realpath "${BUILDROOT}${FILEPATH}/$FILENAME")"
 
 create_file "$FILESPEC" 0640 _chrony:_chrony
 add_file_headers "NTP Pools for Chrony NTP daemon"

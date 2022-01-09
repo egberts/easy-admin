@@ -31,7 +31,8 @@
 #   coreutils (basename, chmod, chown, dirname, mkdir, sort, tee, touch)
 #   util-linux (whereis)
 #
-BUILDROOT=${1:-/}  # Pass BUILDROOT=/tmp for pseudo-dry-runs
+
+source ./chrony-ntp-common.sh
 
 DROP_IN_CONF_FILENAME="20-chronyc_cli_admin_access.conf"
 
@@ -54,90 +55,29 @@ fi
 echo "Username '$USERNAME' found."
 GROUPNAME="$USERNAME"
 
-# shellcheck disable=SC2034
-package_tarname="chrony"
-
-# configure/autogen/autoreconf -------------------------------------
-# most configurable variables used here are found in
-# configure/autogen/autoconf but are capitalized for readablity here
-#
-# maintainer default (Chrony)
-#   prefix=/usr/local
-#   libexecdir=$prefix/libexec
-#   datarootdir=$prefix/share
-#   sysconfdir=$prefix/etc
-#   localstatedir=$prefix/var
-#   libdir=$exec_prefix/lib
-#   bindir=$exec_prefix/bin
-#   sbindir=$exec_prefix/sbin
-#   datadir=$datarootdir
-
-# Debian maintainer however applies this:
-#   libdir=/usr/lib
-#   SYSROOT=/
-#   libexecdir=/usr/lib
-
-# All we are really concern about are:
-#   prefix/prefix
-#   sysconfdir/sysconfdir
-#   localstatedir/localstatedir
-
-DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
-if [ "$DISTRO_MANUF" == "Debian" ]; then
-  DEFAULT_prefix=""  # '/'
-  DEFAULT_exec_prefix="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR=""  # '/'
-  EXTENDED_sysconfdir_DIRNAME="chrony"
-elif [ "$DISTRO_MANUF" == "Redhat" ]; then
-  DEFAULT_prefix=""  # '/'
-  DEFAULT_exec_prefix="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR="/var"
-  EXTENDED_sysconfdir_DIRNAME="chrony"  # change this often
-else
-  DEFAULT_prefix="/usr"
-  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
-  EXTENDED_sysconfdir_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
-fi
-prefix="${prefix:-$DEFAULT_prefix}"
-sysconfdir="${sysconfdir:-$prefix/etc}"
-exec_prefix="${exec_prefix:-${DEFAULT_exec_prefix:-${prefix}}}"
-libdir="${libdir:-$exec_prefix/lib}"
-libexecdir=${libexecdir:-$exec_prefix/libexec}
-localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
-# datarootdir=${datarootdir:-$prefix/share}
-# sharedstatedir=${prefix:-${prefix}/com}
-# bindir="$exec_prefix/bin"
-### runstatedir="$(realpath -m "$localstatedir/run")"
 runstatedir="$localstatedir/run"
-# sbindir="$exec_prefix/sbin"
 
-# bind9 maintainer tweaks
-expanded_sysconfdir="${sysconfdir}/${EXTENDED_sysconfdir_DIRNAME}"
 
-# Useful directories that autoconf/configure/autoreconf does not offer.
-VARDIR="$prefix/var"
-STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
-# LOG_DIR="$VARDIR/log"  # /var/log
 
 # DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
 # DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
 DEFAULT_CHRONY_SOCK_FILENAME="chrony.sock"
 
-CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
-# CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
+CHRONY_RUN_DIR="$runstatedir/$package_name"  # /run/chrony
+# CHRONY_VAR_LIB_DIR="$varlibdir/$package_name"
 
-CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
-# CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
+CHRONY_CONFD_DIR="$extended_sysconfdir/conf.d"  # /etc/chrony/conf.d
+# CHRONY_SOURCESD_DIR="$extended_sysconfdir/sources.d"  # /etc/chrony/sources.d
 # CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
 # CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
-# CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
+# CHRONY_KEYS_FILESPEC="$extended_sysconfdir/chrony.keys"
 CHRONY_SOCK_FILESPEC="$CHRONY_RUN_DIR/$DEFAULT_CHRONY_SOCK_FILENAME"
 
 echo "final configure/autogen/autoreconf settings:"
 echo "  prefix:        $prefix"
 echo "  sysconfdir:    $sysconfdir"
 echo "  LOCALSTATEDIR: $localstatedir"
-echo "  RUNDIR: $RUNDIR or $runstatedir"
+echo "  RUNDIR: $rundir or $runstatedir"
 #
 ANNOTATE=${ANNOTATE:-y}
 DEFAULT_CMD_PORT=323
@@ -194,10 +134,10 @@ function create_file
       echo "Creating $dir_name directory..."
     fi
   fi
-  [[ -n "$SUDO_BIN" ]] && $SUDO_BIN touch "$FILESPEC"
-  [[ -n "$SUDO_BIN" ]] && $SUDO_BIN chmod "$1" "$FILESPEC"
-  [[ -n "$SUDO_BIN" ]] && $SUDO_BIN chown "$2" "$FILESPEC"
-  cat << CREATE_FILE_EOF | $SUDO_BIN tee "$FILESPEC" >/dev/null
+  [[ -n "$SUDO_BIN" ]] && flex_touch "$FILESPEC"
+  [[ -n "$SUDO_BIN" ]] && flex_chmod "$1" "$FILESPEC"
+  [[ -n "$SUDO_BIN" ]] && flex_chown "$2" "$FILESPEC"
+  cat << CREATE_FILE_EOF | $SUDO_BIN tee "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 #
 # File: $(basename "$FILESPEC")
 # Path: $dir_name
@@ -212,7 +152,7 @@ CREATE_FILE_EOF
 
 function write_conf
 {
-  cat << WRITE_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << WRITE_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 $1
 WRITE_CONF_EOF
 }
@@ -220,7 +160,7 @@ WRITE_CONF_EOF
 function write_note
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << WRITE_NOTE_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << WRITE_NOTE_EOF | $SUDO_BIN tee -a "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 $1
 WRITE_NOTE_EOF
   fi
@@ -229,7 +169,7 @@ WRITE_NOTE_EOF
 function write_note_bindcmdaddress
 {
   if [ "$ANNOTATE" = "y" ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 # Command and monitoring access
 #   bindcmdaddress address
 #     The bindcmdaddress directive specifies a local IP address to which
@@ -273,7 +213,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_cmdallow
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 #   cmdallow [all] [subnet]
 #     This is similar to the allow directive, except that it allows
 #     monitoring access (rather than NTP client access) to a particular
@@ -297,7 +237,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_cmddeny
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 #   cmddeny [all] [subnet]
 #     This is similar to the cmdallow directive, except that it denies
 #     monitoring access to a particular subnet or host, rather than
@@ -314,7 +254,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_cmdport
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}${CHROOT}$FILESPEC" >/dev/null
 # cmdport port
 #   The cmdport directive allows the port that is used for run-time
 #   monitoring (via the chronyc program) to be altered from its default
@@ -762,31 +702,33 @@ fi
 echo ""
 echo "Verifying syntax of Chrony config files..."
 # Verify the configuration files to be correct, syntax-wise.
-$SUDO_BIN "$CHRONYD_BIN" -p -f "$FILESPEC" >/dev/null 2>&1
+$SUDO_BIN "$CHRONYD_BIN" -p -f "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # do it again but verbosely
-  $SUDO_BIN "$CHRONYD_BIN" -p -f "$FILESPEC"
+  $SUDO_BIN "$CHRONYD_BIN" -p -f "${BUILDROOT}${CHROOT_DIR}$FILESPEC"
   echo "ERROR: $FILESPEC failed syntax check."
   exit 13
 fi
-echo "$FILESPEC passes syntax-check"
+echo "${BUILDROOT}${CHROOT_DIR}$FILESPEC passes syntax-check"
 
-echo "Reloading config file in chronyd daemon..."
-chronyc reload sources >/dev/null 2>&1
-retsts=$?
-if [ "$retsts" -ne 0 ]; then
-  systemctl --quiet is-enabled chrony.service
+if [ "$BUILD_ABSOLUTE" -ge 1 ]; then
+  echo "Reloading config file in chronyd daemon..."
+  chronyc reload sources >/dev/null 2>&1
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
-    systemctl enable chrony.service
-  fi
-  systemctl --quiet is-active chrony.service
-  retsts=$?
-  if [ "$retsts" -ne 0 ]; then
-    systemctl try-reload-or-restart chrony.service
-  else
-    systemctl start chrony.service
+    systemctl --quiet is-enabled "$chrony_systemd_unit_name"
+    retsts=$?
+    if [ "$retsts" -ne 0 ]; then
+      systemctl enable "$chrony_systemd_unit_name"
+    fi
+    systemctl --quiet is-active "$chrony_systemd_unit_name"
+    retsts=$?
+    if [ "$retsts" -ne 0 ]; then
+      systemctl try-reload-or-restart "$chrony_systemd_unit_name"
+    else
+      systemctl start "$chrony_systemd_unit_name"
+    fi
   fi
 fi
 echo "Done."

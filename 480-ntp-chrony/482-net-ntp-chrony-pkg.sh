@@ -21,11 +21,8 @@
 #   /etc/chrony/conf.d/*
 #
 
-sysconfdir="/etc"
-localstatedir="/"
-
-DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
 DEFAULT_DROPIN_CONF_FILENAME="zzz-remote-chronyc-all-denied.conf"
+DROPIN_CONF_FILESPEC="$CHRONY_CONFD_DIRSPEC/$DEFAULT_DROPIN_CONF_FILENAME"
 
 
 CHRONY_CONF_DIRPATH="$sysconfdir/chrony"
@@ -71,12 +68,12 @@ echo "Username '$CHRONY_USER' found."
 ##############################################################
 #
 # Find the Chrony config directory.
-if [ ! -d "$CHRONY_CONF_DIRPATH" ]; then
-  echo "Ummm, Chrony is missing the $CHRONY_CONF_DIRPATH directory."
+if [ ! -d "$CHRONY_CONF_DIRSPEC" ]; then
+  echo "Ummm, Chrony is missing the $CHRONY_CONF_DIRSPEC directory."
   exit 9
 fi
-sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONF_DIRPATH"
-sudo chmod 0750 "$CHRONY_CONF_DIRPATH"
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONF_DIRSPEC"
+sudo chmod 0750 "$CHRONY_CONF_DIRSPEC"
 
 # Find the Chrony config file.
 if [ ! -f "$CHRONY_CONF_FILESPEC" ]; then
@@ -87,27 +84,27 @@ sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONF_FILESPEC"
 sudo chmod 0640 "$CHRONY_CONF_FILESPEC"
 
 # check if /etc/chrony/conf.d exist, if not, create them
-if [ ! -d "$CHRONY_CONFD_DIRPATH" ]; then
-  echo "Creating $CHRONY_CONFD_DIRPATH..."
-  echo sudo mkdir "$CHRONY_CONFD_DIRPATH"
-  sudo mkdir "$CHRONY_CONFD_DIRPATH"
+if [ ! -d "$CHRONY_CONFD_DIRSPEC" ]; then
+  echo "Creating $CHRONY_CONFD_DIRSPEC..."
+  echo sudo mkdir "$CHRONY_CONFD_DIRSPEC"
+  sudo mkdir "$CHRONY_CONFD_DIRSPEC"
 fi
-sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONFD_DIRPATH"
-sudo chmod 0750 "$CHRONY_CONFD_DIRPATH" # drop this to 0750 if ntp group-privilege is given to end-users.
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONFD_DIRSPEC"
+sudo chmod 0750 "$CHRONY_CONFD_DIRSPEC" # drop this to 0750 if ntp group-privilege is given to end-users.
 
-if [ ! -d "$CHRONY_SOURCESD_DIRPATH" ]; then
-  echo "Creating $CHRONY_SOURCESD_DIRPATH..."
-  sudo mkdir "$CHRONY_SOURCESD_DIRPATH"
+if [ ! -d "$CHRONY_SOURCESD_DIRSPEC" ]; then
+  echo "Creating $CHRONY_SOURCESD_DIRSPEC..."
+  sudo mkdir "$CHRONY_SOURCESD_DIRSPEC"
 fi
-sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_SOURCESD_DIRPATH"
-sudo chmod 0750 "$CHRONY_SOURCESD_DIRPATH"
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_SOURCESD_DIRSPEC"
+sudo chmod 0750 "$CHRONY_SOURCESD_DIRSPEC"
 
-if [ ! -d "$CHRONY_RUN_DIRPATH" ]; then
-  echo "Package install should have created this $CHRONY_RUN_DIRPATH; aborted."
+if [ ! -d "$CHRONY_RUN_DIRSPEC" ]; then
+  echo "Package install should have created this $CHRONY_RUN_DIRSPEC; aborted."
   edit 9
 fi
-sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_RUN_DIRPATH"
-sudo chmod 0750 "$CHRONY_RUN_DIRPATH"
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_RUN_DIRSPEC"
+sudo chmod 0750 "$CHRONY_RUN_DIRSPEC"
 
 function stop_disable_sysd()
 {
@@ -131,11 +128,11 @@ stop_disable_sysd systemd-timesyncd.service
 ################################################################
 
 # go check that various DHCP clients have been updating /run/chrony-dhcp file.
-if [ -d "${CHRONY_DHCP_DIRPATH}" ]; then
-  CHRONY_DHCP_LIST="$(/usr/bin/ls -A -- "$CHRONY_DHCP_DIRPATH/" |xargs -n1 | sort -u | xargs)"
+if [ -d "${CHRONY_DHCP_DIRSPEC}" ]; then
+  CHRONY_DHCP_LIST="$(/usr/bin/ls -A -- "$CHRONY_DHCP_DIRSPEC/" |xargs -n1 | sort -u | xargs)"
   CHRONY_DHCP_COUNT="$(echo "$CHRONY_DHCP_LIST" | wc -l)"
   if [ "$CHRONY_DHCP_COUNT" -ge 1 ]; then
-    for f in "${CHRONY_DHCP_DIRPATH}"/*; do
+    for f in "${CHRONY_DHCP_DIRSPEC}"/*; do
       # shellcheck disable=SC2002
       IP_ADDR=$(cat "$f" | awk '{print $2}')
       NTP_SERVERS+="$NTP_SERVERS $IP_ADDR"
@@ -147,7 +144,7 @@ if [ -d "${CHRONY_DHCP_DIRPATH}" ]; then
   fi
 else
   echo "WARNING: DHCP 'dhclient' client is not updating the "
-  echo "   ${CHRONY_DHCP_DIRPATH} file from that /etc/dhcp/dhclient-exit.d/chrony "
+  echo "   ${CHRONY_DHCP_DIRSPEC} file from that /etc/dhcp/dhclient-exit.d/chrony "
   echo "   DHCP client dispatcher-script file."
 fi
 echo "Configured NTP addr peer:   ${NTP_ADDR_PEER_A[*]}"

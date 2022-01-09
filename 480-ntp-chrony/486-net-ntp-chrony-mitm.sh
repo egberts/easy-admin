@@ -22,7 +22,8 @@
 #   coreutils (basename, chmod, chown, dirname, mkdir, sort, tee, touch)
 #   util-linux (whereis)
 #
-BUILDROOT=${1:-/}  # Pass BUILDROOT=/tmp for pseudo-dry-runs
+
+source ./chrony-ntp-common.sh
 
 DROP_IN_CONF_FILENAME="50-chronyd_mitm_defense.conf"
 USERNAMES_LIST="_chrony chrony ntp"  # new Chrony
@@ -44,9 +45,6 @@ if [ -z "$USERNAME" ]; then
 fi
 echo "Username '$USERNAME' found."
 GROUPNAME="$USERNAME"
-
-# shellcheck disable=SC2034
-package_tarname="chrony"
 
 # configure/autogen/autoreconf -------------------------------------
 # most configurable variables used here are found in
@@ -73,55 +71,22 @@ package_tarname="chrony"
 #   sysconfdir/sysconfdir
 #   localstatedir/localstatedir
 
-DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
-if [ "$DISTRO_MANUF" == "Debian" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR=""  # '/'
-  EXTENDED_SYSCONFDIR_DIRNAME="chrony"
-elif [ "$DISTRO_MANUF" == "Redhat" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR="/var"
-  EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
-else
-  DEFAULT_PREFIX="/usr"
-  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
-  EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
-fi
-prefix="${prefix:-$DEFAULT_PREFIX}"
-sysconfdir="${sysconfdir:-$prefix/etc}"
-exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
-libdir="${libdir:-$exec_prefix/lib}"
-libexecdir=${libexecdir:-$exec_prefix/libexec}
-localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
-# datarootdir=${datarootdir:-$prefix/share}
-# sharedstatedir=${prefix:-${prefix}/com}
-# bindir="$exec_prefix/bin"
-### runstatedir="$(realpath -m "$localstatedir/run")"
-# runstatedir="$localstatedir/run"
-# sbindir="$exec_prefix/sbin"
-
-# bind9 maintainer tweaks
-expanded_sysconfdir="${sysconfdir}/${EXTENDED_SYSCONFDIR_DIRNAME}"
 
 # Useful directories that autoconf/configure/autoreconf does not offer.
-VARDIR="$prefix/var"
-STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
-# LOG_DIR="$VARDIR/log"  # /var/log
+# LOG_DIR="$vardir/log"  # /var/log
 
 # DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
 # DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
 # DEFAULT_CHRONY_SOCK_FILENAME="chrony.sock"
 
-# CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
-# CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
+# CHRONY_RUN_DIR="$runstatedir/$package_name"  # /run/chrony
+# CHRONY_VAR_LIB_DIR="$varlibdir/$package_name"
 
-CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
-# CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
+CHRONY_CONFD_DIR="${extended_sysconfdir}/conf.d"  # /etc/chrony/conf.d
+# CHRONY_SOURCESD_DIR="$extended_sysconfdir/sources.d"  # /etc/chrony/sources.d
 # CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
 # CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
-# CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
+# CHRONY_KEYS_FILESPEC="$extended_sysconfdir/chrony.keys"
 # CHRONY_SOCK_FILESPEC="$CHRONY_RUN_DIR/$DEFAULT_CHRONY_SOCK_FILENAME"
 
 ANNOTATE=${ANNOTATE:-y}
@@ -132,6 +97,8 @@ if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" = '/' ]]; then
 else
   echo "Writing ALL files into $BUILDROOT as user '$USER')..."
 fi
+
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony-mitm.sh"
 
 # Syntax: create_file file-permission owner:group
 function create_file
@@ -145,8 +112,8 @@ function create_file
     fi
   fi
   [[ -n "$SUDO_BIN" ]] && $SUDO_BIN touch "$FILESPEC"
-  [[ -n "$SUDO_BIN" ]] && $SUDO_BIN chmod "$1" "$FILESPEC"
-  [[ -n "$SUDO_BIN" ]] && $SUDO_BIN chown "$2" "$FILESPEC"
+  flex_chmod "$FILESPEC" "$1" 
+  flex_chown "$FILESPEC" "$2" 
   cat << CREATE_FILE_EOF | $SUDO_BIN tee "$FILESPEC" >/dev/null
 #
 # File: $(basename "$FILESPEC")
@@ -162,7 +129,7 @@ CREATE_FILE_EOF
 
 function write_conf
 {
-  cat << WRITE_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << WRITE_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 $1
 WRITE_CONF_EOF
 }
@@ -170,7 +137,7 @@ WRITE_CONF_EOF
 function write_note
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << WRITE_NOTE_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << WRITE_NOTE_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 $1
 WRITE_NOTE_EOF
   fi
@@ -179,7 +146,7 @@ WRITE_NOTE_EOF
 function write_note_makestep
 {
   if [ "$ANNOTATE" = "y" ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # makestep threshold limit
 #  Normally chronyd will cause the system to gradually correct any
 #  time offset, by slowing down or speeding up the clock as required.
@@ -209,7 +176,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_minsources
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # minsources sources
 #   The minsources directive sets the minimum number of sources that
 #   need to be considered as selectable in the source selection
@@ -228,7 +195,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_maxchange
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # maxchange offset start ignore
 #   This directive sets the maximum allowed offset corrected on a clock
 #   update. The check is performed only after the specified number of
@@ -253,7 +220,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_maxdrift
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # maxdrift drift-in-ppm
 #   This directive specifies the maximum assumed drift (frequency
 #   error) of the system clock. It limits the frequency adjustment that
@@ -273,7 +240,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_maxslewrate
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # maxslewrate rate-in-ppm
 #   The maxslewrate directive sets the maximum rate at which chronyd is
 #   allowed to slew the time. It limits the slew rate controlled by the
@@ -304,7 +271,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_ntsdumpdir
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # ntsdumpdir directory
 #   This directive specifies a directory for the client to save NTS
 #   cookies it received from the server in order to avoid making an
@@ -328,7 +295,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_ntsdumpdir
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # rtcsync
 #   The rtcsync directive enables a mode where the system time is
 #   periodically copied to the RTC and chronyd does not try to track
@@ -431,31 +398,31 @@ echo "Done writing $FILESPEC."
 echo ""
 echo "Verifying syntax of Chrony config files..."
 # Verify the configuration files to be correct, syntax-wise.
-$CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
+$CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # do it again but verbosely
-  $CHRONYD_BIN -p -f "$FILESPEC"
-  echo "ERROR: $FILESPEC failed syntax check."
+  $CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC"
+  echo "ERROR: ${BUILDROOT}$FILESPEC failed syntax check."
   exit 13
 fi
-echo "$FILESPEC passes syntax-check"
+echo "${BUILDROOT}$FILESPEC passes syntax-check"
 
 echo "Reloading config file in chronyd daemon..."
 chronyc reload sources >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
-  systemctl --quiet is-enabled chrony.service
+  systemctl --quiet is-enabled "$chrony_systemd_unit_name"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
-    systemctl enable chrony.service
+    systemctl enable "$chrony_systemd_unit_name"
   fi
-  systemctl --quiet is-active chrony.service
+  systemctl --quiet is-active "$chrony_systemd_unit_name"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
-    systemctl try-reload-or-restart chrony.service
+    systemctl try-reload-or-restart "$chrony_systemd_unit_name"
   else
-    systemctl start chrony.service
+    systemctl start "$chrony_systemd_unit_name"
   fi
 fi
 echo "Done."

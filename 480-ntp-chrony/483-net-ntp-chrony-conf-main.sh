@@ -35,58 +35,11 @@
 SUDO_BIN=
 ANNOTATION=${ANNOTATION:-y}
 
-# shellcheck disable=SC2034
-package_tarname="chrony"
-
-BUILDROOT="/"
-
 ARG1_CHRONY_CONF=${1}
 
-# configure/autogen/autoreconf -------------------------------------
-# most configurable variables used here are found in
-# configure/autogen/autoconf but are capitalized for readablity here
-#
-# maintainer default (Chrony)
-#   prefix=/usr/local
-#   libexecdir=$prefix/libexec
-#   datarootdir=$prefix/share
-#   sysconfdir=$prefix/etc
-#   localstatedir=$prefix/var
-#   libdir=$exec_prefix/lib
-#   bindir=$exec_prefix/bin
-#   sbindir=$exec_prefix/sbin
-#   datadir=$datarootdir
-
-# Debian maintainer however applies this:
-#   libdir=/usr/lib
-#   SYSROOT=/
-#   libexecdir=/usr/lib
-
-# All we are really concern about are:
-#   prefix/prefix
-#   sysconfdir/sysconfdir
-#   localstatedir/localstatedir
+source ./chrony-ntp-common.sh
 
 # Useful directories that autoconf/configure/autoreconf does not offer.
-VARDIR="$prefix/var"
-STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
-# LOG_DIR="$VARDIR/log"  # /var/log
-
-# application specific
-DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
-DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
-CHRONY_DRIFT_FILENAME="$DEFAULT_CHRONY_DRIFT_FILENAME"
-
-# CHRONY_ETC_DIR="$expanded_sysconfdir/chrony"
-# CHRONY_RUN_DIR="$runstatedir/$package_tarname"  # /run/chrony
-CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
-CHRONY_DUMP_DIRPATH="$CHRONY_VAR_LIB_DIR"
-
-# CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
-CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
-# CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
-CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$CHRONY_DRIFT_FILENAME"
-CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
 
 # User supplied chrony.conf variants (offline testing)
 if [ -n "$ARG1_CHRONY_CONF" ]; then
@@ -95,18 +48,9 @@ if [ -n "$ARG1_CHRONY_CONF" ]; then
   CONF_PATHNAME="$(dirname "$REAL_CONF")"
 else
   CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
-  CONF_PATHNAME="$expanded_sysconfdir"
+  CONF_PATHNAME="$extended_sysconfdir"
 fi
 CONF_FILESPEC="$(realpath -m "${BUILDROOT}$CONF_PATHNAME/$CONF_FILENAME")"
-
-# /run/chrony-dhcp/* is populated by /etc/dhcp/dhclient-exit-hooks.d/chrony
-# script and executed by 'dhclient' daemon.
-DHCP_CHRONY_PATHNAME="$runstatedir/chrony-dhcp/"
-
-# CHRONY_LOG_DIR="$VAR_LOG_DIR/chrony"
-# CHRONY_RUN_DIR="$VAR_RUN_DIR/chrony"
-
-# CHRONY_CONFD_DIR="$CHRONY_ETC_DIR/conf.d"  # deferred to other scripts
 
 # minimum default settings of /etc/chrony/chrony.conf
 
@@ -362,25 +306,25 @@ echo "$CONF_FILESPEC passes syntax-check"
 #
 # If it was stopped, it stays stopped
 # If it was started, it gets restarted/reloaded
-systemctl --quiet is-enabled chrony.service
+systemctl --quiet is-enabled "$chrony_systemd_unit_name"
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   echo "Enabling Chrony service..."
-  systemctl enable chrony.service
+  systemctl enable "$chrony_systemd_unit_name"
 fi
 
 echo ""
-systemctl --quiet is-active chrony.service
+systemctl --quiet is-active "$chrony_systemd_unit_name"
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   echo "Trying to reload or restart Chrony service..."
-  systemctl try-reload-or-restart chrony.service
+  systemctl try-reload-or-restart "$chrony_systemd_unit_name"
   echo "WARNING: You may have to start it yourself."
-  echo "Chrony daemon status: $(systemctl is-active chrony.service)"
+  echo "Chrony daemon status: $(systemctl is-active "$chrony_systemd_unit_name")"
   exit $?  # pass-along 'is-active' errcode
 else
   echo "Restarting Chrony service..."
-  systemctl restart chrony.service
+  systemctl restart "$chrony_systemd_unit_name"
 fi
-echo "Chrony daemon status: $(systemctl is-active chrony.service): Done."
+echo "Chrony daemon status: $(systemctl is-active "$chrony_systemd_unit_name"): Done."
 exit $?  # pass-along 'is-active' errcode
