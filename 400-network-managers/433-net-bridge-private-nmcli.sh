@@ -7,9 +7,29 @@
 #  man nm-settings(5)
 #  man nm-settings-nmcli(5)
 #
-PRIVATE_LAN_IP="172.28.140.1"
-DNS_SERVER_IP="172.28.130.1"
-DNS_DOMAIN_NAME_SEARCH="leo"
+
+# get gateway netdev
+GW_NETDEV="$(ip -o route show  | grep default | awk '{print $5}')"
+BRIDGE_NETDEV="$(ip -o -d link show | grep bridge | awk '{print $2}')"
+BRIDGE_NETDEV="${BRIDGE_NETDEV:0:-1}"
+# get list of all netdevs
+ALL_NETDEVS="$(ip -o -4 addr show | grep -v "host lo" | grep -v $GW_NETDEV | grep -v $BRIDGE_NETDEV | awk '{print $2}' | xargs)"
+
+if [ -z "$ALL_NETDEVS" ]; then
+  echo "No non-public netdev available left; aborted."
+  exit 1
+fi
+
+read -rp "Enter in private LAN IP address: "
+PRIVATE_LAN_IP="$REPLY"
+read -rp "Enter in private DNS nameserver address: " -ei$PRIVATE_LAN_IP
+DNS_SERVER_IP="$REPLY"
+read -rp "Enter in domain name search suffix: "
+DNS_DOMAIN_NAME_SEARCH="$REPLY"
+echo
+echo "List of netdev: $ALL_NETDEVS"
+read -rp "Enter in private LAN netdev device: " -ei$ALL_NETDEVS
+PRIVATE_LAN_NETDEV="$REPLY"
 
 function nmcli_con_modify
 {
@@ -29,8 +49,8 @@ echo "Creating a bridge for private LAN (sudo pwd prompt)..."
 # Hide any error message during deletion
 sudo nmcli c delete bridge-br0 >/dev/null 2>&1
 sudo nmcli c delete br0 >/dev/null 2>&1
-sudo nmcli c delete bridge-slave-enp3s0 >/dev/null 2>&1
-sudo nmcli c delete enp3s0 >/dev/null 2>&1
+sudo nmcli c delete "bridge-slave-${PRIVATE_LAN_NETDEV}" >/dev/null 2>&1
+sudo nmcli c delete "${PRIVATE_LAN_NETDEV}" >/dev/null 2>&1
 
 # We want a connection named 'br0' (id=br0)
 sudo nmcli c add ifname br0 type bridge con-name br0
@@ -55,19 +75,19 @@ nmcli_con_modify br0 ipv6.method disabled
 
 
 # Set up all bridge slaves
-sudo nmcli c add type bridge-slave ifname enp3s0 master br0 con-name 'enp3s0'
-# nmcli_con_modify enp3s0 ethernet.mac-address-blacklist ""
-# nmcli_con_modify enp3s0 connection.lldp 0
-# nmcli_con_modify enp3s0 connection.llmnr "no"
-# nmcli_con_modify enp3s0 connection.read-only "1" # does not work
+sudo nmcli c add type bridge-slave ifname "${PRIVATE_LAN_NETDEV}" master br0 con-name "${PRIVATE_LAN_NETDEV}"
+nmcli_con_modify "${PRIVATE_LAN_NETDEV}" ethernet.mac-address-blacklist ""
+nmcli_con_modify "${PRIVATE_LAN_NETDEV}" connection.lldp 0
+nmcli_con_modify "${PRIVATE_LAN_NETDEV}" connection.llmnr "no"
+nmcli_con_modify "${PRIVATE_LAN_NETDEV}" connection.read-only "1" # does not work
 
 # go back to bridge master and connect the slaves
-# nmcli_con_modify br0 connection.autoconnect-slaves 1
+nmcli_con_modify br0 connection.autoconnect-slaves 1
 sleep 0.5
 
-sudo nmcli connection down enp3s0
+sudo nmcli connection down "${PRIVATE_LAN_NETDEV}"
 sudo nmcli connection down br0
 sudo nmcli connection up br0   # hopefully that will bring up all slave ports
-sudo nmcli connection up enp3s0  # might be redundant
+sudo nmcli connection up "${PRIVATE_LAN_NETDEV}"  # might be redundant"
 
 # sudo systemctl try-restart NetworkManager.service
