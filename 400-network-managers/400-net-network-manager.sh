@@ -5,6 +5,11 @@
 # Description:
 #   Turns off systemd-networkd, SysV, and other weird init stuff.
 
+SYSTEMCTL_BIN="$(which systemctl)"
+if [ -z "$SYSTEMCTL_BIN" ]; then
+  echo "systemd is not installed; exiting ..."
+  exit 1
+fi
 # ENABLED_WORKING="$(sudo systemctl is-enabled networking)"
 ENABLED_SYSNETD="$(sudo systemctl is-enabled systemd-networkd)"
 # ACTIVE_WORKING="$(sudo systemctl is-active networking)"
