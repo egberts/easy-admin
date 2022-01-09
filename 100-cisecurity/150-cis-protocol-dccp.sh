@@ -5,6 +5,7 @@
 
 echo "CIS recommendation for removal of DCCP Protocol"
 echo ""
+
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 

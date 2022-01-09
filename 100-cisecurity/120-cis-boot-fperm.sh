@@ -5,22 +5,16 @@
 echo "Lower file permission of /boot/grub config file"
 echo ""
 
-source /etc/os-release
+source ../os-distro.sh
 
 GRUB_FILENAME="grub.cfg"
 DEFAULT_GRUB_FILESPEC="/etc/default/grub"
 echo "Determine OS distro ..."
 case $ID in
-  'debian')
+  debian|devuan)
     GRUB_DIRSPEC="/boot/grub"
     ;;
-  'fedora')
-    GRUB_DIRSPEC="/boot/grub2"
-    ;;
-  'centos')
-    GRUB_DIRSPEC="/boot/grub2"
-    ;;
-  'redhat')
+  fedora|centos|redhat)
     GRUB_DIRSPEC="/boot/grub2"
     ;;
   *)

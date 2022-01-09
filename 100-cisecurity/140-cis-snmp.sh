@@ -2,9 +2,16 @@
 # File: 140-cis-snmp-server.sh
 # Title: Disable SNMP server
 
+echo "Remove SNMP daemon service"
+echo
+
+SYSTEMCTL_BIN="$(which systemctl)"
+if [ -z "$SYSTEMCTL_BIN" ]; then
+  echo "No systemd installed; exiting ..."
+  exit 1
+fi
 
 # checking if we need to prompt for 'disabling SNMP server'...
-
 
 echo "Checking if SNMP server is running..."
 snmp_active="$(systemctl is-active snmp.service)"

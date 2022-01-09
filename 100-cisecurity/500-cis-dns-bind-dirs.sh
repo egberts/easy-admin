@@ -110,7 +110,7 @@ source /etc/os-release
 
 # libdir and $HOME are three separate grouping (that Fedora, et. al. merged)
 case $ID in
-  debian)
+  debian|devuan)
     DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
     DEFAULT_LOCALSTATEDIR=""
@@ -118,23 +118,7 @@ case $ID in
     DEFAULT_LIB_DIRSPEC="/var/lib"
     WHEEL_GROUP="sudo"
     ;;
-  centos)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
-    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
-    WHEEL_GROUP="wheel"
-    ;;
-  redhat)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
-    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
-    WHEEL_GROUP="wheel"
-    ;;
-  fedora)
+  centos|fedora|redhat)
     DEFAULT_PREFIX="/usr"
     DEFAULT_EXEC_PREFIX="/usr"
     DEFAULT_LOCALSTATEDIR=""
@@ -166,7 +150,7 @@ rundir="${rundir:-"${localstatedir}/run"}"
 # End of os-distro.sh
 
 case $ID in
-  debian)
+  debian|devuan)
     USER_NAME="bind"
     GROUP_NAME="bind"
     WHEEL_GROUP="sudo"
@@ -241,8 +225,7 @@ fi
 
 if [  -z "$VAR_LIB_NAMED_DIRNAME" ]; then
   echo "We are violating Linux File System Standards by using '/var' directly"
-  exit 3
-  #libdir="/var/${VAR_LIB_NAMED_DIRNAME}"
+  libdir="/var/${VAR_LIB_NAMED_DIRNAME}"
 else
   libdir="/var/${VAR_LIB_NAMED_DIRNAME}"
 fi

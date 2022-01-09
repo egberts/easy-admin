@@ -3,8 +3,16 @@
 # Title: Disable SAMBA server
 #
 
-# checking if we need to prompt for 'disabling SAMBA server'...
+echo "Remove SAMBA daemon service"
+echo
 
+SYSTEMCTL_BIN="$(which systemctl)"
+if [ -z "$SYSTEMCTL_BIN" ]; then
+  echo "No systemd installed; exiting ..."
+  exit 1
+fi
+
+# checking if we need to prompt for 'disabling SAMBA server'...
 
 echo "Checking if SAMBA server is running..."
 samba_active="$(systemctl is-active smbd.service)"

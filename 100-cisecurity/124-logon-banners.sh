@@ -12,7 +12,7 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   FILE_SETTINGS_FILESPEC="${BUILDROOT}/os-file-settings-banners.sh"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "$BUILDROOT"
-  rm "$FILE_SETTINGS_FILESPEC"
+  rm -f "$FILE_SETTINGS_FILESPEC"
 fi
 
 source installer.sh
@@ -21,7 +21,7 @@ issue_filename="issue"
 issue_filepath="/etc"
 issue_filespec="${issue_filepath}/${issue_filename}"
 
-echo "Creating $issue_filespec..."
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$issue_filespec..."
 flex_mkdir "$(dirname "$issue_filespec")"
 flex_touch "$issue_filespec"
 flex_chown root:root "$issue_filespec"
@@ -33,7 +33,7 @@ echo ""
 
 issue_net_filename="issue.net"
 issue_net_filespec="${issue_filepath}/${issue_net_filename}"
-echo "Creating $issue_net_filespec..."
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$issue_net_filespec..."
 flex_touch "$issue_net_filespec"
 flex_chown root:root "$issue_net_filespec"
 flex_chmod 0644      "$issue_net_filespec"

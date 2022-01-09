@@ -2,6 +2,14 @@
 # File: 133-cis-vsftp-server.sh
 # Title: Disable FTP server
 #
+echo "Remove VsFTP server daemon service"
+echo
+
+SYSTEMCTL_DIR="$(which systemctl)"
+if [ -z "$SYSTEMCTL_DIR" ]; then
+  echo "systemd is not installed; exiting ..."
+  exit 1
+fi
 
 # checking if we need to prompt for 'disabling FTP server'...
 

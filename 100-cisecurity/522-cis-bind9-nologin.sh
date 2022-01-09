@@ -9,6 +9,17 @@
 #  util-linux (whereis)
 #  coreutils (basename, cat, dirname, id)
 
+echo "Check Bind9 user account for correct shell."
+echo
+
+NAMED_BIN="$(whereis named | awk '{print $2}')"
+if [ -z "$NAMED_BIN" ]; then
+  echo "File $NAMED_BIN not found;"
+  echo "ISC Bind9 package maybe not installed?"
+  echo "Aborted."
+  exit 1
+fi
+
 nologin_pattern="nologin"
 NOLOGIN_BIN="$(whereis -b "$nologin_pattern" | awk '{print $2}')"
 echo "$NOLOGIN_BIN"
@@ -21,14 +32,14 @@ NOLOGIN_FILENAME="$(basename "$NOLOGIN_BIN")"
 NOLOGIN_FILEPATH="$(dirname "$NOLOGIN_BIN")"
 
 # Try the newest username first, 'bind'
-user_name='bind'
+user_name="bind"
 BIND_USER_EXIST="$(id "$user_name" >/dev/null 2>&1)"
 if [ $? -ne 0 ]; then
   # Try the original username, 'named'
-  user_name='named'
+  user_name="named"
   BIND_USER_EXIST="$(id "$user_name" >/dev/null 2>&1)"
 fi
-USER_SHELL="$(cat /etc/passwd|grep "$user_name" | awk -F: '{print $7}')"
+USER_SHELL="$(cat /etc/passwd|grep "$user_name" | awk -F: '{print $7}' | sort -u | xargs )"
 SHELL_FILENAME="$(basename "$USER_SHELL")"
 SHELL_FILEPATH="$(dirname "$USER_SHELL")"
 

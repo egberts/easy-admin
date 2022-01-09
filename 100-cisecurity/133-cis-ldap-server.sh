@@ -4,6 +4,14 @@
 #
 
 # checking if we need to prompt for 'disabling LDAP server'...
+echo "Remove LDAP daemon service"
+echo
+
+SYSTEMCTL_BIN="$(which systemctl)"
+if [ -z "$SYSTEMCTL_BIN" ]; then
+  echo "No systemd installed; exiting..."
+  exit 1
+fi
 
 
 echo "Checking if LDAP server is running..."
