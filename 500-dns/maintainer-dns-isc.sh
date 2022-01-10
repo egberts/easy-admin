@@ -22,10 +22,9 @@ NAMED_CONF_FILENAME="named.conf"
 NAMED_CONF_DIRSPEC="$extended_sysconfdir"
 
 case $ID in
-  debian)
+  debian|devuan)
     USER_NAME="bind"
     GROUP_NAME="bind"
-    WHEEL_GROUP="sudo"
     ETC_SUB_DIRNAME="bind"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="/var/cache/$USER_NAME"
@@ -48,7 +47,6 @@ case $ID in
   fedora)
     USER_NAME="named"
     GROUP_NAME="named"
-    WHEEL_GROUP="wheel"
     ETC_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
@@ -63,7 +61,6 @@ case $ID in
   redhat)
     USER_NAME="named"
     GROUP_NAME="named"
-    WHEEL_GROUP="wheel"
     ETC_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
@@ -78,7 +75,20 @@ case $ID in
   centos)
     USER_NAME="named"
     GROUP_NAME="named"
-    WHEEL_GROUP="wheel"
+    ETC_SUB_DIRNAME="named"
+    LOG_SUB_DIRNAME="named"
+    HOME_DIRSPEC="$localstatedir/$USER_NAME"
+    VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
+    VAR_LIB_NAMED_DIRSPEC="$libdir/${VAR_LIB_NAMED_DIRNAME}"
+    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
+    package_tarname="bind"
+    systemd_unitname="named"
+    sysvinit_unitname="named"
+    default_chroot_dirspec="/var/named/chroot"
+    ;;
+  arch)
+    USER_NAME="named"
+    GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
