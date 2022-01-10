@@ -30,7 +30,7 @@ fi
 # Package maintainer-specific
 
 case $ID in
-  debian)
+  debian|devuan)
     package_name="chrony"
     chrony_systemd_unit_name="chrony.service"
     CHRONYD_USER_NAME="_chrony"
@@ -59,6 +59,10 @@ case $ID in
     chrony_systemd_unit_name="chronyd.service"
     CHRONYD_USER_NAME="chrony"
     CHRONYD_GROUP_NAME="chrony"
+    ;;
+  *)
+    echo "Unknown $ID distro; aborting..."
+    exit 1
     ;;
 esac
 

@@ -33,13 +33,19 @@ echo ""
 
 source ./chrony-ntp-common.sh
 
-if [ "$ID" != "debian" ]; then
-  echo "This is for a Debian distro."
-  echo "Not applicable."
-  echo ""
-  echo "Done."
-  exit 0
-fi
+echo "ID: $ID"
+case $ID in
+
+  'debian'|'devuan')
+    ;;
+  *)
+    echo "This is for a Debian distro."
+    echo "Not applicable."
+    echo
+    echo "Unknown $ID distro; Aborted."
+    exit 0
+    ;;
+esac
 
 sysconfdir="/etc"
 

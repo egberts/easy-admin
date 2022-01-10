@@ -19,7 +19,7 @@ source /etc/os-release
 DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-}"
 
 case $ID in
-  debian)
+  debian|devuan)
     DEFAULT_PREFIX=""
     DEFAULT_EXEC_PREFIX="/usr"
     DEFAULT_LOCALSTATEDIR=""
