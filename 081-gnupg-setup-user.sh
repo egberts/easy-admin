@@ -39,7 +39,9 @@ if [ -z "$MIGRATE_BIN" ]; then
   echo "GNU migrate-pubring-from-classic-gpg is not installed"
   # gnupg-utils, makes it easier to upgrade from older GPGv1
   sudo apt install gnupg-utils gpgconf
-  migrate-pubring-from-classic-gpg --default
+  if [ $? -eq 0 ]; then
+    migrate-pubring-from-classic-gpg --default
+  fi
 fi
 
 GPGCONF="gpgconf"
@@ -48,7 +50,9 @@ if [ -z "$GPGCONF_BIN" ]; then
   echo "GNU migrate-pubring-from-classic-gpg is not installed"
   # gpgconf, makes it easier to view GPG settings and make any safer changes
   sudo apt install gnupg-utils gpgconf
-  migrate-pubring-from-classic-gpg --default
+  if [ -n "$MIGRATE_BIN" ]; then
+    migrate-pubring-from-classic-gpg --default
+  fi
 fi
 
 MIN_GPG_VERSION="2.2.0"
@@ -97,7 +101,7 @@ else
 fi
 
 # Check permission or bail
-if [ "$(stat -c %a "$GPG_CONF_FILESPEC")" != "700" ]; then
+if [ "$(stat -c %a "$GPG_CONF_FILESPEC")" != "600" ]; then
   echo "File permission of $GPG_CONF_FILESPEC file was not SAFE; adjusted."
   chmod 0600 "$GPG_CONF_FILESPEC"
 fi
@@ -228,7 +232,6 @@ GPG_AGENT_EOF
   fi
   echo "File $GPG_AGENT_CONF_FILESPEC created."
 fi
-exit
 
 # Refresh any existing keys
 echo ""
@@ -294,6 +297,7 @@ DROPIN_FILESPEC="$DROPIN_FILEPATH/$DROPIN_FILENAME"
 echo "Creating $DROPIN_FILESPEC ..."
 touch "$DROPIN_FILESPEC"
 chmod a+rx "$DROPIN_FILESPEC"
+exit
 cat << DROPIN_EOF | sudo tee "$DROPIN_FILESPEC" >/dev/null 2>&1
 #
 # File: $DROPIN_FILENAME
