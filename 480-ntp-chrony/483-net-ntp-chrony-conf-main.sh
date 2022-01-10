@@ -37,7 +37,7 @@ ANNOTATION=${ANNOTATION:-y}
 
 ARG1_CHRONY_CONF=${1}
 
-source ./chrony-ntp-common.sh
+source ./maintainer-chrony.sh
 
 # Useful directories that autoconf/configure/autoreconf does not offer.
 
@@ -82,7 +82,6 @@ if [ ! -w "$CONF_FILESPEC" ]; then
   SUDO_BIN=sudo
 fi
 
-# USERNAMES_LIST="_named bind9 bind named"  # new ISC Bind9
 # USERNAMES_LIST="_ntp ntp chrony"  # new NTP
 USERNAMES_LIST="_chrony chrony ntp"  # new Chrony
 

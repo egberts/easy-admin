@@ -32,7 +32,7 @@
 #   util-linux (whereis)
 #
 
-source ./chrony-ntp-common.sh
+source ./maintainer-chrony.sh
 
 DROP_IN_CONF_FILENAME="20-chronyc_cli_admin_access.conf"
 

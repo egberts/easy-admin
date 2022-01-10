@@ -2,7 +2,7 @@
 # File: 503-dns-no-dnsmasq.sh
 # Title: Ensure that DNSMASQ is NOT running
 
-source dns-isc-common.sh
+source ./maintainer-dns-isc.sh
 
 echo "Checking for existance of /etc/dnsmasq.conf file..."
 if [ -f /etc/dnsmasq.conf ]; then

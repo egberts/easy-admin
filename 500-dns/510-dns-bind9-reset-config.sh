@@ -3,7 +3,8 @@
 # Title:  Restart Bind9 configuration from scratch
 
 BUILDROOT="${BUILDROOT:-build/}"
-source dns-isc-common.sh
+
+source maintainer-dns-isc.sh
 
 echo "Clearing out prior settings in $BUILDROOT"
 

@@ -3,7 +3,7 @@
 # Title: Add authorized users to 'ssh' group for using 'ssh' tools
 
 
-source ./ssh-openssh-common.sh
+source ./maintainer-ssh-openssh.sh
 
 echo "Adding '$SSH_GROUP_NAME' GID to a user's supplementary group"
 echo

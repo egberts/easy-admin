@@ -33,7 +33,7 @@ function check_redhat_crypto_policy()
   fi
 }
 
-source ./ssh-openssh-common.sh
+source ./maintainer-ssh-openssh.sh
 
 case $ID in
   debian|devuan)
@@ -50,8 +50,6 @@ case $ID in
 esac
 
 DEFAULT_ETC_CONF_DIRNAME="ssh"
-
-source ssh-openssh-common.sh
 
 FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"

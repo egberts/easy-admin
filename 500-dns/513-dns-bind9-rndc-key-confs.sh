@@ -1,5 +1,5 @@
 #!/bin/bash
-# File: 513-dns-bind9-rndc-conf.sh
+# File: 513-dns-bind9-rndc-confs.sh
 # Title: Create rndc configuration file for Bind9
 # Description:
 #   Creates the rndc by systemd unit instance.
@@ -27,7 +27,7 @@
 #                     hmac-sha224, hmac-sha1, hmac-md5
 #
 
-source dns-bind9-common.sh
+source ./maintainer-dns-isc.sh
 
 function create_rndc_conf_header() {
     echo "Creating ${CHROOT_DIR}$CORE_RNDC_CONF_FILESPEC ..."

@@ -6,7 +6,7 @@
 # Prerequisites:
 #
 
-source  dns-bind9-common.sh
+source  ./maintainer-dns-isc.sh
 
 echo "Creating a new bind9@.service systemd unit file..."
 echo ""

@@ -20,7 +20,7 @@
 echo "Setting up OpenSSH daemon configuration file(s)"
 echo 
 
-source ./ssh-openssh-common.sh
+source ./maintainer-ssh-openssh.sh
 
 if [ "$BUILD_ABSOLUTE" -eq 0 ]; then
   FILE_SETTINGS_FILESPEC="${BUILD_DIRNAME}/file-settings-openssh-server.sh"

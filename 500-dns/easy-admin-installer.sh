@@ -1,5 +1,5 @@
 
-# File: installer.sh
+# File: easy-admin-installer.sh
 # Title: Create an installer script that handles file permissions
 # Description:
 #

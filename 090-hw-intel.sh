@@ -1,6 +1,8 @@
 #!/bin/bash
+# File: 090-hw-intel.sh
+# Title: Firmware install for Intel-based hardware
 
-source os-distro.sh
+source distro-os.sh
 
 case $ID in
 

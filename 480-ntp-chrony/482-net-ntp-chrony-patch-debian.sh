@@ -31,7 +31,7 @@ DEFAULT_DROPIN_CONF_FILENAME="debian-stock-pool.sources"
 echo "Relocate debian-assigned pool fron chrony.conf into sources.d/ subdir"
 echo ""
 
-source ./chrony-ntp-common.sh
+source ./maintainer-chrony.sh
 
 echo "ID: $ID"
 case $ID in

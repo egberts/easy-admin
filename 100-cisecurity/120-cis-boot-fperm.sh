@@ -1,11 +1,11 @@
 #!/bin/bash
-# File: 120-cis-fperm-boot.sh
+# File: 120-cis-boot-fperm.sh
 # Title: Knock off group-other file permissions from GRUB boot menu
 
 echo "Lower file permission of /boot/grub config file"
 echo ""
 
-source ../os-distro.sh
+source ../distro-os.sh
 
 GRUB_FILENAME="grub.cfg"
 DEFAULT_GRUB_FILESPEC="/etc/default/grub"

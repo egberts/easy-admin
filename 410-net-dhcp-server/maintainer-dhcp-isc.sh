@@ -1,5 +1,5 @@
 #
-# File: dhcp-isc-common.sh
+# File: maintainer-dhcp-isc.sh
 # Title: Common settings for ISC DHCP
 
 package_tarname="isc-dhcp-server"
@@ -8,10 +8,10 @@ package_tarname="isc-dhcp-server"
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
-source ./installer.sh
+source ./easy-admin-installer.sh
 
 DEFAULT_ETC_CONF_DIRNAME="dhcp"
 
-source ./os-distro.sh
+source ./distro-os.sh
 
 extended_sysconfdir="${sysconfdir}/${DEFAULT_ETC_CONF_DIRNAME}"

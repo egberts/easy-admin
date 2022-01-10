@@ -9,7 +9,7 @@
 #   - INSTANCE_NAME - Bind9 instance name, if any
 #
 
-source dns-bind9-common.sh
+source ./maintainer-dns-isc.sh
 
 function create_sysv_default() {
 

@@ -97,12 +97,12 @@ if [ $EUID -ne 0 ]; then
   sudo_bin=sudo
 fi
 
-# Begin of dns-isc-common.sh
+# Begin of maintainer-dns-isc.sh
 BUILDROOT="${BUILDROOT:-build}"
 
-source installer.sh
+source ./easy-admin-installer.sh
 
-# Begin of os-distro.sh
+# Begin of distro-os.sh
 source /etc/os-release
 
 # Probably should have 'source distro-package-specific' scripting go here
@@ -147,7 +147,7 @@ rundir="${rundir:-"${localstatedir}/run"}"
 
 # Package maintainer-specific
 
-# End of os-distro.sh
+# End of distro-os.sh
 
 case $ID in
   debian|devuan)
@@ -374,7 +374,7 @@ DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
-# End of dns-isc-common.sh
+# End of maintainer-dns-isc.sh
 
 ##################################################################
 

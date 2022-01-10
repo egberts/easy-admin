@@ -14,7 +14,7 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   rm -f "$FILE_SETTINGS_FILESPEC"
 fi
 
-source installer.sh
+source ./easy-admin-installer.sh
 
 tipc_module="tipc"
 

@@ -82,10 +82,10 @@ if [ $EUID -ne 0 ]; then
   sudo_bin=sudo
 fi
 
-# Begin of dns-isc-common.sh
+# Begin of maintainer-ssh-openssh.sh
 BUILDROOT="${BUILDROOT:-build}"
 
-source ssh-openssh-common.sh
+source ./maintainer-ssh-openssh.sh
 
 # Probably should have 'source distro-package-specific' scripting go here
 # Needs to deal with 'DEFAULT_ETC_CONF_DIRNAME' there.
@@ -241,7 +241,7 @@ DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
-# End of dns-isc-common.sh
+# End of maintainer-ssh-openssh.sh
 
 ##################################################################
 

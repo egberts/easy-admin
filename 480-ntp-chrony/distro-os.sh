@@ -1,6 +1,6 @@
 # 
-# File: os-distro.sh
-# Title: Determine OS distro
+# File: distro-os.sh
+# Title: Determine OS distro and their directory specifications
 #
 #   DEFAULT_PKG_NAME=
 #   DEFAULT_ETC_CONF_DIRNAME=

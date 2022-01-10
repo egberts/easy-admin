@@ -13,7 +13,9 @@
 #
 
 echo "Creating instance-specific 'rndc' script files for $mytool_bindir..."
-source dns-bind9-common.sh
+echo
+
+source ./maintainer-dns-isc.sh
 
 if [ -z "$INSTANCE_NAME" ]; then
   echo "Must define INSTANCE_NAME envar."

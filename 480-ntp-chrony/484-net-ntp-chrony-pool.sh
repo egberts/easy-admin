@@ -41,7 +41,7 @@ IBURST_MAX_HOPS_CUTOFF=3  # try to stay within local/home LAN
 DEFAULT_NTP_SERVER="pool.ntp.org"
 
 
-source ./chrony-ntp-common.sh
+source ./maintainer-chrony.sh
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
 
 ######################################

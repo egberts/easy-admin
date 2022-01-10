@@ -21,7 +21,7 @@ SSH_USE_STRONG_RNG=1
 GRND_NONBLOCK=1
 GRND_RANDOM=1
 
-source ssh-openssh-common.sh
+source ./maintainer-ssh-openssh.sh
 
 case $ID in
   debian)

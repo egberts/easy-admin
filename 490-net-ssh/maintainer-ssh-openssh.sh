@@ -1,5 +1,5 @@
 #
-# File: ssh-openssh-common.sh
+# File: maintainer-ssh-openssh.sh
 # Title: Common settings for OpenSSH configuration
 #
 # Debian specific
@@ -19,11 +19,11 @@ BUILDROOT="${BUILDROOT:-${BUILD_DIRNAME}/}"
 BUILD_SSH="${BUILDROOT}/partial-ssh"
 MINI_REPO="."
 
-source installer.sh
+source ./easy-admin-installer.sh
 
 DEFAULT_ETC_CONF_DIRNAME="ssh"
 
-source os-distro.sh
+source ./distro-os.sh
 
 # OpenSSH maintainer settings
 extended_sysconfdir="${sysconfdir}/${DEFAULT_ETC_CONF_DIRNAME}"

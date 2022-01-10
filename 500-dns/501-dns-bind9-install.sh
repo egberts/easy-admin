@@ -2,7 +2,7 @@
 # File: 500-dns-bind9-install.sh
 # Title: Install ISC Bind9 server
 
-source ./os-distro.sh
+source ./distro-os.sh
 
 case $ID in
   debian)

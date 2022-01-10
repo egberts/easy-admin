@@ -1,6 +1,6 @@
 #
-# File: dns-isc-common.sh
-# Title: Common settings for DNS DHCP
+# File: maintainer-dns-isc.sh
+# Title: Common settings for ISC DNS 
 #
 # Definable ENV variables
 #   BUILDROOT
@@ -13,8 +13,9 @@
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
-source installer.sh
-source os-distro.sh
+source ./easy-admin-installer.sh
+
+source ./distro-os.sh
 
 # ISC Bind9 configuration filename default
 NAMED_CONF_FILENAME="named.conf"

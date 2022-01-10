@@ -1,5 +1,5 @@
 #
-# File: os-distro.sh
+# File: distro-os.sh
 # Title: Determine OS distro
 #
 #   prefix [/usr]

@@ -16,7 +16,7 @@
 echo "Creating SSH SFTP server configuration settings..."
 echo ""
 
-source ./ssh-openssh-common.sh
+source ./maintainer-ssh-openssh.sh
 
 # We are forcing no-root login permitted here
 # so let us check to ensure that SOMEONE can

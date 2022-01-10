@@ -10,8 +10,10 @@
 #   - KEY_ALGORITHM - hmac-sha512, hmac-sha384, hmac-sha256,
 #                     hmac-sha224, hmac-sha1, hmac-md5
 #
+echo "Create a key for both DHCP and DNS to securely communicate
+echo
 
-source dns-bind9-common.sh
+source ./maintainer-dns-isc.sh
 
 HMAC_KEY_KEYNAME="bastion-inter-instance-$KEY_ALGORITHM"
 HMAC_KEY_FILENAME="${HMAC_KEY_KEYNAME}.key"

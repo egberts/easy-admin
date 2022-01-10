@@ -1,5 +1,5 @@
 #!/bin/bash
-# File: dnssec-create-root.sh
+# File: 599-dns-root-server-standalone.sh
 # Title: Create standalone "13" Root Servers for whitelab
 # Description:
 #   This script will create a Root Server for local use only.
@@ -15,7 +15,7 @@
 # Env vars:
 #   rundir
 #   sysconfdir
-#   NAMED_HOME_DIRSPEC (defaults to os-distro-selected named/bind $HOME)
+#   NAMED_HOME_DIRSPEC (defaults to distro-os-selected named/bind $HOME)
 #   DATA_DIRSPEC
 #   ZONE_DB_DIRSPEC
 #   KEYS_DIRSPEC
@@ -23,8 +23,7 @@
 echo "Create a standalone root server for a closed network whitelab usage"
 echo ""
 
-
-source dns-isc-common.sh
+source ./maintainer-dns-isc.sh
 
 NAMED_CONF_FILESPEC="/etc/named/standalone-named.conf"
 

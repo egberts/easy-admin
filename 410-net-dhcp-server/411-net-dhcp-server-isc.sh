@@ -46,8 +46,8 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   rm -f "$FILE_SETTINGS_FILESPEC"
 fi
 
-declare sysconfdir  # assigned in os-distro.sh/dhcp-isc-common.sh
-source ./dhcp-isc-common.sh
+declare sysconfdir  # assigned in distro-os.sh/maintainer-dhcp-isc.sh
+source ./maintainer-dhcp-isc.sh
 
 if [ "${BUILDROOT:0:1}" != "/" ]; then
   mkdir -p "${BUILDROOT}/$extended_sysconfdir"

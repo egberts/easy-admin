@@ -23,7 +23,7 @@
 
 BUILDROOT=""
 
-source ./chrony-ntp-common.sh
+source ./maintainer-chrony.sh
 
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"

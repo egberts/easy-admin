@@ -1,15 +1,15 @@
 #
-# File: chrony-ntp-common.sh
+# File: maintainer-chrony.sh
 # Title: Package Maintainer-specific settings for Chrony NTP server
 
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
-source installer.sh
+source ./easy-admin-installer.sh
 
-DEFAULT_ETC_CONF_DIRNAME="chrony"  # feeds into DEFAULT_EXTENDED_SYSCONFDIR in os-distro.sh
+DEFAULT_ETC_CONF_DIRNAME="chrony"  # feeds into DEFAULT_EXTENDED_SYSCONFDIR in distro-os.sh
 
-source os-distro.sh
+source ./distro-os.sh
 
 extended_sysconfdir="${extended_sysconfdir:-${DEFAULT_EXTENDED_SYSCONFDIR}}"
 
