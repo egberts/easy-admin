@@ -14,3 +14,5 @@ DEFAULT_ETC_CONF_DIRNAME="dhcp"
 
 source ./os-distro.sh
 
+extended_sysconfdir="${sysconfdir}"
+
