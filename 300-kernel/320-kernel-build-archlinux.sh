@@ -70,7 +70,7 @@ fi
 echo "Perform kernel 'make modules_install' (quick time)..."
 sudo make modules_install
 if [ "$retsts" -ne 0 ]; then
-  echo "make bzImage failed: error $retsts"
+  echo "make module_install failed: error $retsts"
   exit $retsts
 fi
 
