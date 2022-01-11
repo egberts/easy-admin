@@ -1,6 +1,8 @@
 #!/bin/bash
 # File: 070-bashrc.sh
 # Title: Clean up bashrc
+# Description:
+#    Basic account setup with regard to bash shell handling
 #
 # Design:
 #    For system-wide settings
