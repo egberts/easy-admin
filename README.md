@@ -36,4 +36,4 @@ Some features are:
 ** DNS, ISC Bind9: authoritative, bastion/split-horizon, resolver
 
 
-[![Codacy Security Scan](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml)
+[![Lint Code Base](https://github.com/egberts/easy-admin/actions/workflows/super-linter.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/super-linter.yml) [![Codacy Security Scan](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml) 
