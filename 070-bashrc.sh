@@ -52,31 +52,29 @@ done
 DOT_BASHRC_PATHNAME="$HOME"
 DOT_BASHRC_FILENAME=".bashrc"
 DOT_BASHRC_FILESPEC="$DOT_BASHRC_PATHNAME/$DOT_BASHRC_FILENAME"
+DOT_BASHRC_EXIST=0
 echo "Checking for $DOT_BASHRC_FILESPEC script file..."
 if [ -r "$DOT_BASHRC_FILESPEC" ]; then
   DOT_BASHRC_EXIST=1
-else
-  DOT_BASHRC_EXIST=0
 fi
 
 DOT_BASH_PROFILE_PATHNAME="$HOME"
 DOT_BASH_PROFILE_FILENAME=".bash_profile"
 DOT_BASH_PROFILE_FILESPEC="$DOT_BASH_PROFILE_PATHNAME/$DOT_BASH_PROFILE_FILENAME"
+DOT_BASH_PROFILE_EXIST=0
 echo "Checking for $DOT_BASH_PROFILE_FILESPEC script file..."
 if [ -r "$DOT_BASH_PROFILE_FILESPEC" ]; then
   DOT_BASH_PROFILE_EXIST=1
-else
-  DOT_BASH_PROFILE_EXIST=0
 fi
 
 # Should be OK by most latest distros to use both .bashrc and .bash_profile now
-#if [ "$DOT_BASH_PROFILE_EXIST" -eq 1 ] &&
-#   [ "$DOT_BASHRC_EXIST" -eq 1 ]; then
-#  echo "Your login(1) is stable and uses $DOT_BASH_PROFILE_FILESPEC."
-#  echo "It is confusing to be using both $DOT_BASH_PROFILE_FILESPEC and"
+if [ "$DOT_BASH_PROFILE_EXIST" -eq 1 ] &&
+   [ "$DOT_BASHRC_EXIST" -eq 1 ]; then
+  echo "Your login(1) is stable and uses $DOT_BASH_PROFILE_FILESPEC."
+  echo "It is confusing to be using both $DOT_BASH_PROFILE_FILESPEC and"
 #  echo "   $DOT_BASHRC_FILESPEC together. Aborted"
 #  exit 3
-#fi
+fi
 
 SKEL_PATHNAME="/etc/skel"
 SKEL_DOT_BASHRC_FILENAME=".bashrc"
@@ -108,7 +106,7 @@ DOT_BASHRC_EOF
 
 function append_dot_bashrc_subdirs()
 {
-  FOUND_BASHRC_D_SUBDIRS="$(grep "aliases completions plugins" "$DOT_BASHRC_FILESPEC"|wc -l)"
+  FOUND_BASHRC_D_SUBDIRS="$(grep -c "aliases completions plugins" "$DOT_BASHRC_FILESPEC")"
   if [ "$FOUND_BASHRC_D_SUBDIRS" -eq 0 ]; then
 
     echo "Appending the .bashrc/<subdir> scripting to $DOT_BASHRC_FILESPEC ..."
@@ -158,7 +156,7 @@ if [ "$SKEL_DOT_BASHRC_TIMESTAMP" -gt "$DOT_BASHRC_TIMESTAMP" ]; then
     echo "Appending $DOT_BASHRC_FILESPEC..."
     append_dot_bashrc_subdirs
   elif [ "$REPLY" == 'o' ]; then
-    "Overwriting $DOT_BASHRC_FILESPEC..."
+    echo "Overwriting $DOT_BASHRC_FILESPEC..."
     create_dot_bashrc_header
     cp -v -i "$SKEL_DOT_BASHRC_FILESPEC" "$DOT_BASHRC_FILESPEC"
     append_dot_bashrc_subdirs
