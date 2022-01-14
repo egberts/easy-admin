@@ -13,6 +13,8 @@
 #   KERNEL_LOCALVERSION:  your custom subversion to tack on to the Linux version
 #   KERN_TYPE: defaults to KVM_INITRAMFS
 #              choices are:
+#                USE_CONFIG_VERSION - 
+#                    uses ./config-<version>-<localversion> file (as-is)
 #                FULL - All Linux modules built
 #                CLONE_OS - All modules loaded in this OS are being used here
 #                KVM_INITRAMFS - Minimal KVM needed
@@ -22,7 +24,7 @@
 DEFAULT_KERNEL_LOCALVERSION="custom1"  # the part that goes into `uname -r`
 LINUX_VERSION=5.15.12
 
-KERN_TYPES='FULL CLONE_OS INITRAMFS KVM_INITRAMFS'
+kern_type_list='USE_CONFIG_VERSION FULL CLONE_OS INITRAMFS KVM_INITRAMFS'
 kern_type="${KERN_TYPE:-KVM_INITRAMFS}"
 
 # Unchangable things below
@@ -33,12 +35,12 @@ if [ "root" != "$USER" ]; then
   sudo_bin=/usr/bin/sudo
 fi
 
-NUM_CPUS="$(grep -E '^processor\s*:' /proc/cpuinfo | tail -n1 | awk -F: '{print $2}')"
-((NUM_CPUS++))
-echo "NUM_CPUS: $NUM_CPUS"
+num_cpus="$(grep -E '^processor\s*:' /proc/cpuinfo | tail -n1 | awk -F: '{print $2}')"
+((num_cpus++))
+echo "num_cpus: $num_cpus"
 
 PS3="Enter in kernel type: "
-select kern_type in $KERN_TYPES; do
+select kern_type in $kern_type_list; do
   if [ -n "$kern_type" ]; then
     break
   fi
@@ -48,9 +50,9 @@ if [ -z "$kern_type" ]; then
   exit 3
 fi
 
-LINUX_VERSION_1="$(echo "$LINUX_VERSION" | awk -F. '{print $1}')"
-LINUX_VERSION_2="$(echo "$LINUX_VERSION" | awk -F. '{print $2}')"
-mkinitcpio_prefix="linux${LINUX_VERSION_1}${LINUX_VERSION_2}"
+linux_version_1="$(echo "$LINUX_VERSION" | awk -F. '{print $1}')"
+linux_version_2="$(echo "$LINUX_VERSION" | awk -F. '{print $2}')"
+mkinitcpio_prefix="linux${linux_version_1}${linux_version_2}"
 
 # if [ 0 -eq 1  ]; then
 # $sudo_bin pacman -Syu
@@ -58,17 +60,18 @@ mkinitcpio_prefix="linux${LINUX_VERSION_1}${LINUX_VERSION_2}"
 # fi
 
 echo "Listing available kernel source directories:"
-KERNELS_LIST="$(find . -maxdepth 1 -type d -name "linux-*" -print | sed -e 's/\.\///' | xargs)"
-echo "    $KERNELS_LIST"
-if [ -z "$KERNELS_LIST" ]; then
+kernels_dirlist="$(find . -maxdepth 1 -type d -name "linux-*" -print | sed -e 's/\.\///' | xargs)"
+echo "    $kernels_dirlist"
+if [ -z "$kernels_dirlist" ]; then
   echo "No directory found starting with 'linux-'; aborted."
   exit 9
 fi
 
 # Select first one as a default
-default_kernel_version="$(echo "$KERNELS_LIST" | awk '{print $1}')"
+default_kernel_version="$(echo "$kernels_dirlist" | awk '{print $1}')"
 echo 
 echo "Stepping into Linux kernel source directory ..."
+# bash internal PROMPT_DIRTRIM for read/select function
 PROMPT_DIRTRIM=2
 read -rp "Enter desired linux-* subdirectory name: " -ei"$default_kernel_version"
 
@@ -100,15 +103,15 @@ function dotconfig_get_current_kernel()
 function modules_list_active_mods()
 {
   echo "Constructing modprobed-db from AUR ..."
-  MODPROBED_DB_BIN="$(which modprobed-db)"
-  if [ -z "$MODPROBED_DB_BIN" ]; then
+  modprobed_db_bin="$(which modprobed-db)"
+  if [ -z "$modprobed_db_bin" ]; then
     git clone https://aur.archlinux.org/modprobed-db.git
     pushd . || exit 9
     cd modprobed-db || exit 10
     makepkg
     $sudo_bin -U modprobed-db.tar.xz
     popd || exit 11
-    MODPROBED_DB_BIN="$(which modprobed-db)"
+    modprobed_db_bin="$(which modprobed-db)"
   fi
   # Why are we using modprobed-db?  Because we can do things
   # between boots which auto-loaded modules of which this
@@ -119,7 +122,7 @@ function modules_list_active_mods()
   # Alternatively, we could do:
   #    lsmod > /tmp/my-lsmod.txt
   #    make LSMOD=/tmp/my-lsmod.txt localmodconfig
-  $MODPROBED_DB_BIN store && $MODPROBED_DB_BIN init 
+  $modprobed_db_bin store && $modprobed_db_bin init 
 } 
 
 
@@ -139,6 +142,23 @@ function dotconfig_tweak_settings()
 
 USE_MODULES=0
 case $kern_type in
+  USE_CONFIG_VERSION)
+    USE_MODULES=1
+    versioned_config="./.config-${LINUX_VERSION}-${KERNEL_LOCALVERSION}"
+    if [ ! -f "$versioned_config" ]; then
+      echo "File $versioned_config not found; aborted."
+      exit 9
+    fi
+    echo "Copying $versioned_config into ./.config ..."
+    cp "$versioned_config" .config
+    retsts=$?
+    if [ $retsts -ne 0 ];then
+      echo "Error copying $versioned_config into .config; aborted."
+      exit 11
+    fi
+    # eliminate any unneeded '=n' option and its corresponding CONFIG_(s).
+    make oldconfig
+    ;;
   CLONE_OS)
     USE_MODULES=1
     dotconfig_get_current_kernel
@@ -160,7 +180,7 @@ case $kern_type in
     make LSMOD="$HOME/.config/modprobed.db localmodconfig"
     retsts=$?
     if [ $retsts -ne 0 ]; then
-      echo "Unable to get '$MODPROBED_DB_BIN' info: Error $retsts"
+      echo "Unable to get '$modprobed_db_bin' info: Error $retsts"
       exit 1
     fi
 
@@ -186,103 +206,117 @@ sed -i "s/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION=\"-${KERNEL_LOCALVERSION}\
 
 # Review .config settings in $EDITOR
 vim .config
+# 'make -j4' will execute oldconfig to flesh out any errant settings
 
 # Test .config if modules were used and not requested
 if [ "$USE_MODULES" -eq 0 ]; then
   MODULES_USED="$(grep -c "=m" .config)"
   if [ "$MODULES_USED" -ge 1 ]; then
+    find . -name "*.ko.*" -print
     echo "WARNING: modules used in this kernel"
     # exit 9
   fi
 fi
 
-echo "Perform kernel 'make' (long time)..."
-make -j"${NUM_CPUS}"
+echo "Perform kernel 'make -j${num_cpus}' (long time) ..."
+make -j"${num_cpus}"
 
-echo "Perform kernel 'make bzImage' (makes vmlinux) ..."
-make -j"${NUM_CPUS}" bzImage
+echo "Perform kernel 'make -j${num_cpus} bzImage' (makes vmlinux) ..."
+make -j"${num_cpus}" bzImage
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   echo "make bzImage failed: error $retsts"
   exit $retsts
 fi
 
-echo "Perform kernel 'make modules' (medium time)..."
-make -j"${NUM_CPUS}" modules
+echo "Perform kernel 'make -j${num_cpus} modules' (medium time) ..."
+make -j"${num_cpus}" modules
 
 if [ -n "$sudo_bin" ]; then
-  echo "This shell session is under $USER user, not 'root'."
+  echo "This shell session is under '$USER' user session, not 'root'."
   echo "because series of sudo prompts are next on the way."
   echo "Finally, it builds.  Press ENTER to continue."
   read -rp _
 fi
 
-echo "Perform kernel 'make modules_install' (quick time)..."
-#####$sudo_bin make -j"${NUM_CPUS}" LSMOD="$HOME/.config/modprobed.db" modules_install
-$sudo_bin make -j"${NUM_CPUS}" modules_install
+echo "Perform kernel 'make -j${num_cpus} modules_install' (quick time) ..."
+#####$sudo_bin make -j"${num_cpus}" LSMOD="$HOME/.config/modprobed.db" modules_install
+$sudo_bin make -j"${num_cpus}" modules_install
 if [ "$retsts" -ne 0 ]; then
   echo "make bzImage failed: error $retsts"
   exit $retsts
 fi
 
-MKINITCPIO_CONF_DIRSPEC="/etc"
-MKINITCPIO_CONF_FILENAME="mkinitcpio-${KERNEL_LOCALVERSION}.conf"
-MKINITCPIO_CONF_FILESPEC="${MKINITCPIO_CONF_DIRSPEC}/$MKINITCPIO_CONF_FILENAME"
+mkinitcpio_conf_dirspec="/etc"
+mkinitcpio_conf_filename="mkinitcpio-${KERNEL_LOCALVERSION}.conf"
+mkinitcpio_conf_filespec="${mkinitcpio_conf_dirspec}/$mkinitcpio_conf_filename"
 
-MKINITCPIO_D_DIRSPEC="/etc/mkinitcpio.d"
-MKINITCPIO_D_FILENAME="${mkinitcpio_prefix}.preset"
-MKINITCPIO_D_FILESPEC="${MKINITCPIO_D_DIRSPEC}/$MKINITCPIO_D_FILENAME"
+mkinitcpio_d_dirspec="/etc/mkinitcpio.d"
+mkinitcpio_d_filename="${mkinitcpio_prefix}.preset"
+mkinitcpio_d_filespec="${mkinitcpio_d_dirspec}/$mkinitcpio_d_filename"
 
-VMLINUZ_DIRSPEC="/boot"
-VMLINUZ_FILENAME="vmlinuz-${mkinitcpio_prefix}"
-VMLINUZ_FILESPEC="${VMLINUZ_DIRSPEC}/$VMLINUZ_FILENAME"
+vmlinuz_dirspec="/boot"
+vmlinuz_filename="vmlinuz-${mkinitcpio_prefix}"
+vmlinuz_filespec="${vmlinuz_dirspec}/$vmlinuz_filename"
 
-INITRAMFS_DIRSPEC="/boot"
-INITRAMFS_FILENAME="initramfs-${mkinitcpio_prefix}.img"
-INITRAMFS_FILESPEC="${INITRAMFS_DIRSPEC}/$INITRAMFS_FILENAME"
+initramfs_dirspec="/boot"
+initramfs_filename="initramfs-${mkinitcpio_prefix}.img"
+initramfs_filespec="${initramfs_dirspec}/$initramfs_filename"
 
-INITRAMFS_FB_DIRSPEC="/boot"
-INITRAMFS_FB_FILENAME="initramfs-${mkinitcpio_prefix}-fallback.img"
-INITRAMFS_FB_FILESPEC="${INITRAMFS_FB_DIRSPEC}/$INITRAMFS_FB_FILENAME"
+initramfs_fb_dirspec="/boot"
+initramfs_fb_filename="initramfs-${mkinitcpio_prefix}-fallback.img"
+initramfs_fb_filespec="${initramfs_fb_dirspec}/$initramfs_fb_filename"
 
-SYSTEM_MAP_DIRSPEC="/boot"
-SYSTEM_MAP_FILENAME="System.map-${mkinitcpio_prefix}"
-SYSTEM_MAP_FILESPEC="${SYSTEM_MAP_DIRSPEC}/$SYSTEM_MAP_FILENAME"
+system_map_dirspec="/boot"
+system_map_filename="System.map-${mkinitcpio_prefix}"
+system_map_filespec="${system_map_dirspec}/$system_map_filename"
 
-if [ ! "$MKINITCPIO_D_FILESPEC" ]; then
-  $sudo_bin cat << PRESET_EOF | tee "$MKINITCPIO_D_FILESPEC"
+if [ ! "$mkinitcpio_d_filespec" ]; then
+  $sudo_bin cat << PRESET_EOF | tee "$mkinitcpio_d_filespec"
 #
-# File: $MKINITCPIO_D_FILENAME
-# Path: $MKINITCPIO_D_DIRSPEC
+# File: $mkinitcpio_d_filename
+# Path: $mkinitcpio_d_dirspec
 # mkinitcpio preset file for the '$mkinitcpio_prefix' package
 
 # ALL_config="/etc/mkinitcpio.conf"
 # ALL_kver="/boot/vmlinuz"
 
-PRESETS=('default' 'fallback')
+presets_A=('default' 'fallback')
 
-default_config="$MKINITCPIO_CONF_FILESPEC"
-default_image="$INITRAMFS_FILESPEC"
+default_config="$mkinitcpio_conf_filespec"
+default_image="$initramfs_filespec"
 #default_options=""
 
-fallback_config="$MKINITCPIO_CONF_FILESPEC"
-fallback_image="$INITRAMFS_FB_FILESPEC"
+fallback_config="$mkinitcpio_conf_filespec"
+fallback_image="$initramfs_fb_filespec"
 fallback_options="-S autodetect"
 
 PRESET_EOF
 fi
 
-$sudo_bin cp -v arch/x86/boot/bzImage "$VMLINUZ_FILESPEC"
+$sudo_bin cp -v arch/x86/boot/bzImage "$vmlinuz_filespec"
 if [ ! -f System.map ]; then
-  $sudo_bin cp /proc/kallsyms "$SYSTEM_MAP_FILESPEC"
+  $sudo_bin cp /proc/kallsyms "$system_map_filespec"
 fi
-$sudo_bin cp System.map "$SYSTEM_MAP_FILESPEC"
+$sudo_bin cp System.map "$system_map_filespec"
 
 if [ ! -h /boot/System.map ]; then
-  $sudo_bin ln -sf "$SYSTEM_MAP_FILESPEC" /boot/System.map
+  $sudo_bin ln -sf "$system_map_filespec" /boot/System.map
 fi
 
 $sudo_bin mkinitcpio -p "${mkinitcpio_prefix}"
 
 
 $sudo_bin grub-mkconfig -o /boot/grub/grub.cfg
+
+echo "Linux kernel build completed."
+echo "  Version:         $LINUX_VERSION"
+echo "  Local version:   $KERNEL_LOCALVERSION"
+echo "  bzImage/vmlinuz: $vmlinuz_filespec"
+echo "  System.map:      $system_map_filespec"
+echo "  initramfs:            $initramfs_filespec"
+echo "  initramfs (fallback): $initramfs_fb_filespec"
+echo "  config:               $versioned_config"
+echo "  kernel type:     $kern_type"
+echo
+echo "Done."
