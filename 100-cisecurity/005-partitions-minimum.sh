@@ -263,6 +263,39 @@ while [ $mtab_idx -lt ${#mtab_mp_dirpath[@]} ]; do
   ((mtab_idx+=1))
 done
 
+# Check on mtab options for
+#  - proc(fs) hidepid option
+idx=0
+for this_mntfs in $mtab_mp_fstype; do
+  case $this_mntfs in
+    proc)
+      echo "Proc options: ${mtab_mp_options[idx]}"
+      options="${mtab_mp_options[idx]}"
+      options="${options:0:-1}"
+      options="${options:1}"
+      options_list="$(echo "$options"|sed -e 's/,/ /g')"
+      for this_mopt in $options_list; do
+        if [[ "hidepid" == "${this_mopt:0:7}" ]]; then
+          # hidepid_value="$(echo "$this_mopt"|awk -F= '{print $2}')"
+          hidepid_value="${this_mopt:8}"
+          case $hidepid_value in
+            1)
+              echo "WARNING: Weak hiding of Process ID (hidepid=1); upgrade it to 'hidepid=2'"
+            ;;
+            2)
+              echo "Hiding of Process ID is correctly set to 'hidepid=2'"
+            ;;
+            noaccess)
+              echo "Hiding of Process ID is correctly set to 'hidepid=noaccess'"
+              ;;
+          esac
+        fi
+      done
+  esac
+  ((idx++))
+done
+
+# Error checking
 if [[ "$err_missing_partitions" -ge 1 ]] || \
    [[ "$err_missing_options" -ge 1 ]]; then
   echo "Errors:"
@@ -278,5 +311,7 @@ if [[ "$err_missing_partitions" -ge 1 ]] || \
 else
   echo "PASS"
 fi
+echo
+
 echo "Done."
 exit 0

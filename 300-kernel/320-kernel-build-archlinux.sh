@@ -13,7 +13,7 @@
 #   KERNEL_LOCALVERSION:  your custom subversion to tack on to the Linux version
 #   KERN_TYPE: defaults to KVM_INITRAMFS
 #              choices are:
-#                USE_CONFIG_VERSION - 
+#                USE_CONFIG_VERSION -
 #                    uses ./config-<version>-<localversion> file (as-is)
 #                FULL - All Linux modules built
 #                CLONE_OS - All modules loaded in this OS are being used here
@@ -28,6 +28,8 @@ kern_type_list='USE_CONFIG_VERSION FULL CLONE_OS INITRAMFS KVM_INITRAMFS'
 kern_type="${KERN_TYPE:-KVM_INITRAMFS}"
 
 # Unchangable things below
+
+# Do we want to leverage KCONFIG_CONFIG=.config-<version> in 'make bzImage'?
 
 sudo_bin=
 if [ "root" != "$USER" ]; then
@@ -69,7 +71,7 @@ fi
 
 # Select first one as a default
 default_kernel_version="$(echo "$kernels_dirlist" | awk '{print $1}')"
-echo 
+echo
 echo "Stepping into Linux kernel source directory ..."
 # bash internal PROMPT_DIRTRIM for read/select function
 PROMPT_DIRTRIM=2
@@ -122,8 +124,8 @@ function modules_list_active_mods()
   # Alternatively, we could do:
   #    lsmod > /tmp/my-lsmod.txt
   #    make LSMOD=/tmp/my-lsmod.txt localmodconfig
-  $modprobed_db_bin store && $modprobed_db_bin init 
-} 
+  $modprobed_db_bin store && $modprobed_db_bin init
+}
 
 
 function dotconfig_tweak_settings()
@@ -140,10 +142,10 @@ function dotconfig_tweak_settings()
 }
 
 
-USE_MODULES=0
+EXPECT_MODULES=0
 case $kern_type in
   USE_CONFIG_VERSION)
-    USE_MODULES=1
+    EXPECT_MODULES=1
     versioned_config="./.config-${LINUX_VERSION}-${KERNEL_LOCALVERSION}"
     if [ ! -f "$versioned_config" ]; then
       echo "File $versioned_config not found; aborted."
@@ -160,7 +162,7 @@ case $kern_type in
     make oldconfig
     ;;
   CLONE_OS)
-    USE_MODULES=1
+    EXPECT_MODULES=1
     dotconfig_get_current_kernel
     modules_list_active_mods
 
@@ -168,7 +170,7 @@ case $kern_type in
 
   # KVM_INITRAMFS settings
   KVM_INITRAMFS)
-    USE_MODULES=1
+    EXPECT_MODULES=1
 
     dotconfig_get_current_kernel
     modules_list_active_mods
@@ -187,7 +189,7 @@ case $kern_type in
     YES_CONFIGS=""
     M_CONFIGS="DM_SNAPSHOT DM_MIRROR DM_CACHE DM_CACHE_SMQ DM_THIN_PROVISIONING USB_HID NETFILTER_NETLINK NF_TABLES"
     # Set some config settings to "YES"
-    # Do this anyway regardless of USE_MODULES
+    # Do this anyway regardless of EXPECT_MODULES
     dotconfig_tweak_settings "$YES_CONFIGS" y
     dotconfig_tweak_settings "$M_CONFIGS" m
 
@@ -209,14 +211,15 @@ vim .config
 # 'make -j4' will execute oldconfig to flesh out any errant settings
 
 # Test .config if modules were used and not requested
-if [ "$USE_MODULES" -eq 0 ]; then
+# if [ "$EXPECT_MODULES" -eq 0 ]; then
   MODULES_USED="$(grep -c "=m" .config)"
   if [ "$MODULES_USED" -ge 1 ]; then
     find . -name "*.ko.*" -print
     echo "WARNING: modules used in this kernel"
     # exit 9
   fi
-fi
+# fi
+mkdir /lib/modules/${LINUX_VERSION}-${KERNEL_LOCALVERSION}
 
 echo "Perform kernel 'make -j${num_cpus}' (long time) ..."
 make -j"${num_cpus}"
@@ -229,8 +232,15 @@ if [ "$retsts" -ne 0 ]; then
   exit $retsts
 fi
 
-echo "Perform kernel 'make -j${num_cpus} modules' (medium time) ..."
-make -j"${num_cpus}" modules
+if [ "$MODULES_USED" -ge 1 ]; then
+  echo "Perform kernel 'make -j${num_cpus} modules' (medium time) ..."
+  make -j"${num_cpus}" modules
+  retsts=$?
+  if [ "$retsts" -ne 0 ]; then
+    echo "make modules failed: error $retsts"
+    exit $retsts
+  fi
+fi
 
 if [ -n "$sudo_bin" ]; then
   echo "This shell session is under '$USER' user session, not 'root'."
@@ -239,12 +249,14 @@ if [ -n "$sudo_bin" ]; then
   read -rp _
 fi
 
-echo "Perform kernel 'make -j${num_cpus} modules_install' (quick time) ..."
-#####$sudo_bin make -j"${num_cpus}" LSMOD="$HOME/.config/modprobed.db" modules_install
-$sudo_bin make -j"${num_cpus}" modules_install
-if [ "$retsts" -ne 0 ]; then
-  echo "make bzImage failed: error $retsts"
-  exit $retsts
+if [ "$MODULES_USED" -ge 1 ]; then
+  echo "Perform kernel 'make -j${num_cpus} modules_install' (quick time) ..."
+  #####$sudo_bin make -j"${num_cpus}" LSMOD="$HOME/.config/modprobed.db" modules_install
+  $sudo_bin make -j"${num_cpus}" modules_install
+  if [ "$retsts" -ne 0 ]; then
+    echo "make bzImage failed: error $retsts"
+    exit $retsts
+  fi
 fi
 
 mkinitcpio_conf_dirspec="/etc"
@@ -271,8 +283,9 @@ system_map_dirspec="/boot"
 system_map_filename="System.map-${mkinitcpio_prefix}"
 system_map_filespec="${system_map_dirspec}/$system_map_filename"
 
-if [ ! "$mkinitcpio_d_filespec" ]; then
-  $sudo_bin cat << PRESET_EOF | tee "$mkinitcpio_d_filespec"
+if [ "$MODULES_USED" -ge 1 ]; then
+  if [ ! "$mkinitcpio_d_filespec" ]; then
+    $sudo_bin cat << PRESET_EOF | tee "$mkinitcpio_d_filespec"
 #
 # File: $mkinitcpio_d_filename
 # Path: $mkinitcpio_d_dirspec
@@ -292,6 +305,7 @@ fallback_image="$initramfs_fb_filespec"
 fallback_options="-S autodetect"
 
 PRESET_EOF
+  fi
 fi
 
 $sudo_bin cp -v arch/x86/boot/bzImage "$vmlinuz_filespec"
@@ -304,7 +318,9 @@ if [ ! -h /boot/System.map ]; then
   $sudo_bin ln -sf "$system_map_filespec" /boot/System.map
 fi
 
-$sudo_bin mkinitcpio -p "${mkinitcpio_prefix}"
+if [ "$MODULES_USED" -ge 1 ]; then
+  $sudo_bin mkinitcpio -p "${mkinitcpio_prefix}"
+fi
 
 
 $sudo_bin grub-mkconfig -o /boot/grub/grub.cfg
@@ -318,5 +334,10 @@ echo "  initramfs:            $initramfs_filespec"
 echo "  initramfs (fallback): $initramfs_fb_filespec"
 echo "  config:               $versioned_config"
 echo "  kernel type:     $kern_type"
+if [ "$MODULES_USED" -ge 1 ]; then
+echo "  modules used:    TRUE"
+else
+echo "  modules used:    false"
+fi
 echo
 echo "Done."
