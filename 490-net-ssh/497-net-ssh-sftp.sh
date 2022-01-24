@@ -116,7 +116,7 @@ echo ""
 
 
 FOUND=0
-USERS_IN_SFTP_GROUP="$(grep "$SSH_SFTP_GROUP" /etc/group | awk -F: '{ print $4 }')"
+USERS_IN_SFTP_GROUP="$(grep "^${SSH_SFTP_GROUP_NAME}:" /etc/group | awk -F: '{ print $4 }')"
 for THIS_USERS in $USERS_IN_SFTP_GROUP; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
     if [ "${this_user}" == "${USER}" ]; then
@@ -128,19 +128,19 @@ done
 
 if [ $FOUND -eq 0 ]; then
   echo "No one will be able to \`scp\` to this box:"
-  echo "No user in '$SSH_SFTP_GROUP' group."
+  echo "No user in '$SSH_SFTP_GROUP_NAME' group."
   echo "User ${USER} cannot access this SFTP server here."
   echo "Must execute:"
-  echo "  usermod -g ${SSH_SFTP_GROUP} ${USER}"
+  echo "  usermod -g ${SSH_SFTP_GROUP_NAME} ${USER}"
   exit 1
 else
-  echo "Only these users can use 'ssh' tools: '$USERS_IN_SFTP_GROUP'"
-  echo ""
-  echo "If you have non-root apps that also uses 'ssh', then add that user"
-  echo "to the '$SSH_SFTP_GROUP' supplemental group; run:"
-  echo "  usermod -g ${SSH_SFTP_GROUP} <app-username>"
+  echo "Only these users can use '${SSH_SFTP_GROUP_NAME}' tools: '$USERS_IN_SFTP_GROUP'"
+  echo
+  echo "If you have non-root apps that also uses '${SSH_SFTP_GROUP_NAME}', then add that user"
+  echo "to the '$SSH_SFTP_GROUP_NAME' supplemental group; run:"
+  echo "  usermod -g ${SSH_SFTP_GROUP_NAME} <app-username>"
 fi
-echo ""
+echo
 
 echo "Done."
 
