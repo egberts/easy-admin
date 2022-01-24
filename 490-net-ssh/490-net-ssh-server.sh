@@ -263,11 +263,12 @@ if [ -n "$ssh_keys_group_found" ]; then
   echo "SSH key group ID found: $SSHKEY_GROUP_NAME in /etc/group"
   file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"
   for this_file in $file_list; do
-    key_file="${this_file}.key"
-    flex_chmod 640 "$key_file"
-    flex_chown "root:$SSHKEY_GROUP_NAME" "$this_file"
-    flex_chmod 644 "$this_file"
-    flex_chown "root:root" "$this_file"
+    this_filespec="${extended_sysconfdir}/$this_file"
+    flex_chmod 640 "$this_filespec"
+    flex_chown "root:$SSHKEY_GROUP_NAME" "$this_filespec"
+    pub_file="${extended_sysconfdir}/${this_file}.pub"
+    flex_chmod 644 "$pub_file"
+    flex_chown "root:root" "$pub_file"
   done
 else
   echo "Warning: No $SSHKEY_GROUP_NAME group name found in /etc/group"
