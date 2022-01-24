@@ -11,9 +11,11 @@
 # get gateway netdev
 GW_NETDEV="$(ip -o route show  | grep default | awk '{print $5}')"
 BRIDGE_NETDEV="$(ip -o -d link show | grep bridge | awk '{print $2}')"
-BRIDGE_NETDEV="${BRIDGE_NETDEV:0:-1}"
 # get list of all netdevs
-ALL_NETDEVS="$(ip -o -4 addr show | grep -v "host lo" | grep -v $GW_NETDEV | grep -v $BRIDGE_NETDEV | awk '{print $2}' | xargs)"
+if [ -n "$BRIDGE_NETDEV" ]; then
+  BRIDGE_NETDEV="${BRIDGE_NETDEV:0:-1}"
+  ALL_NETDEVS="$(ip -o -4 addr show | grep -v "host lo" | grep -v "$GW_NETDEV" | grep -v "$BRIDGE_NETDEV" | awk '{print $2}' | xargs)"
+fi
 
 if [ -z "$ALL_NETDEVS" ]; then
   echo "No non-public netdev available left; aborted."
@@ -22,13 +24,13 @@ fi
 
 read -rp "Enter in private LAN IP address: "
 PRIVATE_LAN_IP="$REPLY"
-read -rp "Enter in private DNS nameserver address: " -ei$PRIVATE_LAN_IP
+read -rp "Enter in private DNS nameserver address: " -ei"$PRIVATE_LAN_IP"
 DNS_SERVER_IP="$REPLY"
 read -rp "Enter in domain name search suffix: "
 DNS_DOMAIN_NAME_SEARCH="$REPLY"
 echo
 echo "List of netdev: $ALL_NETDEVS"
-read -rp "Enter in private LAN netdev device: " -ei$ALL_NETDEVS
+read -rp "Enter in private LAN netdev device: " -ei"$ALL_NETDEVS"
 PRIVATE_LAN_NETDEV="$REPLY"
 
 function nmcli_con_modify
