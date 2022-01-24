@@ -247,15 +247,21 @@ done
 
 if [ $FOUND -eq 0 ]; then
   echo "User ${USER} cannot access this SSH server here."
-  echo "Must execute:"
-  echo "  usermod -a -G $SSH_GROUP_NAME ${USER}"
-  exit 1
+  # check if this is root (and root passwd is disabled)
+  if [ "$USER" != "root" ]; then
+    echo "Must execute:"
+    echo "  usermod -a -G $SSH_GROUP_NAME ${USER}"
+    exit 1
+  else
+    echo "NOTICE: You probably want to re-run this script but as non-root."
+  fi
 fi
 
 # check keys
-ssh_keys_group_found="$(egrep '^${SSHKEY_GROUP_NAME}:' /etc/group)"
+ssh_keys_group_found="$(egrep "^${SSHKEY_GROUP_NAME}:" /etc/group)"
 if [ -n "$ssh_keys_group_found" ]; then
-  file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed2559_key"
+  echo "SSH key group ID found: $SSHKEY_GROUP_NAME in /etc/group"
+  file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"
   for this_file in $file_list; do
     key_file="${this_file}.key"
     flex_chmod 640 "$key_file"
@@ -267,6 +273,8 @@ else
   echo "Warning: No $SSHKEY_GROUP_NAME group name found in /etc/group"
   echo "Probably leftover from Redhat/Fedora/CentOS distro"
   echo "To fix this, execute"
+  echo "  groupadd -r $SSHKEY_GROUP_NAME"
+  echo "then do"
   echo "  usermod -a -G $SSHKEY_GROUP_NAME ${USER}"
   echo "And add a one-shot 'sshd-keygen@.service' evoking "
   echo "  /usr/libexec/openssh/sshd-keygen"
