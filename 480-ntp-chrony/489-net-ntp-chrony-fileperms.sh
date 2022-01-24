@@ -4,6 +4,9 @@
 # Description:
 #   - Checks for file permissions
 #
+#   Design is to be free of any 'source XXXX' for later inclusion into
+#   CISecurity
+#
 # Usage Syntax:
 #   ./489-net-ntp-chrony-file-perms.sh   <config-filespec>
 #     whereas
@@ -91,7 +94,7 @@ CHRONY_CONF_DIR="$expanded_sysconfdir"
 # Useful directories that autoconf/configure/autoreconf does not offer.
 VARDIR="$prefix/var"
 STATEDIR=${STATEDIR:-${VARDIR}/lib/${package_tarname}}
-LOG_DIR="$VARDIR/log"  # /var/log
+LOG_DIRSPEC="$VARDIR/log"  # /var/log
 
 DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
 DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
@@ -101,7 +104,7 @@ CHRONY_VAR_LIB_DIR="$VARDIR/lib/$package_tarname"
 
 CHRONY_CONFD_DIR="$expanded_sysconfdir/conf.d"  # /etc/chrony/conf.d
 CHRONY_SOURCESD_DIR="$expanded_sysconfdir/sources.d"  # /etc/chrony/sources.d
-CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
+CHRONY_LOG_DIRSPEC="$LOG_DIRSPEC/chrony"  # /var/log/chrony
 CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
 CHRONY_KEYS_FILESPEC="$expanded_sysconfdir/chrony.keys"
 
@@ -230,7 +233,7 @@ for source_file in $SOURCES_FILES; do
   file_perm_check source_file "640" "_chrony" "_chrony"
 done
 file_perm_check CHRONY_VAR_LIB_DIR "750" "_chrony" "_chrony"
-file_perm_check CHRONY_LOG_DIR "750" "_chrony" "_chrony"
+file_perm_check CHRONY_LOG_DIRSPEC "750" "_chrony" "_chrony"
 
 # The following files do not need to be check as its file permissions
 # are determined by what the umask of the parent daemon process was set to.

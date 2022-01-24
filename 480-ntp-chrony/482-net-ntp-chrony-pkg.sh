@@ -21,6 +21,8 @@
 #   /etc/chrony/conf.d/*
 #
 
+source ./maintainer-chrony.sh
+
 DEFAULT_DROPIN_CONF_FILENAME="zzz-remote-chronyc-all-denied.conf"
 DROPIN_CONF_FILESPEC="$CHRONY_CONFD_DIRSPEC/$DEFAULT_DROPIN_CONF_FILENAME"
 
@@ -68,12 +70,12 @@ echo "Username '$CHRONY_USER' found."
 ##############################################################
 #
 # Find the Chrony config directory.
-if [ ! -d "$CHRONY_CONF_DIRSPEC" ]; then
-  echo "Ummm, Chrony is missing the $CHRONY_CONF_DIRSPEC directory."
+if [ ! -d "$extended_sysconfdir" ]; then
+  echo "Ummm, Chrony is missing the $extended_sysconfdir directory."
   exit 9
 fi
-sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$CHRONY_CONF_DIRSPEC"
-sudo chmod 0750 "$CHRONY_CONF_DIRSPEC"
+sudo chown "$CHRONY_USER:$CHRONY_GROUP" "$extended_sysconfdir"
+sudo chmod 0750 "$extended_sysconfdir"
 
 # Find the Chrony config file.
 if [ ! -f "$CHRONY_CONF_FILESPEC" ]; then

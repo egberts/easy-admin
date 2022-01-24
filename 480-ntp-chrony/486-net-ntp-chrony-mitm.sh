@@ -46,48 +46,8 @@ fi
 echo "Username '$USERNAME' found."
 GROUPNAME="$USERNAME"
 
-# configure/autogen/autoreconf -------------------------------------
-# most configurable variables used here are found in
-# configure/autogen/autoconf but are capitalized for readablity here
-#
-# maintainer default (Chrony)
-#   prefix=/usr/local
-#   libexecdir=$prefix/libexec
-#   datarootdir=$prefix/share
-#   sysconfdir=$prefix/etc
-#   localstatedir=$prefix/var
-#   libdir=$exec_prefix/lib
-#   bindir=$exec_prefix/bin
-#   sbindir=$exec_prefix/sbin
-#   datadir=$datarootdir
-
-# Debian maintainer however applies this:
-#   libdir=/usr/lib
-#   SYSROOT=/
-#   libexecdir=/usr/lib
-
-# All we are really concern about are:
-#   prefix/prefix
-#   sysconfdir/sysconfdir
-#   localstatedir/localstatedir
-
-
-# Useful directories that autoconf/configure/autoreconf does not offer.
-# LOG_DIR="$vardir/log"  # /var/log
-
-# DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
-# DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
-# DEFAULT_CHRONY_SOCK_FILENAME="chrony.sock"
-
-# CHRONY_RUN_DIR="$runstatedir/$package_name"  # /run/chrony
-# CHRONY_VAR_LIB_DIR="$varlibdir/$package_name"
 
 CHRONY_CONFD_DIR="${extended_sysconfdir}/conf.d"  # /etc/chrony/conf.d
-# CHRONY_SOURCESD_DIR="$extended_sysconfdir/sources.d"  # /etc/chrony/sources.d
-# CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
-# CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
-# CHRONY_KEYS_FILESPEC="$extended_sysconfdir/chrony.keys"
-# CHRONY_SOCK_FILESPEC="$CHRONY_RUN_DIR/$DEFAULT_CHRONY_SOCK_FILENAME"
 
 ANNOTATE=${ANNOTATE:-y}
 

@@ -68,7 +68,7 @@ CHRONY_RUN_DIR="$runstatedir/$package_name"  # /run/chrony
 
 CHRONY_CONFD_DIR="$extended_sysconfdir/conf.d"  # /etc/chrony/conf.d
 # CHRONY_SOURCESD_DIR="$extended_sysconfdir/sources.d"  # /etc/chrony/sources.d
-# CHRONY_LOG_DIR="$LOG_DIR/chrony"  # /var/log/chrony
+# CHRONY_LOG_DIR="$LOG_DIRSPEC/chrony"  # /var/log/chrony
 # CHRONY_DRIFT_FILESPEC="$CHRONY_VAR_LIB_DIR/$DEFAULT_CHRONY_DRIFT_FILENAME"
 # CHRONY_KEYS_FILESPEC="$extended_sysconfdir/chrony.keys"
 CHRONY_SOCK_FILESPEC="$CHRONY_RUN_DIR/$DEFAULT_CHRONY_SOCK_FILENAME"
