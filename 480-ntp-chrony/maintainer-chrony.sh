@@ -89,7 +89,7 @@ CHRONY_KEYS_FILESPEC="${extended_sysconfdir}/$DEFAULT_CHRONY_KEYS_FILENAME"
 # Useful directories that autoconf/configure/autoreconf does not offer.
 CHRONY_RUN_DIRSPEC="${rundir}/$package_name"  # /run/chrony
 
-CHRONY_LOG_DIRSPEC="$LOG_DIR/chrony"  # /var/log/chrony
+CHRONY_LOG_DIRSPEC="$LOG_DIRSPEC/chrony"  # /var/log/chrony
 
 CHRONY_VAR_LIB_DIRSPEC="${varlibdir}/$package_name"
 CHRONY_DRIFT_FILESPEC="${CHRONY_VAR_LIB_DIRSPEC}/$DEFAULT_CHRONY_DRIFT_FILENAME"
@@ -99,6 +99,8 @@ CHRONY_DRIFT_FILESPEC="${CHRONY_VAR_LIB_DIRSPEC}/$DEFAULT_CHRONY_DRIFT_FILENAME"
 # chrony.conf config file, 'sourcedir' config item, or
 # Debian's dynamic '/run/chrony-dhcp'
 CHRONY_DHCP_DIRSPEC="$(realpath -m "$rundir/chrony-dhcp")"
+
+CHRONY_DUMP_DIRPATH="$CHRONY_LOG_DIRSPEC/dump"
 
 
 unset varlibdir
