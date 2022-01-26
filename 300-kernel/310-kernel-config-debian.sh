@@ -21,9 +21,9 @@ DEBIAN_UEFI_CERT=debian-uefi-certs.pem
 # locally-clone the original linux-5.10.46
 # use X.YY.ZZ-X.YY.ZZ versioning scheme
 # so that `make deb-pkg` works???
-cp -rpf linux-5.10.46 linux-5.10.46-5.10-46
+cp -rpf linux-5.10.92 linux-5.10.92-5.10-92
 
-cd linux-5.10.46-5.10-46 || exit $?
+cd linux-5.10.92-5.10-92 || exit $?
 
 pushd .
 if [ ! -d debian ]; then

@@ -17,4 +17,5 @@ apt source --download linux-source
 apt source --download linux-headers-amd64
 apt source --download linux-config-5.10
 
+# filename format: linux-5.10.92_5.10.92.orig.tar.gz
 
