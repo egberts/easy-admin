@@ -3,6 +3,7 @@
 # INCOMPLETE:
 #   Focus is on within the NTPD daemon (not Chrony)
 #   Looks like it got supplanted by chrony
+#   Discontinued this 'ntpd' in favor of 'chronyd' approach
 #
 # INCOMPLETE:
 # Usage:
@@ -17,6 +18,9 @@
 #   during ISC dhclient RENEW|BOUND|REBIND|REBOOT
 
 ANNOTATION=${ANNOTATION:-0}
+
+echo "'ntpd' not advocated; use 'chronyd' instead; aborted."
+exit 1
 
 function dump_ntpd_conf_current_settings
 {
@@ -141,7 +145,7 @@ read -rp "Allow any NTP admin commands (security-risk) (N/y): " -eiN
 REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 if [ "$REPLY" != 'y' ]; then
 
-  # COMM_NET_REMOTE_NEEDED=0
+  COMM_NET_REMOTE_NEEDED=0
   echo "...No remote access to ntpdd daemon netdev."
 
   COMM_NET_LOOPBACK_NEEDED=0
@@ -169,7 +173,7 @@ if [ "$REPLY" != 'y' ]; then
 else
 
   echo "...Open UNIX socket for NTPd administrators."
-  # COMM_NET_REMOTE_NEEDED=1
+  COMM_NET_REMOTE_NEEDED=1
 
   echo ""
   echo "For non-root users, there are several orthogonal layerings of "
@@ -311,14 +315,14 @@ if [ "$CMD_UNIX_FPERM_NEEDED" -ne 0 ]; then
   read -rp "Give UNIX socket-only access to NTP admins for local users? (N/y): "
 fi
 dump_ntpd_conf_current_settings
-exit 0
+#exit 0
 
 # All done with the administrator/administration part of NTP
 
 # Moving on to the NTP protocol aspects
 
 # Do you want to use encryption NTP only?
-if [ "$NET_REMOTE_NEEDED" -ge 1 ]; then
+if [ "$COMM_NET_REMOTE_NEEDED" -ge 1 ]; then
   echo ""
   echo "Encryption is great protection against attackers.  Only useful if you"
   echo "actually own an Atomic Clock or GPS time-provider."

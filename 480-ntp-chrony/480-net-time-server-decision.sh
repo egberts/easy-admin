@@ -1,8 +1,11 @@
 #!/bin/bash
 # File: 480-net-time-server-selecting.sh
-# Title: Selecting the right time server
+# Title: Guide user into selecting the right time server
 # Description:
-#   Help end-user decide what to use for time-syncing effort.
+#   Help the end-user to decide what to use for their time-syncing effort.
+#   Does not change anything.
+#   Examines current host for various settings
+#   May require 'sudo' to access file-protected devices/sockets
 #
 # Reads:
 #   /dev/ptp[0-9]

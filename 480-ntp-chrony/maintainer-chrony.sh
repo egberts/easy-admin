@@ -79,7 +79,7 @@ DEFAULT_CHRONY_DRIFT_FILENAME="chrony.drift"
 # /etc/chrony/chrony.conf
 CHRONY_CONF_FILESPEC="${extended_sysconfdir}/$DEFAULT_CHRONY_CONF_FILENAME"
 
-varlibdir="${localstatedir}/lib"
+varlibdir="${VAR_DIRSPEC}/lib"
 CHRONY_VAR_LIB_DIRSPEC="${varlibdir}/$DEFAULT_ETC_CONF_DIRNAME"
 
 CHRONY_CONFD_DIRSPEC="${extended_sysconfdir}/$DEFAULT_CHRONY_CONFD_DIRNAME"  # /etc/chrony/conf.d
