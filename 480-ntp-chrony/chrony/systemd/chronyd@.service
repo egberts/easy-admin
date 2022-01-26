@@ -1,0 +1,29 @@
+# /etc/systemd/system/chrony@.service
+[Unit]
+Description=chrony, an NTP client/server for %I interface
+Documentation=man:chronyd(8) man:chronyc(1) man:chrony.conf(5)
+Conflicts=openntpd.service ntp.service ntpsec.service
+Wants=time-sync.target
+Before=time-sync.target
+After=network.target
+ConditionCapability=CAP_SYS_TIME
+ConditionFileExists=/etc/chrony/chrony-%I.conf
+ConditionPathExists=/etc/chrony/netdev-%I
+ConditionPathExists=/var/lib/chrony/netdev-%I
+ConditionPathExists=/var/log/chrony/netdev-%I
+
+[Service]
+Type=forking
+PIDFile=/run/chrony/chronyd-%I.pid
+EnvironmentFile=-/etc/default/chrony
+EnvironmentFile=-/etc/default/chrony-%I
+ExecStart=/usr/sbin/chronyd -f /etc/chrony/chrony-%I.conf $DAEMON_OPTS
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+
+[Install]
+WantedBy=multi-user.target
