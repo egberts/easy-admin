@@ -29,7 +29,7 @@
 function flex_mkdir() {
 
   if [ "${1:0:1}" != "/" ]; then
-    echo "flex_mkdir: argument must be an absolute directory path"
+    echo "flex_mkdir: argument '$1' must be an absolute directory path"
     exit 9
   fi
   destdir_dirspec="${CHROOT_DIR}${1}"
