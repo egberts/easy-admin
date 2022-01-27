@@ -13,10 +13,10 @@ case $OS_TYPE in
     DISTRO_MANUF="$(lsb_release -s -i)"
     case $DISTRO_MANUF in
       Debian)
-        DEFAULT_PREFIX=""
-        DEFAULT_EXEC_PREFIX="/usr"
-        DEFAULT_LOCALSTATEDIR=""
-        DEFAULT_SYSCONFDIR="/etc"
+        DISTRO_PREFIX=""
+        DISTRO_EXEC_PREFIX="/usr"
+        DISTRO_LOCALSTATEDIR=""
+        DISTRO_SYSCONFDIR="/etc"
         if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
            || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
           DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
@@ -27,10 +27,10 @@ case $OS_TYPE in
         # No GROUP_NAME
         ;;
       Redhat)
-        DEFAULT_PREFIX=""
-        DEFAULT_EXEC_PREFIX="/usr"
-        DEFAULT_LOCALSTATEDIR="/var"
-        DEFAULT_SYSCONFDIR="/etc"
+        DISTRO_PREFIX=""
+        DISTRO_EXEC_PREFIX="/usr"
+        DISTRO_LOCALSTATEDIR="/var"
+        DISTRO_SYSCONFDIR="/etc"
         if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
            || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
           DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
@@ -53,13 +53,13 @@ case $OS_TYPE in
 esac
 
 # Vendor-specific autotool/autoconf
-prefix="${prefix:-${DEFAULT_PREFIX}}"
-sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR}}"
+prefix="${prefix:-${DISTRO_PREFIX}}"
+sysconfdir="${sysconfdir:-${DISTRO_SYSCONFDIR}}"
 extended_sysconfdir="${extended_sysconfdir:-${DEFAULT_PKG_SYSCONFDIR}}"
-exec_prefix="${exec_prefix:-${prefix:-$DEFAULT_EXEC_PREFIX}}"
+exec_prefix="${exec_prefix:-${prefix:-$DISTRO_EXEC_PREFIX}}"
 libdir="${libdir:-"${exec_prefix}/lib"}"
 libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"
-localstatedir="${localstatedir:-"$DEFAULT_LOCALSTATEDIR"}"
+localstatedir="${localstatedir:-"$DISTRO_LOCALSTATEDIR"}"
 datarootdir="${datarootdir:-"${prefix}/share"}"
 sharedstatedir="${sharedstatedir:-"${prefix}/com"}"
 bindir="${bindir:-"${exec_prefix}/bin"}"

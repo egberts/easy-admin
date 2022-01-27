@@ -15,11 +15,11 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   rm -f "$FILE_SETTINGS_FILESPEC"
 fi
 
-source ./easy-admin-installer.sh
+source ../easy-admin-installer.sh
 
 DEFAULT_ETC_CONF_DIRNAME="shorewall"
 
-source ./distro-os.sh
+source ../distro-os.sh
 
 shorewall_dirspec="$extended_sysconfdir"
 if [ "${BUILDROOT:0:1}" != "/" ]; then
