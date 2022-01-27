@@ -7,7 +7,7 @@
 RESOLV_CONF_FILESPEC="/etc/resolv.conf"
 
 echo "This script tests the current state and integrity of "
-echo "the $RESOLV_CONF_FILESPEC file."
+echo "the DNS Resolver and its $RESOLV_CONF_FILESPEC file."
 echo ""
 
 # What can we tell about /etc/resolv.conf file?
@@ -49,6 +49,14 @@ else
   echo "   nor a symblink; aborted."
   exit 11
 fi
+
+# Obtain whether systemd-resolved is enabled/alive
+SYSD_RESOLVED_SVC_ENABLED="$(systemctl is-enabled systemd-resolved.service)"
+SYSD_RESOLVED_SVC_ACTIVE="$(systemctl is-active systemd-resolved.service)"
+# Obtain whether NetworkManager is enabled/alive
+SYSD_NETWORKMANAGER_SVC_ENABLED="$(systemctl is-enabled NetworkManager.service)"
+SYSD_NETWORKMANAGER_SVC_ACTIVE="$(systemctl is-active NetworkManager.service)"
+
 
 # Determine which nameservers are currently existing... (regardless of
 #     resolv.conf control)
@@ -142,13 +150,6 @@ if [ -n "$SYSTEMCTL_BIN" ]; then
      [ "$RESOLV_FILE_MODE" != "regular file" ]; then
 
 
-    # Obtain whether systemd-resolved is enabled/alive
-    SYSD_RESOLVED_SVC_ENABLED="$(systemctl is-enabled systemd-resolved.service)"
-    SYSD_RESOLVED_SVC_ACTIVE="$(systemctl is-active systemd-resolved.service)"
-
-    # Obtain whether NetworkManager is enabled/alive
-    SYSD_NETWORKMANAGER_SVC_ENABLED="$(systemctl is-enabled NetworkManager.service)"
-    SYSD_NETWORKMANAGER_SVC_ACTIVE="$(systemctl is-active NetworkManager.service)"
 
     # Determine if we have to do anything
     if [ "$SYSD_RESOLVED_SVC_ENABLED" != "enabled" ] && \
@@ -228,6 +229,8 @@ function find_config_value
 
 find_config_value "main" "systemd-resolved"
 NETWORKMANAGER_INI_SYSTEMD_RESOLVED="$CONFIG_VALUE"
+find_config_value "main" "dns"
+NETWORKMANAGER_INI_DNS="$CONFIG_VALUE"
 
 echo ""
 echo "SUGGESTIONS"
@@ -235,10 +238,10 @@ echo "-----------"
 # Concurrency of different resolver daemons
 if [ -n "$NETWORKMANAGER_BIN" ] && [ -n "$SYSTEMCTL_BIN" ]; then
   # Both binaries exist
-
+  echo "checkpoint 1"
   # And its up and running, both resolver daemon
-  if [ "$SYSD_NETWORKMANAGER_SVC_ACTIVE" == "active" ]; then
-     [ "$SYSD_RESOLVED_SVC_ACTIVE" == "active" ] && \
+  if [ "$SYSD_NETWORKMANAGER_SVC_ACTIVE" == "active" ] && \
+     [ "$SYSD_RESOLVED_SVC_ACTIVE" == "active" ]; then 
 
     # Need to figure out WHO has precedence (systemd-resolved or NetworkManager)
     # did NetworkManager configure it right?
@@ -254,6 +257,15 @@ if [ -n "$NETWORKMANAGER_BIN" ] && [ -n "$SYSTEMCTL_BIN" ]; then
         echo "NetworkManager controls /etc/resolv.conf"
         echo "Looks good."
       fi
+      if [ -z "$NETWORKMANAGER_INI_DNS" ] || \
+         [ "$NETWORKMANAGER_INI_DNS" == "true" ]; then
+        echo "NetworkManager config is missing the following:"
+        echo "    [main]"
+        echo "    dns=none"
+      else
+        echo "Systemd-networkd controls /etc/resolv.conf"
+        echo "Looks good."
+      fi
     elif [ "$RESOLV_FILELINK" == "systemd-resolved" ]; then
       if [ -z "$NETWORKMANAGER_INI_SYSTEMD_RESOLVED" ] || \
          [ "$NETWORKMANAGER_INI_SYSTEMD_RESOLVED" == "false" ]; then
@@ -264,12 +276,57 @@ if [ -n "$NETWORKMANAGER_BIN" ] && [ -n "$SYSTEMCTL_BIN" ]; then
         echo "systemd-resolved controls /etc/resolv.conf"
         echo "Looks good."
       fi
+      if [ -z "$NETWORKMANAGER_INI_DNS" ] || \
+         [ "$NETWORKMANAGER_INI_DNS" == "true" ]; then
+        echo "NetworkManager config is missing the following:"
+        echo "    [main]"
+        echo "    dns=none"
+      else
+        echo "Systemd-networkd controls /etc/resolv.conf"
+        echo "Looks good."
+      fi
     fi
   elif [ "$SYSD_RESOLVED_SVC_ENABLED" == "enabled" ] && \
    [ "$SYSD_NETWORKMANAGER_SVC_ENABLED" == "enabled" ]; then
     echo "Both systemd and NetworkManager are fighting over $RESOLV_CONF_FILESPEC"
+  else
+    echo "No conflict."
   fi
 fi
+echo "No conflict between NetworkManager and systemd-networkd"
+echo -n "  $NETWORKMANAGER_BIN	"
+if [ -n "$NETWORKMANAGER_BIN" ]; then
+  echo -n "exists    "
+else
+  echo -n "not found "
+fi
+if [ "$SYSD_NETWORKMANAGER_SVC_ENABLED" == 'enabled' ]; then
+  echo -n "enabled  "
+else
+  echo -n "disabled "
+fi
+if [ "$SYSD_NETWORKMANAGER_SVC_ACTIVE" == 'active' ]; then
+  echo -n "active   "
+else
+  echo -n "inactive "
+fi
+echo
+echo -n "  $SYSTEMCTL_BIN	"
+if [ -n "$SYSTEMCTL_BIN" ]; then
+  echo -n "exists    "
+else
+  echo -n "not found "
+fi
+if [ "$SYSD_RESOLVED_SVC_ENABLED" == 'enabled' ]; then
+  echo -n "enabled  "
+else
+  echo -n "disabled "
+fi
+if [ "$SYSD_RESOLVED_SVC_ACTIVE" == 'active' ]; then
+  echo -n "active  "
+else
+  echo -n "inactive "
+fi
+echo
 echo "Done."
 exit 0
-
