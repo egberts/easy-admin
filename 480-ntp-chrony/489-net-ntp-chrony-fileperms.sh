@@ -60,26 +60,26 @@ ARG1_CHRONY_CONF=${1}
 
 DISTRO_MANUF="$(lsb_release -i|awk -F: '{print $2}'|xargs)"
 if [ "$DISTRO_MANUF" == "Debian" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR=""  # '/'
+  DISTRO_PREFIX=""  # '/'
+  DISTRO_EXEC_PREFIX="/usr"  # revert  back to default
+  DISTRO_LOCALSTATEDIR=""  # '/'
   EXTENDED_SYSCONFDIR_DIRNAME="chrony"
 elif [ "$DISTRO_MANUF" == "Redhat" ]; then
-  DEFAULT_PREFIX=""  # '/'
-  DEFAULT_EXEC_PREFIX="/usr"  # revert  back to default
-  DEFAULT_LOCALSTATEDIR="/var"
+  DISTRO_PREFIX=""  # '/'
+  DISTRO_EXEC_PREFIX="/usr"  # revert  back to default
+  DISTRO_LOCALSTATEDIR="/var"
   EXTENDED_SYSCONFDIR_DIRNAME="chrony"  # change this often
 else
-  DEFAULT_PREFIX="/usr"
-  DEFAULT_LOCALSTATEDIR="/var"  # or /usr/local/var
+  DISTRO_PREFIX="/usr"
+  DISTRO_LOCALSTATEDIR="/var"  # or /usr/local/var
   EXTENDED_SYSCONFDIR_DIRNAME="$package_tarname"   # ie., 'bind' vs 'named'
 fi
-prefix="${prefix:-$DEFAULT_PREFIX}"
+prefix="${prefix:-$DISTRO_PREFIX}"
 sysconfdir="${sysconfdir:-$prefix/etc}"
-exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX:-${prefix}}}"
+exec_prefix="${exec_prefix:-${DISTRO_EXEC_PREFIX:-${prefix}}}"
 libdir="${libdir:-$exec_prefix/lib}"
 libexecdir=${libexecdir:-$exec_prefix/libexec}
-localstatedir="${localstatedir:-"${DEFAULT_LOCALSTATEDIR}"}"
+localstatedir="${localstatedir:-"${DISTRO_LOCALSTATEDIR}"}"
 datarootdir=${datarootdir:-$prefix/share}
 sharedstatedir=${prefix:-${prefix}/com}
 bindir="$exec_prefix/bin"

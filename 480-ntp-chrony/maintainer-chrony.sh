@@ -5,11 +5,11 @@
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
-source ./easy-admin-installer.sh
+source ../easy-admin-installer.sh
 
 DEFAULT_ETC_CONF_DIRNAME="chrony"  # feeds into DEFAULT_EXTENDED_SYSCONFDIR in distro-os.sh
 
-source ./distro-os.sh
+source ../distro-os.sh
 
 extended_sysconfdir="${extended_sysconfdir:-${DEFAULT_EXTENDED_SYSCONFDIR}}"
 
