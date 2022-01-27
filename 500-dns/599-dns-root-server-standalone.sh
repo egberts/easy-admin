@@ -25,7 +25,7 @@ echo ""
 
 source ./maintainer-dns-isc.sh
 
-NAMED_CONF_FILESPEC="/etc/named/standalone-named.conf"
+# NAMED_CONF_FILESPEC="/etc/named/standalone-named.conf"
 
 DOMAIN_TTL=86400
 
@@ -62,16 +62,17 @@ T4="86400"
 NS1_NAME="ns1.a.myroot-servers.${PRIVATE_TLD}."
 CONTACT="hostmaster.${PRIVATE_TLD}."
 
-if [ "${BUILDROOT:0:1}" != '/' ]; then
-  mkdir -p build
-else
-  BUILDROOT=""
-fi
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
-flex_mkdir "$libdir"
-# DONT TOUCH libdir; too many distro-specific package maintainers veered off
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p build
+  flex_mkdir "$VAR_DIRSPEC"
+  flex_mkdir "$VAR_LIB_DIRSPEC"
+else
+  BUILDROOT=""
+fi
+flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
 
 flex_mkdir "$DEFAULT_DYNAMIC_DIRSPEC"
 flex_chmod 0750 "$DEFAULT_DYNAMIC_DIRSPEC"
@@ -113,19 +114,21 @@ flex_chmod 0755 "$extended_sysconfdir"
 flex_chown root:root "$extended_sysconfdir"
 flex_chcon named_conf_t "$extended_sysconfdir"
 
-flex_mkdir "$extended_sysconfdir"
-flex_chmod 0755 "$extended_sysconfdir"
-flex_chown root:root "$extended_sysconfdir"
-flex_chcon named_conf_t "$extended_sysconfdir"
+flex_mkdir "$INSTANCE_SYSCONFDIR"
+flex_chmod 0755 "$INSTANCE_SYSCONFDIR"
+flex_chown root:root "$INSTANCE_SYSCONFDIR"
+flex_chcon named_conf_t "$INSTANCE_SYSCONFDIR"
 
-flex_mkdir "$extended_sysconfdir/keys"
-flex_chmod 0755 "$extended_sysconfdir/keys"
-flex_chown "root:$GROUP_NAME" "$extended_sysconfdir/keys"
-flex_chcon named_cache_t "$extended_sysconfdir/keys"
+# /etc/bind[/instance]/keys directory
+flex_mkdir "$INSTANCE_CONF_KEYS_DIRSPEC"
+flex_chmod 0755 "$INSTANCE_CONF_KEYS_DIRSPEC"
+flex_chown "root:$GROUP_NAME" "$INSTANCE_CONF_KEYS_DIRSPEC"
+flex_chcon named_cache_t "$INSTANCE_CONF_KEYS_DIRSPEC"
 
-# In ALGORITHSM, the first entry is the input default
+# In ALGORITHMS, the first entry is the input default
 echo "List of supported DNSSEC algorithms:"
-ALGORITHMS=("ecdsaP256Sha256" "ecdsaP384Sha384" "ed25519" "rsaSha256" "rsaSha512")
+# ALGORITHMS=("ecdsaP256Sha256" "ecdsaP384Sha384" "ed25519" "rsaSha256" "rsaSha512")
+ALGORITHMS=("ed25519" "ecdsaP256Sha256" "ecdsaP384Sha384" "rsaSha256" "rsaSha512")
 idx=1
 for alg in ${ALGORITHMS[*]}; do
   echo "  $idx: $alg"
@@ -149,7 +152,8 @@ DOMAIN_ROOT_PART="."  # must be the same as 1st field of SOA line in zone file
 ROOT_ZONE_FILESPEC="${DEFAULT_ZONE_DB_DIRSPEC}/db.root.standalone"
 TMP_ROOT_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.tmp"
 
-
+flex_mkdir "${VAR_CACHE_DIRSPEC}"
+flex_mkdir "${NAMED_HOME_DIRSPEC}"  # TBD not sure we want this for all 3 tri-states
 if [ ! -d "${BUILDROOT}${CHROOT_DIR}$NAMED_HOME_DIRSPEC" ]; then
   echo "named $HOME directory '${BUILDROOT}${CHROOT_DIR}$NAMED_HOME_DIRSPEC' does not exist; aborted."
   exit 3
@@ -294,20 +298,21 @@ fi
 # $ROOT_ZONE_FILESPEC.signed created
 # dsset-. created
 # mv "$WEIRD_DSSET_FILESPEC" "${BUILDROOT}${CHROOT_DIR}${DSSET_FILESPEC}"
-echo "${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC created."
+
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC ..."
 flex_chmod 0644 "$DSSET_FILESPEC" 
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$DSSET_FILESPEC" 
 flex_chcon named_zone_t "$DSSET_FILESPEC" 
 
 SIGNED_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.signed"
-echo "$SIGNED_ZONE_FILESPEC created."
+echo "Creating $SIGNED_ZONE_FILESPEC ..."
 flex_chmod 0644 "$SIGNED_ZONE_FILESPEC" 
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$SIGNED_ZONE_FILESPEC" 
 flex_chcon named_zone_t "$SIGNED_ZONE_FILESPEC" 
 
 # Create the view and its zone file
-VIEW_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-view-recursive-zone-root-named.conf"
-echo "Creating $VIEW_NAMED_CONF_FILESPEC ..."
+VIEW_NAMED_CONF_FILESPEC="${INSTANCE_SYSCONFDIR}/standalone-view-recursive-zone-root-named.conf"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$VIEW_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$VIEW_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $VIEW_NAMED_CONF_FILESPEC
@@ -344,8 +349,8 @@ flex_chmod 0640 "$VIEW_NAMED_CONF_FILESPEC"
 flex_chown "root:${GROUP_NAME}" "$VIEW_NAMED_CONF_FILESPEC" 
 flex_chcon named_conf_t "$VIEW_NAMED_CONF_FILESPEC" 
 
-OPTIONS_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-options-named.conf"
-echo "Creating $OPTIONS_NAMED_CONF_FILESPEC ..."
+OPTIONS_NAMED_CONF_FILESPEC="${INSTANCE_SYSCONFDIR}/standalone-options-named.conf"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$OPTIONS_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$OPTIONS_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $OPTIONS_NAMED_CONF_FILESPEC
@@ -357,15 +362,14 @@ options {
     # before any relative directory settings.
     # Because it actually does LIVE change-directory while reading config
     # ISC has said WONTFIX on the shortcoming of this 'directory' statement.
-    directory "${NAMED_HOME_DIRSPEC}";
-    key-directory "${DEFAULT_KEYS_DB_DIRSPEC}";
+    directory "${INSTANCE_NAMED_HOME_DIRSPEC}";
+    key-directory "${INSTANCE_KEYS_DB_DIRSPEC}";
 
-    dump-file "${DATA_DIRSPEC}/cache_dump.db";
-    statistics-file "${DATA_DIRSPEC}/named_stats.txt";
-    memstatistics-file "${DATA_DIRSPEC}/named.memstats";
+    dump-file "${DUMP_CACHE_FILESPEC}";
+    statistics-file "${INSTANCE_DATA_DIRSPEC}/named_stats.txt";
+    memstatistics-file "${INSTANCE_DATA_DIRSPEC}/named.memstats";
 
-    session-keyfile "${rundir}/named-session.key";
-    pid-file none;
+    session-keyfile "${INSTANCE_SESSION_FILESPEC}";
 
     zone-statistics yes;
 
@@ -398,8 +402,8 @@ flex_chown "root:${GROUP_NAME}" "$OPTIONS_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$OPTIONS_NAMED_CONF_FILESPEC"
 
 # And for the 'key' clause for RNDC of named configuration
-KEY_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-key-named.conf"
-echo "Creating $KEY_NAMED_CONF_FILESPEC ..."
+KEY_NAMED_CONF_FILESPEC="${INSTANCE_SYSCONFDIR}/standalone-key-named.conf"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$KEY_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$KEY_NAMED_CONF_FILESPEC" >/dev/null
 
 # File: $KEY_NAMED_CONF_FILESPEC
@@ -413,7 +417,7 @@ flex_chown "root:${GROUP_NAME}" "$KEY_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$KEY_NAMED_CONF_FILESPEC"
 
 # And now for the 'managed-keys' clause of named configuration
-TA_NAMED_CONF_FILESPEC="${extended_sysconfdir}/standalone-trust-anchors-named.conf"
+TA_NAMED_CONF_FILESPEC="${INSTANCE_SYSCONFDIR}/standalone-trust-anchors-named.conf"
 echo "Creating $TA_NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$TA_NAMED_CONF_FILESPEC" >/dev/null
 
@@ -454,13 +458,13 @@ flex_chown "root:${GROUP_NAME}" "$TA_NAMED_CONF_FILESPEC"
 flex_chcon named_conf_t "$TA_NAMED_CONF_FILESPEC"
 
 # A final named.conf to include all the above partial named.conf files
-echo "Creating $NAMED_CONF_FILESPEC ..."
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESPEC ..."
 cat << PARTIAL_NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESPEC" >/dev/null
 # File: $NAMED_CONF_FILESPEC
 # Date: $(date +"%Y%M%D %H%M")"
 # Title: named configuration file for standalone CLOSED-NET root server
 
-# include "${extended_sysconfdir}/logging-named.conf";
+# include "${INSTANCE_SYSCONFDIR}/logging-named.conf";
 include "$KEY_NAMED_CONF_FILESPEC";
 include "$OPTIONS_NAMED_CONF_FILESPEC";
 include "$TA_NAMED_CONF_FILESPEC";
