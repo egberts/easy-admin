@@ -1,6 +1,6 @@
 #
 # File: distro-os.sh
-# Title: Determine OS distro
+# Title: Determine OS distro and their directory specifications
 #
 #   prefix [/usr]
 #   sysconfdir [/etc]
@@ -9,6 +9,25 @@
 #   DEFAULT_PKG_NAME=
 #   DEFAULT_ETC_CONF_DIRNAME=
 #
+# POSIX unix
+
+VAR_DIRSPEC="/var"
+# shellcheck disable=SC2034
+USR_DIRSPEC="/usr"
+# shellcheck disable=SC2034
+ETC_DIRSPEC="/etc"
+# shellcheck disable=SC2034
+VAR_CACHE_DIRSPEC="${VAR_DIRSPEC}/cache"
+# shellcheck disable=SC2034
+VAR_LIB_DIRSPEC="${VAR_DIRSPEC}/lib"
+# shellcheck disable=SC2034
+USR_LIB_DIRSPEC="${USR_DIRSPEC}/lib"
+
+# systemd
+# shellcheck disable=SC2034
+ETC_SYSTEMD_DIRSPEC="/etc/systemd"
+# shellcheck disable=SC2034
+ETC_SYSTEMD_SYSTEM_DIRSPEC="/etc/systemd/system"
 
 source /etc/os-release
 
@@ -18,18 +37,18 @@ source /etc/os-release
 # libdir and $HOME are two separate grouping (that Fedora, et. al. merged)
 case $ID in
   debian|devuan)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
+    DISTRO_PREFIX="/usr"
+    DISTRO_EXEC_PREFIX="/usr"
+    DISTRO_LOCALSTATEDIR=""
+    DISTRO_SYSCONFDIR="/etc"
     DEFAULT_LIB_DIRSPEC="/var/lib"
     WHEEL_GROUP="sudo"
     ;;
   centos|fedora|redhat)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
+    DISTRO_PREFIX="/usr"
+    DISTRO_EXEC_PREFIX="/usr"
+    DISTRO_LOCALSTATEDIR=""
+    DISTRO_SYSCONFDIR="/etc"
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
@@ -39,13 +58,15 @@ case $ID in
     ;;
 esac
 
+DISTRO_ETC_DIRSPEC="$DISTRO_SYSCONFDIR"
+
 # Vendor-specific autotool/autoconf
-prefix="${prefix:-${DEFAULT_PREFIX}}"
-sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR}}"
-exec_prefix="${exec_prefix:-${prefix:-$DEFAULT_EXEC_PREFIX}}"
+prefix="${prefix:-${DISTRO_PREFIX}}"
+sysconfdir="${sysconfdir:-${DISTRO_SYSCONFDIR}}"
+exec_prefix="${exec_prefix:-${prefix:-$DISTRO_EXEC_PREFIX}}"
 libdir="${libdir:-$DEFAULT_LIB_DIRSPEC}"
 libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"
-localstatedir="${localstatedir:-"$DEFAULT_LOCALSTATEDIR"}"
+localstatedir="${localstatedir:-"$DISTRO_LOCALSTATEDIR"}"
 datarootdir="${datarootdir:-"${prefix}/share"}"
 sharedstatedir="${sharedstatedir:-"${prefix}/com"}"
 bindir="${bindir:-"${exec_prefix}/bin"}"
