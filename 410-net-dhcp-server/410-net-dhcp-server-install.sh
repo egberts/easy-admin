@@ -2,7 +2,7 @@
 # File: 410-dhcp-server-install.sh
 # Title: Install ISC DHCP server
 
-source ./distro-os.sh
+source ../distro-os.sh
 
 case $ID in
   debian)

@@ -39,7 +39,7 @@ ETC_SYSTEMD_SYSTEM_DIRSPEC="/etc/systemd/system"
 source /etc/os-release
 
 case $ID in
-  debian)
+  debian|devuan)
     DISTRO_PREFIX=""
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""
@@ -47,7 +47,7 @@ case $ID in
 
     WHEEL_GROUP="sudo"
     ;;
-  centos|redhat|fedora)
+  centos|fedora|redhat)
     DISTRO_PREFIX=""
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR="/var"
@@ -81,7 +81,7 @@ localstatedir="${localstatedir:-"$DISTRO_LOCALSTATEDIR"}"
 datarootdir="${datarootdir:-"${prefix}/share"}"
 sharedstatedir="${sharedstatedir:-"${prefix}/com"}"
 bindir="${bindir:-"${exec_prefix}/bin"}"
-sbindir="${bindir:-"${exec_prefix}/sbin"}"
+sbindir="${sbindir:-"${exec_prefix}/sbin"}"
 rundir="${rundir:-"${localstatedir}/run"}"
 
 # Package maintainer-specific
