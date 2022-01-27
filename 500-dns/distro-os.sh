@@ -11,7 +11,11 @@
 VAR_DIRSPEC="/var"
 USR_DIRSPEC="/usr"
 ETC_DIRSPEC="/etc"
+VAR_CACHE_DIRSPEC="${VAR_DIRSPEC}/cache"
 
+# systemd
+ETC_SYSTEMD_DIRSPEC="/etc/systemd"
+ETC_SYSTEMD_SYSTEM_DIRSPEC="/etc/systemd/system"
 
 # Distro-specifics
 
@@ -64,3 +68,4 @@ rundir="${rundir:-"${localstatedir}/run"}"
 
 # package maintainer-specific goes into outside bash script
 
+VAR_LIB_DIRSPEC="${VAR_DIRSPEC}/lib"

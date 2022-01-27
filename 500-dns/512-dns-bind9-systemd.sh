@@ -5,48 +5,73 @@
 #
 # Prerequisites:
 #
-
-source  ./maintainer-dns-isc.sh
+# Env varnames
+#   - BUILDROOT - '/' for direct installation, otherwise create 'build' subdir
+#   - RNDC_PORT - Port number for Remote Name Daemon Control (rndc)
+#   - RNDC_CONF - rndc configuration file
+#   - INSTANCE_NAME - Bind9 instance name, if any
+#
 
 echo "Creating a new bind9@.service systemd unit file..."
 echo ""
+
+source ./maintainer-dns-isc.sh
+
+FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-bind9-systemd-unitfile.sh"
+
+# Even if we are root, we abide by BUILDROOT directive as to
+# where the final configuration settings goes into.
+ABSPATH="$(dirname "$BUILDROOT")"
+if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
+  echo "$BUILDROOT is an absolute path, we probably need root privilege"
+  echo "We are backing up old bind/named settings"
+  # Only the first copy is saved as the backup
+  if [ ! -f "${NAMED_CONF_FILESPEC}.backup" ]; then
+    BACKUP_FILENAME=".backup-$(date +'%Y%M%d%H%M')"
+    echo "Moving /etc/${ETC_SUB_DIRNAME}/* to /etc/${ETC_SUB_DIRNAME}/${BACKUP_FILENAME}/ ..."
+    mv "$NAMED_CONF_FILESPEC" "${NAMED_CONF_FILESPEC}.backup"
+    retsts=$?
+    if [ $retsts -ne 0 ]; then
+      echo "ERROR: Failed to create a backup of /etc/${ETC_SUB_DIRNAME}/*"
+      exit 3
+    fi
+  fi
+else
+  echo "Creating subdirectories to $BUILDROOT ..."
+  mkdir -p "$BUILDROOT"
+  echo "Creating subdirectories to $BUILDROOT$CHROOT_DIR/$sysconfdir ..."
+  mkdir -p "${BUILDROOT}${CHROOT_DIR}/$sysconfdir"
+
+  echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
+  echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
+  # shellcheck disable=SC2094
+  { \
+  echo "# File: $(basename "$FILE_SETTINGS_FILESPEC")"; \
+  echo "# Path: ${PWD}/$(dirname "$FILE_SETTINGS_FILESPEC")"; \
+  echo "# Title: File permission settings for ISC Bind9 client"; \
+  } >> "$FILE_SETTINGS_FILESPEC"
+fi
+
+
+
 CREATOR="$(basename "$0")"
 
-if [ ! -d "$SYSTEMD_SYSTEM_DIRSPEC" ]; then
+if [ ! -d "$ETC_SYSTEMD_SYSTEM_DIRSPEC" ]; then
   echo "Systemd is not installed. Aborted."
   exit 1
 fi
+flex_mkdir "$ETC_SYSTEMD_DIRSPEC"
+flex_mkdir "$ETC_SYSTEMD_SYSTEM_DIRSPEC"
 
 #
-function stop_disable_unit ()
-{
-  ACTIVE="$(systemctl is-active "${1}" 2>/dev/null )"
-  if [ x"$ACTIVE" == x"active" ]; then
-    echo "Stopping systemd $1 service."
-    systemctl stop "$1"
-    echo "Stopped systemd $1 service."
-  fi
-  EXISTS="$(systemctl is-enabled "${1}" 2>/dev/null )"
-  if [ x"$EXISTS" == x"enabled" ]; then
-    echo "Disabling systemd $1 service."
-    systemctl disable "$1"
-    echo "Disabled systemd $1 service."
-  fi
-}
-
-# Both ISC DNS services are alias to each other,  Read-only
 # BIND_SYSD_UNIT="${BIND_PKG_NAME}.$SERVICE_FILETYPE"
 # TEMPLATE_BIND_SYSD_UNIT="${BIND_PKG_NAME}@.$SERVICE_FILETYPE"
-
-echo "Stopping pre-existing Bind9 named service ..."
-stop_disable_unit "$SYSD_BIND_SVCNAME"
-stop_disable_unit "$SYSD_BIND_ALT_SVCNAME"
 
 
 # Now tweak the original base unit service file.
 # named.service or bind.service
 TEMPLATE_SYSD_UNIT_DROPIN="${SYSD_BIND_TEMPLATE_SVCNAME}.d"
-TEMPLATE_SYSD_DROPIN_DIRSPEC="${SYSTEMD_SYSTEM_DIRSPEC}/$TEMPLATE_SYSD_UNIT_DROPIN"
+TEMPLATE_SYSD_DROPIN_DIRSPEC="${ETC_SYSTEMD_SYSTEM_DIRSPEC}/$TEMPLATE_SYSD_UNIT_DROPIN"
 flex_mkdir "$TEMPLATE_SYSD_DROPIN_DIRSPEC"
 if [ ! -d "$BUILDROOT$TEMPLATE_SYSD_DROPIN_DIRSPEC" ]; then
   echo "Unable to create ${TEMPLATE_SYSD_DROPIN_DIRSPEC} directory."
@@ -58,17 +83,21 @@ DATE="$(date)"
 flex_chmod 0644 "$TEMPLATE_SYSD_DROPIN_DIRSPEC"
 flex_chown "root:root" "$TEMPLATE_SYSD_DROPIN_DIRSPEC"
 
-# Dont edit the bind.service directly, modify it
-# Stick in 'conflicts' with our new named@.service dropin subdir
+if [ "$systemd_unitname" == "bind" ]; then
+  # Dont edit the bind.service directly, modify it
+  # Stick in 'conflicts' with our new named@.service dropin subdir
 
-FILENAME="unit-conflicts.conf"
-FILESPEC=$TEMPLATE_SYSD_DROPIN_DIRSPEC/${FILENAME}
-echo "Creating $FILESPEC..."
-cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
+  FILENAME="unit-conflicts.conf"
+  FILESPEC=$TEMPLATE_SYSD_DROPIN_DIRSPEC/${FILENAME}
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
+  cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
 # Path: ${TEMPLATE_SYSD_DROPIN_DIRSPEC}
 # Title: systemd unit conflict detection
+# Creator: $(basename $0)
+# Created on: $(date)
+#
 # Description:
 #   If a unit has a 'Conflict=' setting on another unit
 #   starting the former unit will stop the latter unit
@@ -78,14 +107,15 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
 #
 
 [Unit]
-Conflicts=named.service
+Conflicts=bind.service
 
 BIND_EOF
-flex_chown "root:root" "${CHROOT_DIR}$FILESPEC"
-flex_chmod "0644"      "${CHROOT_DIR}$FILESPEC"
+  flex_chown "root:root" "$FILESPEC"
+  flex_chmod "0644"      "$FILESPEC"
+fi
 
 # Stick in 'default Debian settings' with our new bind@.service
-FILENAME="egbert-modifications.conf"
+FILENAME="my-modifications.conf"
 FILESPEC=$TEMPLATE_SYSD_DROPIN_DIRSPEC/${FILENAME}
 
 # Tread carefully, don't be overwriting symbolic links within systemd
@@ -94,12 +124,15 @@ if [ -L "$FILESPEC" ]; then
   echo "Symbolic link?!  Remove it"
   rm "$FILESPEC"
 fi
-echo "Creating $FILESPEC..."
-cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
+cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
 #
 # File: ${FILENAME}
 # Path: ${FILEPATH}
 # Title: ISC Bind9 named daemon systemd unit
+# Creator: $(basename $0)
+# Created on: $(date)
+#
 # Description:
 #
 # An instantiation of bind9.service to support
@@ -112,9 +145,9 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
 # OPTIONS string must be defined in /etc/default/bind-%I
 #    OPTIONS cannot replace '-u' or '-c' option of
 #    named(8) for its hard-coded in this file as:
-#        '-u bind -c /etc/bind/named-%I.conf'
+#        '-u ${USER_NAME} -c /etc/bind/named-%I.conf'
 #    Useful Example:
-#        OPTIONS="-u bind -d 63"   # turn on various debug bit flags
+#        OPTIONS="-u ${USER_NAME} -d 63"   # turn on various debug bit flags
 #
 # RNDC_OPTIONS string must be defined in /etc/default/bind-%I
 #    RNDC_OPTIONS cannot replace '-p' or '-c' option of
@@ -129,24 +162,28 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
 #
 
 [Unit]
-Conflicts=bind9.service
-Conflicts=named@.service
-Conflicts=named.service
+# Conflicts=bind9.service
+# Conflicts=bind9@.service
+# Conflicts=named.service
 AssertFileIsExecutable=
 AssertPathExists=
 AssertPathIsDirectory=
 AssertPathIsReadWrite=
-AssertFileIsExecutable=/usr/sbin/named
+
+AssertPathIsDirectory=${INSTANCE_SYSCONFDIR}/%I
+AssertFileIsExecutable=${named_bin_filespec}
 AssertFileIsExecutable=/usr/sbin/rndc
+
 ## AssertPathExists=/run/bind/%I
 ## AssertPathIsDirectory=/run/bind/%I
 ## AssertPathIsReadWrite=/run/bind/%I
+
 AssertPathExists=/var/cache/bind/%I
 AssertPathIsDirectory=/var/cache/bind/%I
 AssertPathIsReadWrite=/var/cache/bind/%I
-AssertPathExists=/var/lib/bind/%I
-AssertPathIsDirectory=/var/lib/bind/%I
-AssertPathIsReadWrite=/var/lib/bind/%I
+AssertPathExists=${INSTANCE_VAR_LIB_NAMED_DIRSPEC}
+AssertPathIsDirectory=${INSTANCE_VAR_LIB_NAMED_DIRSPEC}
+AssertPathIsReadWrite=${INSTANCE_VAR_LIB_NAMED_DIRSPEC}
 
 
 [Service]
@@ -158,8 +195,8 @@ CacheDirectory=+/var/cache/bind
 LogsDirectory=named/%I
 ConfigurationDirectory=+/etc/bind/%I
 
-User=bind
-Group=bind
+User=$USER_NAME
+Group=$GROUP_NAME
 
 
 # resources
@@ -173,10 +210,10 @@ DeviceAllow=/dev/poll rw
 EnvironmentFile=
 
 # Pick up global-wide Bind9 settings (for all instances)
-EnvironmentFile=-/etc/default/bind9
+EnvironmentFile=-/etc/default/named
 
 # Instance-specific Bind environment file required
-EnvironmentFile=/etc/default/bind9-%I
+EnvironmentFile=/etc/default/named-%I
 
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_SETGID CAP_SETUID CAP_SYS_CHROOT CAP_DAC_OVERRIDE
 
@@ -254,18 +291,24 @@ RestartSec=5s
 BIND_EOF
 flex_chown "root:root" "$FILESPEC"
 flex_chmod "0644"      "$FILESPEC"
-echo "Created $FILESPEC"
+echo "Created $BUILDROOT$CHROOT_DIR$FILESPEC"
 
 
 echo ""
 # Copy Debian 'named.service' default as 'bind9@.service'
 FILENAME="$SYSD_BIND_TEMPLATE_SVCNAME"
-FILEPATH="$SYSTEMD_SYSTEM_DIRSPEC"
+FILEPATH="$ETC_SYSTEMD_SYSTEM_DIRSPEC"
 FILESPEC="${FILEPATH}/$FILENAME"
-echo "Creating $FILESPEC..."
-cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
-# now /etc/systemd/system/bind9.service
-# was /lib/systemd/system/named.service
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
+cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
+#
+# File: $FILENAME
+# Path: $FILEPATH
+# Title: ISC Bind9 named unit service file
+# Creator: $(basename $0)
+# Created on: $(date)
+#
+
 [Unit]
 Description=BIND Domain Name Server
 Documentation=man:named(8)

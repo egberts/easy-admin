@@ -15,15 +15,20 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 source ./easy-admin-installer.sh
 
+SYSD_BIND_TEMPLATE_SVCNAME="named"
+SYSD_BIND_SVCNAME="named"
+SYSD_BIND_ALT_SVCNAME="bind"
+
 source ./distro-os.sh
 
 # ISC Bind9 configuration filename default
 if [ -z "$INSTANCE" ]; then
   NAMED_CONF_FILEPART="named"
   INSTANCE_DIRPATH=""
+  INSTANCE_FILEPART=""
 else
   NAMED_CONF_FILEPART="named-$INSTANCE"
-  INSTANCE_DIRPATH="/$INSTANCE"
+  INSTANCE_FILEPART="-$INSTANCE"
 fi
 NAMED_CONF_FILETYPE=".conf"
 NAMED_CONF_FILENAME="${NAMED_CONF_FILEPART}${NAMED_CONF_FILETYPE}"
@@ -33,6 +38,7 @@ case $ID in
     USER_NAME="bind"
     GROUP_NAME="bind"
     ETC_SUB_DIRNAME="bind"
+    VAR_SUB_DIRNAME="bind"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="/var/cache/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-bind}"
@@ -43,7 +49,11 @@ case $ID in
       DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     fi
     package_tarname="bind9"
-    systemd_unitname="named"
+    if [ "$VERSION_ID" -ge 11 ]; then
+      systemd_unitname="named"
+    else
+      systemd_unitname="bind"
+    fi
     sysvinit_unitname="named"  # used to be 'bind', quit shifting around
     default_chroot_dirspec="/var/lib/named"
     ;;
@@ -51,6 +61,7 @@ case $ID in
     USER_NAME="named"
     GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
+    VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
@@ -66,6 +77,7 @@ case $ID in
     GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
+    VAR_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="/var/${VAR_LIB_NAMED_DIRNAME}"
@@ -79,6 +91,7 @@ case $ID in
     USER_NAME="named"
     GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
+    VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
@@ -93,6 +106,7 @@ case $ID in
     USER_NAME="named"
     GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
+    VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
     HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
@@ -113,13 +127,18 @@ else
   extended_sysconfdir="${sysconfdir}"
 fi
 ETC_NAMED_DIRSPEC="$extended_sysconfdir"
+VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
 
+INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}"
 INSTANCE_SYSCONFDIR="${extended_sysconfdir}"
 INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
 INSTANCE_LOG_DIR="/var/log/$LOG_SUB_DIRNAME"
+INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}"
 if [ -n "$INSTANCE" ]; then
+  INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}/$INSTANCE"
   INSTANCE_SYSCONFDIR="${extended_sysconfdir}/${INSTANCE}"
   INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/$INSTANCE"
+  INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}/$INSTANCE"
   INSTANCE_LOG_DIR="/var/log/$LOG_SUB_DIRNAME/$INSTANCE"
 fi
 
@@ -160,8 +179,8 @@ DEFAULT_ZONE_DB_DIRNAME_ALT_A=("primary", "secondary", "hint", "mirror", "redire
 DEFAULT_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
 
 # WHY WOULD WE WANT /etc/named/keys?  We have /var[/lib]/named/keys
-# I suspect that rndc, XFER, AXFR, and DDNS keys go into /etc/named/keys
-# and DNSSEC go into /var[/lib]/named/keys.
+# Perhaps statically-defined rndc, XFER, AXFR, and DDNS keys go into /etc/named/keys
+# and dynamically-created DNSSEC go into /var[/lib]/named/keys.
 
 DEFAULT_CONF_KEYS_DIRSPEC="${INSTANCE_SYSCONFDIR}/keys"
 DEFAULT_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
@@ -281,9 +300,13 @@ DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
+INSTANCE_CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
+INSTANCE_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
+INSTANCE_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
+INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 if [ -n "$INSTANCE" ]; then
   BIND_INIT_DEFAULT_FILENAME="${sysvinit_unitname}-$INSTANCE"
-  INSTANCE_CONF_KEYS_DIRSPEC="${INSTANCE_SYSCONFDIR}/keys"
+  INSTANCE_CONF_KEYS_DIRSPEC="${INSTANCE_SYSCONFDIR}/${INSTANCE}/keys"
   INSTANCE_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
   INSTANCE_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
   INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
@@ -291,6 +314,30 @@ fi
 INSTANCE_INIT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$BIND_INIT_DEFAULT_FILENAME"
 
 
-
 BIND_SERVICE_FILENAME="${sysvinit_unitname}"
+
+# /var/lib/bind[/instance]/dynamic
+# clause: 'options' 
+# statement: 'managed-keys-directory' 
+MANAGED_KEYS_DIRSPEC="${INSTANCE_DYNAMIC_DIRSPEC}"
+# clause: 'zone'
+# statement: 'key-directory'
+ZONE_KEYS_DIRSPEC="${INSTANCE_KEYS_DB_DIRSPEC}"
+
+# /var/cache/bind[/instance]
+# all definable within named.conf
+JOURNAL_DIRSPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
+JOURNAL_FILENAME="${JOURNAL_DIRSPEC}/myzone.jnl"  # zone 'journal' directive
+# clause: 'options' 
+# statement: 'dump-file'
+DUMP_CACHE_FILENAME="named_dump.db"  # compiled-in default
+DUMP_CACHE_DIRSPEC="$INSTANCE_VAR_CACHE_NAMED_DIRSPEC"  # compiled-in default to $HOME/$CWD
+DUMP_CACHE_FILESPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}/$DUMP_CACHE_FILENAME"
+
+# named.conf 'options' 'session-keyfile'
+# default 'session-keyfile' directory path is compiled-in to $CWD 
+#   default directory path is typically /etc/passwd:$HOME
+SESSION_KEYFILE_DIRSPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
+# default 'session-keyfile' filename is compiled-in to 'session.key'
+SESSION_KEYFILE_FILENAME="${SESSION_KEYFILE_DIRSPEC}/session.key" #  'session-keyfile'
 

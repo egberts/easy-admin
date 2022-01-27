@@ -1,6 +1,7 @@
 #!/bin/bash
 # File: 513-dns-bind9-rndc-confs.sh
 # Title: Create rndc configuration file for Bind9
+#
 # Description:
 #   Creates the rndc by systemd unit instance.
 #   Generates the final-form 'rndc-<instance>.conf' in /etc/bind directory
@@ -29,8 +30,11 @@
 
 source ./maintainer-dns-isc.sh
 
-function create_rndc_conf_header() {
-    echo "Creating ${CHROOT_DIR}$CORE_RNDC_CONF_FILESPEC ..."
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dns-bind9-rndc-conf${INSTANCE_PART}.sh"
+
+function create_rndc_conf_header() 
+{
+    echo "Creating ${BUILDROOT}${CHROOT_DIR}$CORE_RNDC_CONF_FILESPEC ..."
     flex_touch "$CORE_RNDC_CONF_FILESPEC"
     cat << EOF | tee "${BUILDROOT}${CHROOT_DIR}$CORE_RNDC_CONF_FILESPEC" >/dev/null
 #

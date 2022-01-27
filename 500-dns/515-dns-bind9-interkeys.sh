@@ -10,7 +10,7 @@
 #   - KEY_ALGORITHM - hmac-sha512, hmac-sha384, hmac-sha256,
 #                     hmac-sha224, hmac-sha1, hmac-md5
 #
-echo "Create a key for both DHCP and DNS to securely communicate
+echo "Create a key for both DHCP and DNS to securely communicate"
 echo
 
 source ./maintainer-dns-isc.sh
