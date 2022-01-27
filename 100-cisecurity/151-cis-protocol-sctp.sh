@@ -16,7 +16,7 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   rm -f "$FILE_SETTINGS_FILESPEC"
 fi
 
-source ./easy-admin-installer.sh
+source ../easy-admin-installer.sh
 
 sctp_module="sctp"
 

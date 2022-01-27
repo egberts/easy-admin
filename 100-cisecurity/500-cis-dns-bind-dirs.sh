@@ -100,7 +100,7 @@ fi
 # Begin of maintainer-dns-isc.sh
 BUILDROOT="${BUILDROOT:-build}"
 
-source ./easy-admin-installer.sh
+source ../easy-admin-installer.sh
 
 # Begin of distro-os.sh
 source /etc/os-release
@@ -111,18 +111,18 @@ source /etc/os-release
 # libdir and $HOME are three separate grouping (that Fedora, et. al. merged)
 case $ID in
   debian|devuan)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
+    DISTRO_PREFIX="/usr"
+    DISTRO_EXEC_PREFIX="/usr"
+    DISTRO_LOCALSTATEDIR=""
+    DISTRO_SYSCONFDIR="/etc"
     DEFAULT_LIB_DIRSPEC="/var/lib"
     WHEEL_GROUP="sudo"
     ;;
   centos|fedora|redhat)
-    DEFAULT_PREFIX="/usr"
-    DEFAULT_EXEC_PREFIX="/usr"
-    DEFAULT_LOCALSTATEDIR=""
-    DEFAULT_SYSCONFDIR="/etc"
+    DISTRO_PREFIX="/usr"
+    DISTRO_EXEC_PREFIX="/usr"
+    DISTRO_LOCALSTATEDIR=""
+    DISTRO_SYSCONFDIR="/etc"
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
@@ -133,12 +133,12 @@ case $ID in
 esac
 
 # Vendor-specific autotool/autoconf
-prefix="${prefix:-${DEFAULT_PREFIX}}"
-sysconfdir="${sysconfdir:-${DEFAULT_SYSCONFDIR}}"
-exec_prefix="${exec_prefix:-${DEFAULT_EXEC_PREFIX}}"
+prefix="${prefix:-${DISTRO_PREFIX}}"
+sysconfdir="${sysconfdir:-${DISTRO_SYSCONFDIR}}"
+exec_prefix="${exec_prefix:-${DISTRO_EXEC_PREFIX}}"
 libdir="${libdir:-"${DEFAULT_LIB_DIRSPEC}"}"
 libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"
-localstatedir="${localstatedir:-"$DEFAULT_LOCALSTATEDIR"}"
+localstatedir="${localstatedir:-"$DISTRO_LOCALSTATEDIR"}"
 datarootdir="${datarootdir:-"${prefix}/share"}"
 sharedstatedir="${sharedstatedir:-"${prefix}/com"}"
 bindir="${bindir:-"${exec_prefix}/bin"}"
