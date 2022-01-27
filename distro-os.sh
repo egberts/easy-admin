@@ -52,6 +52,14 @@ case $ID in
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
+  arch)
+    DISTRO_PREFIX=""
+    DISTRO_EXEC_PREFIX="/usr"
+    DISTRO_LOCALSTATEDIR=""
+    DISTRO_SYSCONFDIR="/etc"
+    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
+    WHEEL_GROUP="wheel"
+    ;;
   *)
     echo "Unknown Operating System; undefined action; aborted."
     exit 3
@@ -60,7 +68,8 @@ esac
 
 DISTRO_ETC_DIRSPEC="$DISTRO_SYSCONFDIR"
 
-# Vendor-specific autotool/autoconf
+# Vendor-specific autotool/autoconf,
+# only set of violations of lowercase variable names crossing to other scripts
 prefix="${prefix:-${DISTRO_PREFIX}}"
 sysconfdir="${sysconfdir:-${DISTRO_SYSCONFDIR}}"
 exec_prefix="${exec_prefix:-${prefix:-$DISTRO_EXEC_PREFIX}}"
