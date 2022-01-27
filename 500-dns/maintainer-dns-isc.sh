@@ -13,13 +13,13 @@ CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-source ./easy-admin-installer.sh
+source ../easy-admin-installer.sh
 
 SYSD_BIND_TEMPLATE_SVCNAME="named"
 SYSD_BIND_SVCNAME="named"
 SYSD_BIND_ALT_SVCNAME="bind"
 
-source ./distro-os.sh
+source ../distro-os.sh
 
 # ISC Bind9 configuration filename default
 if [ -z "$INSTANCE" ]; then
