@@ -238,51 +238,62 @@ echo "-----------"
 # Concurrency of different resolver daemons
 if [ -n "$NETWORKMANAGER_BIN" ] && [ -n "$SYSTEMCTL_BIN" ]; then
   # Both binaries exist
-  echo "checkpoint 1"
+  echo "Both NetworkManager and systemctl binaries exist."
   # And its up and running, both resolver daemon
   if [ "$SYSD_NETWORKMANAGER_SVC_ACTIVE" == "active" ] && \
      [ "$SYSD_RESOLVED_SVC_ACTIVE" == "active" ]; then 
+    echo "Both NetworkManager and systemd-resolverd are active."
 
     # Need to figure out WHO has precedence (systemd-resolved or NetworkManager)
     # did NetworkManager configure it right?
     # Does NetworkManager own the /etc/resolv.conf?
     if [ "$RESOLV_FILELINK" == "NetworkManager" ]; then
+      echo "NetworkManager currently has control of /etc/resolv.conf via symlink"
 
       if [ -z "$NETWORKMANAGER_INI_SYSTEMD_RESOLVED" ] || \
          [ "$NETWORKMANAGER_INI_SYSTEMD_RESOLVED" == "true" ]; then
+        echo "systemd-resolverd ALSO has control of /etc/resolv.conf"
         echo "NetworkManager config is missing the following:"
         echo "    [main]"
         echo "    systemd-resolved=false"
       else
-        echo "NetworkManager controls /etc/resolv.conf"
+        echo "systemd-resolverd does not control /etc/resolv.conf"
+        echo "NetworkManager FULLY controls /etc/resolv.conf"
         echo "Looks good."
       fi
       if [ -z "$NETWORKMANAGER_INI_DNS" ] || \
          [ "$NETWORKMANAGER_INI_DNS" == "true" ]; then
-        echo "NetworkManager config is missing the following:"
+        echo "NetworkManager controls 'nameserver' entries in resolv.conf"
+        echo "NetworkManager config may be missing the following setting:"
         echo "    [main]"
         echo "    dns=none"
       else
-        echo "Systemd-networkd controls /etc/resolv.conf"
+        echo "NetworkManager does not update 'nameserver' in /etc/resolv.conf"
         echo "Looks good."
       fi
     elif [ "$RESOLV_FILELINK" == "systemd-resolved" ]; then
+      echo "systemd-resolverd has control of /etc/resolv.conf via symlink."
       if [ -z "$NETWORKMANAGER_INI_SYSTEMD_RESOLVED" ] || \
          [ "$NETWORKMANAGER_INI_SYSTEMD_RESOLVED" == "false" ]; then
-        echo "NetworkManager config is missing the following:"
+        echo "NetworkManager ALSO ass control of /etc/resolv.conf."
+        echo "NetworkManager config may be missing the following setting:"
         echo "    [main]"
         echo "    systemd-resolved=true"
+	echo "then do"
+	echo "  sudo service network-manager restart"
       else
-        echo "systemd-resolved controls /etc/resolv.conf"
+        echo "systemd-resolved FULLY controls /etc/resolv.conf"
         echo "Looks good."
       fi
       if [ -z "$NETWORKMANAGER_INI_DNS" ] || \
          [ "$NETWORKMANAGER_INI_DNS" == "true" ]; then
-        echo "NetworkManager config is missing the following:"
+        echo "NetworkManager config may be missing the following:"
         echo "    [main]"
         echo "    dns=none"
+	echo "then do"
+	echo "  sudo service network-manager restart"
       else
-        echo "Systemd-networkd controls /etc/resolv.conf"
+        echo "NetworkManager will not 'nameserver' in /etc/resolv.conf"
         echo "Looks good."
       fi
     fi

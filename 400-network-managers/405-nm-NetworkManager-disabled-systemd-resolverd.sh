@@ -11,6 +11,7 @@ source ./maintainer-NetworkManager.sh
 
 FILE_SETTINGS_FILESPEC="file-NetworkManager-conf.d-sysd-resolvered-disable.sh"
 
+
 FILENAME="no-systemd-resolved.conf"
 FILEPATH="/etc/NetworkManager/conf.d"
 FILESPEC="$FILEPATH/$FILENAME"
