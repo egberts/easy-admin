@@ -9,6 +9,17 @@ DNS_DOMAIN_NAME_SEARCH="leo"
 
 echo "Creating a subnet for virtual machine LAN (sudo pwd prompt)..."
 
+if [ "$USER" != 'root' ]; then
+  echo "May prompt for sudo password..."
+  echo
+fi
+echo "May mess with your network settings; do not do this remotely"
+read -rp "Enter in 'continue' to ... continue: "
+if [ "$REPLY" != 'continue' ]; then
+  echo "Aborted."
+  exit 3
+fi
+
 # Hide any error message during connection deletion
 sudo nmcli c delete bridge-vmbr0 >/dev/null 2>&1
 sudo nmcli c delete vmbr0 >/dev/null 2>&1

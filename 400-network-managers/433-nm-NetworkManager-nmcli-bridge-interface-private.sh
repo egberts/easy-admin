@@ -7,6 +7,19 @@
 #  man nm-settings(5)
 #  man nm-settings-nmcli(5)
 #
+echo "Under NetworkManager, create private LAN bridge interface"
+echo
+
+if [ "$USER" != 'root' ]; then
+  echo "May prompt for sudo password..."
+  echo
+fi
+echo "May mess with your network settings; do not do this remotely"
+read -rp "Enter in 'continue' to ... continue: "
+if [ "$REPLY" != 'continue' ]; then
+  echo "Aborted."
+  exit 3
+fi
 
 # get gateway netdev
 GW_NETDEV="$(ip -o route show  | grep default | awk '{print $5}')"

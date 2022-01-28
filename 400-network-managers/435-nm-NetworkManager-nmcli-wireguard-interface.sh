@@ -48,6 +48,20 @@
 #   util-linux (/usr/bin/whereis)
 #   coreutils (cat, date, tee, mkdir, chown, chmod)
 
+echo "Set up Wireguard under NetworkManager"
+echo
+
+if [ "$USER" != 'root' ]; then
+  echo "May prompt for sudo password..."
+  echo
+fi
+echo "May mess with your network settings; do not do this remotely"
+read -rp "Enter in 'continue' to ... continue: "
+if [ "$REPLY" != 'continue' ]; then
+  echo "Aborted."
+  exit 3
+fi
+
 VERSION=$(wg --version)
 echo "Wireguard ver; $VERSION"
 if [ "$USER" == "root" ] || [ "$GROUP" == "root" ]; then

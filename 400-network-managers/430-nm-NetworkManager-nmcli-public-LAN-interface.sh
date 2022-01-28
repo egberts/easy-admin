@@ -5,8 +5,17 @@
 #
 
 echo "Under NetworkManager, create dynamic IPv4 interface for public LAN"
-echo "May prompt for sudo password..."
-echo
+
+if [ "$USER" != 'root' ]; then
+  echo "May prompt for sudo password..."
+  echo
+fi
+echo "May mess with your network settings; do not do this remotely"
+read -rp "Enter in 'continue' to ... continue: "
+if [ "$REPLY" != 'continue' ]; then
+  echo "Aborted."
+  exit 3
+fi
 
 nm_filelist="$(find /etc/NetworkManager/ -maxdepth 1 -type f)"
 

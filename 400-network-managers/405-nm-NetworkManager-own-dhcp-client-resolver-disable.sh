@@ -2,7 +2,7 @@
 # File: 405-nm-NetworkManager-own-dhcp-client-resolver-disable.sh
 # Title: Prevent NetworkManager's own DHCP client from updating /etc/resolv.conf
 #
-# NOTE: This does nothing toward other DHCP clients (outside of Network Manager'lsb_release
+# NOTE: This does nothing toward other DHCP clients (outside of Network Manager
 #       own builtin DHCP client).  This script is often useful for use with
 #       ISC DHCP (dhclient) client package.
 
@@ -11,7 +11,7 @@ echo
 
 source ./maintainer-NetworkManager.sh
 
-FILE_SETTINGS_FILESPEC="file-NetworkManager-conf.d-dhcp-client-resolver.sh"
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-dhcp-client-resolver.sh"
 
 flex_mkdir "$NETWORKMANAGER_CONFD_DIRSPEC"
 
@@ -26,11 +26,11 @@ cat << NM_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
 # Path: $FILEPATH
 # Title: Prevent NetworkManager's own DHCP client from updating /etc/resolv.conf
 #
-# NOTE: This does nothing toward other DHCP clients (outside of Network Manager'lsb_release
+# NOTE: This does nothing toward other DHCP clients (outside of Network Manager'
 #       own builtin DHCP client).  This script is often useful for use with
 #       ISC DHCP (dhclient) client package.
 #
-# Creator: $(realpath "$0")
+# Creator: $(basename "$0")
 # Date: $(date)
 #
 

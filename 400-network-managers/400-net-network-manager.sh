@@ -5,6 +5,15 @@
 # Description:
 #   Turns off systemd-networkd, SysV, and other weird init stuff.
 
+echo "Check this host to ensure that NetworkManager is up and running"
+echo 
+if [ "$USER" != 'root' ]; then
+  echo "Requires 'sudo' only to read OS stuff"
+  echo "Press ENTER to continue (sudo prompt may appear)"
+  echo "Press Ctrl-C to exit"
+  read REPLY
+fi
+
 SYSTEMCTL_BIN="$(which systemctl)"
 if [ -z "$SYSTEMCTL_BIN" ]; then
   echo "systemd is not installed; exiting ..."
