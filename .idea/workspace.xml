@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3506d23b-fed5-4503-936f-4db8b8e6f5b1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+    <list default="true" id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/400-network-managers/405-network-manager-wifi-privacy.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-disabled-systemd-resolverd.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-own-dhcp-client-resolver-disable.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/easy-admin.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/easy-admin.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/410-net-dhcp-server/411-net-dhcp-server-isc.sh" beforeDir="false" afterPath="$PROJECT_DIR$/410-net-dhcp-server/411-net-dhcp-server-isc.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/410-net-dhcp-server/dhcp-isc-common.sh" beforeDir="false" afterPath="$PROJECT_DIR$/410-net-dhcp-server/dhcp-isc-common.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/480-ntp-chrony/482-net-ntp-chrony-patch-debian.sh" beforeDir="false" afterPath="$PROJECT_DIR$/480-ntp-chrony/482-net-ntp-chrony-patch-debian.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/480-ntp-chrony/chrony-ntp-common.sh" beforeDir="false" afterPath="$PROJECT_DIR$/480-ntp-chrony/chrony-ntp-common.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/480-ntp-chrony/os-distro.sh" beforeDir="false" afterPath="$PROJECT_DIR$/480-ntp-chrony/os-distro.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/400-network-managers/410-net-networkmanager-resolv-disable.sh" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,28 +19,81 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="23Sx9GK6KGgkPiioLQscvL4oPri" />
+  <component name="ProjectId" id="249TBZ5118M3S4ZgG6x9l31nSSt" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/400-network-managers" />
+    <property name="settings.editor.selected.configurable" value="preferences.editor.code.editing" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/400-network-managers" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Shell Script.404-network-manager-nm-misc.sh">
+    <configuration name="404-network-manager-nm-misc.sh" type="ShConfigurationType" temporary="true">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/400-network-managers/404-network-manager-nm-misc.sh" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/400-network-managers" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="/bin/bash" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Shell Script.nm-resolve-disable" />
+      <item itemvalue="Shell Script.404-network-manager-nm-misc.sh" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Shell Script.404-network-manager-nm-misc.sh" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="3506d23b-fed5-4503-936f-4db8b8e6f5b1" name="Changes" comment="" />
-      <created>1641741156102</created>
+      <changelist id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="" />
+      <created>1643041667860</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1641741156102</updated>
+      <updated>1643041667860</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
