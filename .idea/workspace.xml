@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/400-network-managers/405-network-manager-wifi-privacy.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-disabled-systemd-resolverd.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-own-dhcp-client-resolver-disable.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/easy-admin.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/easy-admin.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="Split apart the 'nm-misc' file into three separate options.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/400-network-managers/410-net-networkmanager-resolv-disable.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/400-network-managers/403-net-resolv-check.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/403-nm-resolver-check.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/400-network-managers/405-network-manager-wifi-privacy.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-wifi-privacy.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/400-network-managers/430-net-public-nmcli.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/430-nm-NetworkManager-nmcli-public-LAN-interface.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/400-network-managers/433-net-bridge-private-nmcli.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/433-nm-NetworkManager-nmcli-bridge-interface-private.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/400-network-managers/435-net-wireguard-nmcli.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/435-net-wireguard-nmcli.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,6 +81,14 @@
       <option name="presentableId" value="Default" />
       <updated>1643041667860</updated>
     </task>
+    <task id="LOCAL-00001" summary="Split apart the 'nm-misc' file into three separate options.">
+      <created>1643380323312</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1643380323312</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -95,5 +101,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Split apart the 'nm-misc' file into three separate options." />
+    <option name="LAST_COMMIT_MESSAGE" value="Split apart the 'nm-misc' file into three separate options." />
   </component>
 </project>

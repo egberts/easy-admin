@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# File: 430-net-bridge-nmcli-private.sh
+# File: 433-nm-NetworkManager-nmcli-bridge-interface-private.sh
 # Title: Create a private LAN bridge
 #
 # References:

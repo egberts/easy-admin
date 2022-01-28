@@ -1,5 +1,5 @@
 #!/bin/bash
-# File: 403-net-resolv-check.sh
+# File: 403-nm-resolver-check.sh
 # Title: Check out the /etc/resolv.conf to ensure that it is working
 # Description:
 #

@@ -1,5 +1,5 @@
 #!/bin/bash
-# File: 405-network-manager-wifi-privacy.sh
+# File: 405-nm-NetworkManager-wifi-privacy.sh
 # Title: Disable Wifi Privacy by preventing randomizing MAC address
 #
 # Description:

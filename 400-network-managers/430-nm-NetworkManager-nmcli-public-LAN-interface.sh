@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# File: 431-net-nmcli-public.sh
+# File: 430-nm-NetworkManager-nmcli-public-LAN-interface.sh
 # Title: Create a public LAN interface
 #
 
 echo "Under NetworkManager, create dynamic IPv4 interface for public LAN"
 echo "May prompt for sudo password..."
-echo ""
+echo
 
 nm_filelist="$(find /etc/NetworkManager/ -maxdepth 1 -type f)"
 
@@ -56,5 +56,5 @@ sudo nmcli c down "$interface_name"
 sudo nmcli c up "$interface_name"
 
 sudo systemctl try-restart NetworkManager.service
-echo ""
+echo
 echo "Done."

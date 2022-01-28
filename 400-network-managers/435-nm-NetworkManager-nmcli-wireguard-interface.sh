@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# File: 435-net-wireguard.sh
+# File: 435-nm-NetworkManager-nmcli-wireguard-interface.sh
 # Title: wireguard configurator
 # Description:
 #   A bash-based Wireguard configurator that

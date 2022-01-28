@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# File: 440-net-macvlan-nmcli-vm.sh
+# File: 438-nm-NetworkManager-nmcli-bridge-closenet.sh
 # Title: Create a virtual machine LAN bridge
 #
 PRIVATE_LAN_IP="172.28.200.1"
