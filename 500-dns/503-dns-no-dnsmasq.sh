@@ -2,6 +2,8 @@
 # File: 503-dns-no-dnsmasq.sh
 # Title: Ensure that DNSMASQ is NOT running
 
+echo "Disable dnsmasq service"
+echo
 source ./maintainer-dns-isc.sh
 
 echo "Checking for existance of /etc/dnsmasq.conf file..."
@@ -9,10 +11,10 @@ if [ -f /etc/dnsmasq.conf ]; then
   echo "Disable the dnsmasq; those are used by tiny embedded systems"
   echo "Execute:"
   case $ID in
-    debian)
+    debian|devuan)
       echo "  apt purge dnsmasq-base"
       ;;
-    fedora)
+    fedora|centos|redhat)
       echo "  rpm -q --configfiles dnsmasq"
       echo "  dnf remove dnsmasq"
       ;;
@@ -33,5 +35,5 @@ else
   echo "Disabling dnsmasq.service..."
   sudo systemctl disable dnsmasq.service
 fi
+echo
 echo "Done."
-exit 0
