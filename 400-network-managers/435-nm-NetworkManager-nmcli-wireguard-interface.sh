@@ -5,6 +5,7 @@
 #   A bash-based Wireguard configurator that
 #   can set up any type of network layouts in
 #   [TODO: beginner or] expert configuration mode.
+#   [TODO: 'wireguard.mtu' goes under 'connection' section, useful?
 #
 #   NOTE: This script will not insert '0.0.0.0/0' into the
 #         [Peer] 'AllowedIPs' as a security measure.
