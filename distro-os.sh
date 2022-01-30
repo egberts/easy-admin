@@ -24,6 +24,9 @@ VAR_LIB_DIRSPEC="${VAR_DIRSPEC}/lib"
 USR_LIB_DIRSPEC="${USR_DIRSPEC}/lib"
 
 # systemd
+# systemd service filetype
+# shellcheck disable=SC2034
+SYSTEMD_SERVICE_FILETYPE="service"
 # shellcheck disable=SC2034
 ETC_SYSTEMD_DIRSPEC="/etc/systemd"
 # shellcheck disable=SC2034
