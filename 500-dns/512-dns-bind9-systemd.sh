@@ -39,8 +39,8 @@ if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
 else
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
-  echo "Creating subdirectories to $BUILDROOT$CHROOT_DIR/$sysconfdir ..."
-  mkdir -p "${BUILDROOT}${CHROOT_DIR}/$sysconfdir"
+  echo "Creating subdirectories to $BUILDROOT$CHROOT_DIR$sysconfdir ..."
+  mkdir -p "${BUILDROOT}${CHROOT_DIR}$sysconfdir"
 
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
@@ -89,8 +89,8 @@ if [ "$systemd_unitname" == "bind" ]; then
 
   FILENAME="unit-conflicts.conf"
   FILESPEC=$TEMPLATE_SYSD_DROPIN_DIRSPEC/${FILENAME}
-  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
-  cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" >/dev/null
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
+  cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
 #
 # File: ${FILENAME}
 # Path: ${TEMPLATE_SYSD_DROPIN_DIRSPEC}
@@ -124,8 +124,8 @@ if [ -L "$FILESPEC" ]; then
   echo "Symbolic link?!  Remove it"
   rm "$FILESPEC"
 fi
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
-cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
+cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 # File: ${FILENAME}
 # Path: ${FILEPATH}
@@ -299,8 +299,8 @@ echo ""
 FILENAME="$SYSD_BIND_TEMPLATE_SVCNAME"
 FILEPATH="$ETC_SYSTEMD_SYSTEM_DIRSPEC"
 FILESPEC="${FILEPATH}/$FILENAME"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
-cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
+cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 # File: $FILENAME
 # Path: $FILEPATH
