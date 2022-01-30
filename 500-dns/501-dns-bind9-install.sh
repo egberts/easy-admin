@@ -2,10 +2,13 @@
 # File: 500-dns-bind9-install.sh
 # Title: Install ISC Bind9 server
 
+echo "Install ISC Bind9 server, complete with development and document packages"
+echo
+
 source ./distro-os.sh
 
 case $ID in
-  debian)
+  debian|devuan)
     apt install bind9 bind9-dnsutils bind9-doc
     echo "Installing named-checkconf Bind9 syntax checker tool..."
     apt install bind9-utils
@@ -15,21 +18,7 @@ case $ID in
     # apt install libtool-bin
     # apt install libcap-dev
     ;;
-  redhat)
-    dnf install bind-libs
-    dnf install bind
-    dnf install bind-dlz-filesystem
-    # dnf install bind-chroot
-    # dnf install bind-doc
-    ;;
-  centos)
-    dnf install bind-libs
-    dnf install bind
-    dnf install bind-dlz-filesystem
-    # dnf install bind-chroot
-    # dnf install bind-doc
-    ;;
-  fedora)
+  fedora|centos|redhat)
     dnf install bind-dnssec-doc
     dnf install bind-libs
     dnf install python3-bind
@@ -50,3 +39,5 @@ case $ID in
     ;;
 esac
 
+echo
+echo "Done."
