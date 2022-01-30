@@ -67,11 +67,11 @@ function create_sysv_default() {
   flex_mkdir "$ETC_DIRSPEC"
   flex_mkdir "$INIT_DEFAULT_DIRSPEC"
 
-  echo "Creating ${BUILDROOT}${CHROOT_DIR}$BIND_INIT_DEFAULT_FILENAME"
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}$INSTANCE_INIT_DEFAULT_FILESPEC"
   cat << EOF | tee "${BUILDROOT}${CHROOT_DIR}$INSTANCE_INIT_DEFAULT_FILESPEC" >/dev/null
 
 #
-# File: ${BIND_INIT_DEFAULT_FILENAME}
+# File: ${INSTANCE_INIT_DEFAULT_FILENAME}
 # Path: ${INIT_DEFAULT_DIRSPEC}
 # Title: Bind9 configuration for SysV/systemd service startup
 # Description:
