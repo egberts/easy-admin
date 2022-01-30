@@ -21,17 +21,31 @@ SYSD_BIND_ALT_SVCNAME="bind"
 
 source ../distro-os.sh
 
-# ISC Bind9 configuration filename default
-if [ -z "$INSTANCE" ]; then
-  NAMED_CONF_FILEPART="named"
-  INSTANCE_DIRPATH=""
-  INSTANCE_FILEPART=""
-else
-  NAMED_CONF_FILEPART="named-$INSTANCE"
-  INSTANCE_FILEPART="-$INSTANCE"
-fi
+NAMED_CONF_FILEPART="named"
 NAMED_CONF_FILETYPE=".conf"
 NAMED_CONF_FILENAME="${NAMED_CONF_FILEPART}${NAMED_CONF_FILETYPE}"
+
+RNDC_KEYNAME="rndc-key"
+RNDC_PORT="953"
+
+RNDC_CONF_FILEPART="rndc"
+RNDC_CONF_FILETYPE=".conf"
+RNDC_CONF_FILENAME="${RNDC_CONF_FILEPART}${RNDC_CONF_FILETYPE}"
+
+RNDC_KEY_FILEPART="rndc"
+RNDC_KEY_FILETYPE=".key"
+RNDC_KEY_FILENAME="${RNDC_KEY_FILEPART}${RNDC_KEY_FILETYPE}"
+
+# ISC Bind9 configuration filename default
+if [ -z "$INSTANCE" ]; then
+  INSTANCE_SUBDIRPATH=""
+  INSTANCE_NAMED_CONF_FILEPART_SUFFIX=""
+else
+  INSTANCE_SUBDIRPATH="/$INSTANCE"
+  INSTANCE_NAMED_CONF_FILEPART_SUFFIX="-$INSTANCE"
+fi
+INSTANCE_NAMED_CONF_FILENAME="${NAMED_CONF_FILENAME}"
+INSTANCE_RNDC_CONF_FILENAME="${RNDC_CONF_FILENAME}"
 
 case $ID in
   debian|devuan)
@@ -40,7 +54,7 @@ case $ID in
     ETC_SUB_DIRNAME="bind"
     VAR_SUB_DIRNAME="bind"
     LOG_SUB_DIRNAME="named"
-    HOME_DIRSPEC="/var/cache/$USER_NAME"
+    DISTRO_HOME_DIRSPEC="/var/cache/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-bind}"
     VAR_LIB_NAMED_DIRSPEC="${VAR_DIRSPEC}/lib/${VAR_LIB_NAMED_DIRNAME}"
     if [ "$VERSION_ID" -ge 11 ]; then
@@ -57,50 +71,20 @@ case $ID in
     sysvinit_unitname="named"  # used to be 'bind', quit shifting around
     default_chroot_dirspec="/var/lib/named"
     ;;
-  fedora)
+  fedora|centos|redhat)
     USER_NAME="named"
     GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
-    VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
-    HOME_DIRSPEC="$localstatedir/$USER_NAME"
+    VAR_SUB_DIRNAME="named"
+    DISTRO_HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="/var/${VAR_LIB_NAMED_DIRNAME}"
     DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
-    systemd_unitname="named"
     sysvinit_unitname="named"
     default_chroot_dirspec="/var/named/chroot"
-    ;;
-  redhat)
-    USER_NAME="named"
-    GROUP_NAME="named"
-    ETC_SUB_DIRNAME="named"
-    LOG_SUB_DIRNAME="named"
-    VAR_SUB_DIRNAME="named"
-    HOME_DIRSPEC="$localstatedir/$USER_NAME"
-    VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
-    VAR_LIB_NAMED_DIRSPEC="/var/${VAR_LIB_NAMED_DIRNAME}"
-    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
-    package_tarname="bind"
-    systemd_unitname="named"
-    sysvinit_unitname="named"
-    default_chroot_dirspec="/var/named/chroot"
-    ;;
-  centos)
-    USER_NAME="named"
-    GROUP_NAME="named"
-    ETC_SUB_DIRNAME="named"
-    VAR_SUB_DIRNAME="named"
-    LOG_SUB_DIRNAME="named"
-    HOME_DIRSPEC="$localstatedir/$USER_NAME"
-    VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
-    VAR_LIB_NAMED_DIRSPEC="$libdir/${VAR_LIB_NAMED_DIRNAME}"
-    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
-    package_tarname="bind"
-    systemd_unitname="named"
-    sysvinit_unitname="named"
-    default_chroot_dirspec="/var/named/chroot"
+    SYSTEMD_NAMED_UNITNAME="named"
     ;;
   arch)
     USER_NAME="named"
@@ -108,14 +92,14 @@ case $ID in
     ETC_SUB_DIRNAME="named"
     VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
-    HOME_DIRSPEC="$localstatedir/$USER_NAME"
+    DISTRO_HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="$libdir/${VAR_LIB_NAMED_DIRNAME}"
     DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
-    systemd_unitname="named"
     sysvinit_unitname="named"
     default_chroot_dirspec="/var/named/chroot"
+    SYSTEMD_NAMED_UNITNAME="named"
     ;;
 esac
 
@@ -127,19 +111,42 @@ else
   extended_sysconfdir="${sysconfdir}"
 fi
 ETC_NAMED_DIRSPEC="$extended_sysconfdir"
+NAMED_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${NAMED_CONF_FILENAME}"
+SYSTEMD_NAMED_UNITNAME="$systemd_unitname"
+
+RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
+RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/keys"
+RNDC_CONF_FILESPEC="${RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
+RNDC_KEY_FILESPEC="${RNDC_KEY_DIRSPEC}/$RNDC_KEY_FILENAME"
+
 VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
 
-INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}"
-INSTANCE_SYSCONFDIR="${extended_sysconfdir}"
+SYSTEMD_NAMED_SERVICE="${SYSTEMD_NAMED_UNITNAME}.$SYSTEMD_SERVICE_FILETYPE"
+SYSTEMD_NAMED_INSTANCE_SERVICE="${SYSTEMD_NAMED_UNITNAME}@.$SYSTEMD_SERVICE_FILETYPE"
+
+INSTANCE_ETC_NAMED_DIRSPEC="${extended_sysconfdir}"
 INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
 INSTANCE_LOG_DIR="/var/log/$LOG_SUB_DIRNAME"
 INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}"
+INSTANCE_RNDC_CONF_DIRSPEC="$RNDC_CONF_DIRSPEC"
+INSTANCE_RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/keys"
+
+INSTANCE_RNDC_CONF_FILESPEC="${RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
+INSTANCE_RNDC_KEY_FILESPEC="$RNDC_KEY_FILESPEC"
+INSTANCE_SYSTEMD_NAMED_SERVICE="${SYSTEMD_NAMED_UNITNAME}.$SYSTEMD_SERVICE_FILETYPE"
+
 if [ -n "$INSTANCE" ]; then
-  INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}/$INSTANCE"
-  INSTANCE_SYSCONFDIR="${extended_sysconfdir}/${INSTANCE}"
+  INSTANCE_ETC_NAMED_DIRSPEC="${extended_sysconfdir}/${INSTANCE}"
   INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/$INSTANCE"
   INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}/$INSTANCE"
   INSTANCE_LOG_DIR="/var/log/$LOG_SUB_DIRNAME/$INSTANCE"
+  INSTANCE_RNDC_CONF_DIRSPEC="${RNDC_CONF_DIRSPEC}/$INSTANCE"
+  INSTANCE_RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/${INSTANCE}/keys"
+
+  INSTANCE_RNDC_CONF_FILESPEC="${INSTANCE_RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
+  INSTANCE_RNDC_KEY_FILESPEC="${INSTANCE_RNDC_KEY_DIRSPEC}/$RNDC_KEY_FILENAME"
+
+  INSTANCE_SYSTEMD_NAMED_SERVICE="${SYSTEMD_NAMED_UNITNAME}@${INSTANCE}.$SYSTEMD_SERVICE_FILETYPE"
 fi
 
 
@@ -153,14 +160,14 @@ DEFAULT_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 
 # $HOME is always treated separately from Zone DB; Only Fedora merges them
 #
-# named 'directory' statement is not the same as named $HOME directory.
+# named.conf 'directory' statement is not the same as named $HOME directory.
 # daemon's current working directory is not the same as ('directory' statement)
 # named $HOME directory is not the same as named daemon current working dir.
 # These three above things are ... three ... separate ... groups of files.
 #
 # Unmerging would make it easier for 'named' group to be doled out to
 # administrators' supplemental group ID list (much to Fedora's detriments)
-# and restrict these administrators to just updates of zones.
+# and enable restricting these administrators to just updates of DNS zones.
 #
 if [ -z "$NAMED_HOME_DIRSPEC" ]; then
   NAMED_HOME_DIRSPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $6}')"
@@ -178,11 +185,12 @@ DEFAULT_ZONE_DB_DIRNAME_ALT_A=("primary", "secondary", "hint", "mirror", "redire
 # DNSSEC-related & managed-keys/trust-anchors
 DEFAULT_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
 
-# WHY WOULD WE WANT /etc/named/keys?  We have /var[/lib]/named/keys
-# Perhaps statically-defined rndc, XFER, AXFR, and DDNS keys go into /etc/named/keys
-# and dynamically-created DNSSEC go into /var[/lib]/named/keys.
+# WHY WOULD WE WANT /var[/lib]/named/keys?  We have /etc/named/keys
+# Perhaps it refers to a statically-defined rndc, XFER, AXFR, and DDNS keys 
+# that go into /etc/named/keys
+# whereas the dynamically-created DNSSEC go into /var[/lib]/named/keys.
 
-DEFAULT_CONF_KEYS_DIRSPEC="${INSTANCE_SYSCONFDIR}/keys"
+DEFAULT_CONF_KEYS_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
 DEFAULT_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
 
 
@@ -242,12 +250,14 @@ echo "Using 'named' binary in: $named_bin"
 named_sbin_dirspec="$(dirname "$named_bin")"
 tool_dirspec="$(dirname "$named_sbin_dirspec")"
 
+named_sbin_filespec="${named_sbin_dirspec}/named"
+named_rndc_sbin_filespec="${named_sbin_dirspec}/rndc"
+named_checkconf_filespec="${named_sbin_dirspec}/named-checkconf"
+named_checkzone_filespec="${named_sbin_dirspec}/named-checkzone"
+named_compilezone_filespec="${named_sbin_dirspec}/named-compilezone"
+named_journalprint_filespec="${named_sbin_dirspec}/named-journalprint"
+
 named_bin_dirspec="${tool_dirspec}/bin"
-named_bin_filespec="${named_bin_dirspec}/named"
-named_checkconf_filespec="${named_bin_dirspec}/named-checkconf"
-named_checkzone_filespec="${named_bin_dirspec}/named-checkzone"
-named_compilezone_filespec="${named_bin_dirspec}/named-compilezone"
-named_journalprint_filespec="${named_bin_dirspec}/named-journalprint"
 named_rrchecker_filespec="${named_bin_dirspec}/named-rrchecker"
 
 # What to do with named.conf?
@@ -276,17 +286,18 @@ if [ -z "$INSTANCE" -a -z "$1" ]; then
       NAMED_CONF_FILESPEC="$DEFAULT_NAMED_CONF_FILESPEC"
       echo "Using ISC default named.conf: $DEFAULT_NAMED_CONF_FILESPEC"
     else
-      echo "Binary 'named' built-in config default: $SBIN_NAMED_CONF_FILESPEC"
+      echo "Binary 'named' has a built-in config default: $SBIN_NAMED_CONF_FILESPEC"
       NAMED_CONF_FILESPEC="$SBIN_NAMED_CONF_FILESPEC"
     fi
   fi
 else
-  if [ -z "$INSTANCE" ]; then
-    NAMED_CONF_FILESPEC="$1"
+  if [ -n "$1" ]; then
     echo "User-defined named.conf: $1"
-  else
-    NAMED_CONF_FILESPEC="$DEFAULT_NAMED_CONF_FILESPEC"
-    echo "Instance-defined named.conf: $NAMED_CONF_FILESPEC"
+    NAMED_CONF_FILESPEC="$1"
+  fi
+  if [ -n "$INSTANCE" ]; then
+    #INSTANCE_NAMED_CONF_FILESPEC="$DEFAULT_NAMED_CONF_FILESPEC"
+    echo "Instance-defined named.conf: $INSTANCE_NAMED_CONF_FILESPEC"
   fi
 fi
 
@@ -300,21 +311,26 @@ DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
+INSTANCE_NAMED_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}/${INSTANCE_NAMED_CONF_FILENAME}"
+
+INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}"
+INSTANCE_INIT_DEFAULT_FILENAME="${sysvinit_unitname}"
 INSTANCE_CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
-INSTANCE_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
-INSTANCE_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
-INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
+INSTANCE_KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
+INSTANCE_DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
+INSTANCE_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
+INSTANCE_RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 if [ -n "$INSTANCE" ]; then
-  BIND_INIT_DEFAULT_FILENAME="${sysvinit_unitname}-$INSTANCE"
-  INSTANCE_CONF_KEYS_DIRSPEC="${INSTANCE_SYSCONFDIR}/${INSTANCE}/keys"
+  INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}${INSTANCE_SUBDIRPATH}"
+  INSTANCE_INIT_DEFAULT_FILENAME="${sysvinit_unitname}-$INSTANCE"
+  INSTANCE_RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}"
+
+  INSTANCE_CONF_KEYS_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
   INSTANCE_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
   INSTANCE_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
   INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 fi
-INSTANCE_INIT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$BIND_INIT_DEFAULT_FILENAME"
-
-
-BIND_SERVICE_FILENAME="${sysvinit_unitname}"
+INSTANCE_INIT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$INSTANCE_INIT_DEFAULT_FILENAME"
 
 # /var/lib/bind[/instance]/dynamic
 # clause: 'options' 
