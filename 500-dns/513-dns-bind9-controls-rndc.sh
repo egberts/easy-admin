@@ -8,6 +8,9 @@
 #   Creates /etc/bind/named-key.conf
 #   Creates /etc/bind/rndc.conf (RNDC_CONF_FILESPEC)
 #   Creates /etc/bind/keys/rndc.key (RNDC_KEY_FILESPEC)
+#     apparmor check
+#     SELinux check
+#     file permission check
 #
 #   Restrict RNDC access of related files and netdev access 
 #   based on its intended usage.
@@ -18,17 +21,9 @@
 #     * power end-users using their own copy of an RNDC key
 #     * auto-evoked by other daemons/scripts
 # 
-# NOTE: There is no partial-admin-capability much less the remote 'read-only' 
-#   capability in ISC Bind named/rndc.  That is, there is no way 
-#   to separate read/write behavior within current 
-#   'rndc' design such that we can differentiate a system 
-#   administrator from a 'read-only' end-user.  
-#   End-user, if allowed, would have same 
-#   sysadmin privilege over IP network to add/delete DNS records.
-#
-# However, a read-only capability can be done at the same 
-# host by setting all *.conf and zone DB files to 
-# world-read (and their supporting directories).
+# NOTE: There is a 'read-only' directive for IP access to 
+#   named daemon for remote non-admin purpose.
+#   And there is file permission for local read-only as well.
 #
 # NOTE: named.conf provides ways for end-user/sysadmin to 
 #       separately update the:
@@ -144,6 +139,9 @@ cat << RNDC_MASTER_CONF | tee ${BUILDROOT}${CHROOT_DIR}/${filespec} > /dev/null
 # File: ${filename}
 # Path: ${filepath}
 # Title: RNDC configuration file
+# Read-only: false
+# IP interface: inet 127.0.0.1
+# IP Port: 953
 # Generator: $(basename $0)
 # Created on: $(date)
 #
@@ -161,8 +159,8 @@ echo
 flex_chmod 0640 "$filespec"
 flex_chown "root:$GROUP_NAME" "$filespec"
 
-filename="controls-named.conf"
-filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
+filename="$(basename $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
+filepath="$(dirname $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
 cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
@@ -170,11 +168,17 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 # File: ${filename}
 # Path: ${filepath}
 # Title: Control access to Bind9 (named) daemon by RNDC key 
+# Read-only: false
+# IP interface: inet 127.0.0.1
+# IP Port: 953
+#
 # Description:
 #   To be included by $INSTANCE_NAMED_CONF_FILESPEC file
+#
 # Generator: $(basename $0)
 # Created on: $(date)
 #
+
 controls {
 	inet 127.0.0.1 port ${RNDC_PORT} allow { 
 		127.0.0.1/32;
@@ -189,65 +193,31 @@ flex_chmod 0640 "$filespec"
 flex_chown "root:$GROUP_NAME" "$filespec"
 echo
 
-
-if [ $UID -eq 0 ]; then
-  if [ -n "$CHROOT_DIR" ]; then
-    # Check syntax of named.conf file
-    named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
-  fi
-
-  pushd .
-  cd ${BUILDROOT}${CHROOT_DIR}
-  $named_checkconf_filespec -c \
-    -i \
-    -p \
-    -x \
-    $named_chroot_opt \
-    $INSTANCE_NAMED_CONF_FILESPEC \
-    >/dev/null
-  retsts=$?
-  if [ $retsts -ne 0 ]; then
-    echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
-    $named_checkconf_filespec -c \
-      -i \
-      -p \
-      -x \
-      $named_chroot_opt \
-      $INSTANCE_NAMED_CONF_FILESPEC
-    echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
-    popd
-    exit $retsts
-  fi
-  popd
-  if [ $retsts -ne 0 ]; then
-    exit $retsts
-  else
-    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_NAMED_CONF_FILESPEC"
-  fi
-else
-  echo "NOTE: Unable to perform syntax-checking this in here."
-  echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"
-  echo "      ISC Bind9 Issue #3119"
-  echo
-  echo "When you finish moving settings into $ETC_NAMED_DIRSPEC, execute:"
-  echo "  $named_checkconf_filespec -i -p -c -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
+# Must check if file exist otherwise run named.conf init script
+if [ ! -f "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_NAMED_CONF_FILESPEC" ]; then
+  echo "File ${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_NAMED_CONF_FILESPEC is missing; aborted."
+  exit 9
 fi
-echo
+filename="$KEY_NAMED_CONF_FILENAME"
+filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
+filespec="${filepath}/$filename"
+echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
+cat << NAMED_KEY_CLAUSE_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+#
+# File: $filename
+# Path: $filepath
+# Title: This file holds all the 'key' clauses for named.conf 
+# Generator: $(basename $0)
+# Created on: $(date)
+#
 
-if [ "${BUILDROOT:0:1}" == '/' ]; then
-  echo "Restarting $SYSTEMD_NAMED_SERVICE service using 'systemctl restart'..."
-  systemctl restart "$INSTANCE_SYSTEMD_NAMED_SERVICE"
-  retsts=$?
-  echo "Checking RNDC control connection ..."
-  rndc -c "$INSTANCE_RNDC_CONF_FILESPEC" status
-  retsts=$?
-else
-  echo "Execute the following:"
-  echo "  systemctl restart $INSTANCE_SYSTEMD_NAMED_SERVICE"
-  echo "  rndc -c $INSTANCE_RNDC_CONF_FILESPEC status"
-fi
+include "$INSTANCE_RNDC_KEY_FILESPEC";  # RNDC control key
+
+NAMED_KEY_CLAUSE_CONF
+
+flex_chmod 0640 "$filespec"
+flex_chown "root:$GROUP_NAME" "$filespec"
 echo
-  
 
 if [ "$WORLD_READABLE" -eq 1 ]; then
   flex_chmod go+rx-w "$INSTANCE_ETC_NAMED_DIRSPEC"
@@ -268,3 +238,65 @@ else
 fi
 
 echo "Done."
+
+if [ $UID -ne 0 ]; then
+  echo "NOTE: Unable to perform syntax-checking this in here."
+  echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"
+  echo "      ISC Bind9 Issue #3119"
+  echo "You can execute:"
+  echo "  $named_checkconf_filespec -i -p -c -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
+  read -rp "Do you want to sudo the previous command? (Y/n): " -eiY
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
+fi
+if [ "$REPLY" != 'n' ]; then
+  if [ -n "$CHROOT_DIR" ]; then
+    # Check syntax of named.conf file
+    named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
+  fi
+
+  pushd . > /dev/null
+  cd ${BUILDROOT}${CHROOT_DIR}
+  sudo $named_checkconf_filespec -c \
+    -i \
+    -p \
+    -x \
+    $named_chroot_opt \
+    $INSTANCE_NAMED_CONF_FILESPEC \
+    >/dev/null
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
+    sudo $named_checkconf_filespec -c \
+      -i \
+      -p \
+      -x \
+      $named_chroot_opt \
+      $INSTANCE_NAMED_CONF_FILESPEC
+    echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
+    popd
+    exit $retsts
+  fi
+  popd > /dev/null
+  if [ $retsts -ne 0 ]; then
+    exit $retsts
+  else
+    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_NAMED_CONF_FILESPEC"
+  fi
+fi
+echo
+
+if [ "${BUILDROOT:0:1}" == '/' ]; then
+  echo "Restarting $SYSTEMD_NAMED_SERVICE service using 'systemctl restart'..."
+  systemctl restart "$INSTANCE_SYSTEMD_NAMED_SERVICE"
+  retsts=$?
+  echo "Checking RNDC control connection ..."
+  rndc -c "$INSTANCE_RNDC_CONF_FILESPEC" status
+  retsts=$?
+else
+  echo "Execute the following:"
+  echo "  systemctl restart $INSTANCE_SYSTEMD_NAMED_SERVICE"
+  echo "  rndc -c $INSTANCE_RNDC_CONF_FILESPEC status"
+fi
+echo
+  
+
