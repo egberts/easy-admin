@@ -21,10 +21,6 @@
 #     * power end-users using their own copy of an RNDC key
 #     * auto-evoked by other daemons/scripts
 # 
-# NOTE: There is a 'read-only' directive for IP access to 
-#   named daemon for remote non-admin purpose.
-#   And there is file permission for local read-only as well.
-#
 # NOTE: named.conf provides ways for end-user/sysadmin to 
 #       separately update the:
 #   * individual zone's data
@@ -97,14 +93,12 @@ else
   FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-rndc-security.sh"
   mkdir -p build/etc
   flex_mkdir "${ETC_NAMED_DIRSPEC}"
-  flex_mkdir "${ETC_NAMED_DIRSPEC}"
-  flex_mkdir "${ETC_NAMED_DIRSPEC}/${INSTANCE_SUBDIRPATH}"
+  if [ -n "$INSTANCE" ]; then
+    flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+  fi
   flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
 fi
 
-echo "NOTE: There is no 'read-only' capability for remote daemon control"
-echo "   of ISC Bind named/rndc."
-echo
 echo "NOTE: REMOTELY-IP-speaking, named.conf provides a way for"
 echo "      a separate end-user and sysadmin to individually update their:"
 echo "  * zones database"
@@ -127,6 +121,7 @@ HMAC_ALGORITHM="hmac-sha512"
 echo "Generating RNDC key ..."
 rndc-confgen -a \
         -c "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC" \
+	-k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
 echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
 
