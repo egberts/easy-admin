@@ -137,8 +137,8 @@ rndc-confgen -a \
         -c "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC" \
 	-k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
-flex_chmod 0640 "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
-flex_chown "root:$GROUP_NAME" "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
+flex_chmod 0640 "$INSTANCE_RNDC_KEY_FILESPEC"
+flex_chown "root:$GROUP_NAME" "$INSTANCE_RNDC_KEY_FILESPEC"
 echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
 
 
@@ -157,6 +157,10 @@ cat << RNDC_MASTER_CONF | tee ${BUILDROOT}${CHROOT_DIR}/${filespec} > /dev/null
 # IP Port: 953
 # Generator: $(basename $0)
 # Created on: $(date)
+#
+# Example usage:
+#
+#   rndc -c ${filespec} status
 #
 options {
 	default-key "${RNDC_KEYNAME}";
@@ -200,7 +204,7 @@ controls {
 			"${RNDC_KEYNAME}";
 	       	};
 	inet ${RNDC_IP6_ADDR} port ${RNDC_PORT} allow {
-		::1/32;
+		::1;
        		} keys {
 			"${RNDC_KEYNAME}";
 	       	};

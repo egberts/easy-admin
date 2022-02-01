@@ -6,6 +6,7 @@
 #
 #   Appends to /etc/bind/named-controls.conf
 #   Appends to /etc/bind/named-key.conf
+#   Creates /etc/bind/controls-rndc-readonly-named.conf
 #   Creates /etc/bind/rndc-readonly.conf but with 'read-only' attribute options
 #   Creates /etc/bind/keys/rndc-readonly.key (RNDC_KEY_FILESPEC)
 #
@@ -21,7 +22,7 @@ HMAC_ALGORITHM="hmac-sha512"
 
 # Used by 'named' and named.conf
 KEY_READ_ONLY_NAMED_CONF_FILENAME="rndc-readonly.key"
-CONTROLS_READ_ONLY_NAMED_CONF_FILENAME="controls-readonly-named.conf"
+CONTROLS_READ_ONLY_NAMED_CONF_FILENAME="controls-rndc-readonly-named.conf"
 
 # Used by 'rndc'
 RNDC_CONF_READ_ONLY_FILENAME="rndc-readonly.conf"
@@ -52,6 +53,7 @@ else
 fi
 
 # Generate RNDC keys
+# /etc/bind/key/rndc-readonly.key
 echo "Generating RNDC key ..."
 rndc-confgen -a \
         -c "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC" \
@@ -63,8 +65,8 @@ if [ $retsts -ne 0 ]; then
   exit $retsts
 fi
 echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
-flex_chmod 0640 "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
-flex_chown "root:$GROUP_NAME" "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
+flex_chmod 0640 "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
+flex_chown "root:$GROUP_NAME" "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
 # Newly created 'rndc-readonly.key' can now be used by 
 # 'rndc-readonly.conf' and included into 'keys-named.conf'
 
@@ -128,7 +130,7 @@ controls {
 		127.0.0.2/32;
        		} keys { 
 			"${RNDC_KEYNAME}";
-	       	} read-only ;
+	       	} read-only true;
 	};
 
 NAMED_KEY_CONF
@@ -143,6 +145,7 @@ if [ ! -f "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_NAMED_CONF_FILESPEC" ]; then
   exit 9
 fi
 
+# Insert 'include rndc-readonly.key' into key-named.conf
 filename="$KEY_NAMED_CONF_FILENAME"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
@@ -152,10 +155,26 @@ cat << NAMED_KEY_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}/$filespec" > /d
 include "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC";
 
 NAMED_KEY_CLAUSE_CONF
-
 flex_chmod 0640 "$filespec"
 flex_chown "root:$GROUP_NAME" "$filespec"
 echo
+
+
+
+# Insert 'include rndc-readonly.conf' into controls-named.conf
+filename="$(basename $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
+filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
+filespec="${filepath}/$filename"
+echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
+cat << NAMED_CONTROLS_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+# read-only RNDC control 
+include "$INSTANCE_CONTROLS_READ_ONLY_NAMED_CONF_FILESPEC";
+
+NAMED_CONTROLS_CLAUSE_CONF
+flex_chmod 0640 "$filespec"
+flex_chown "root:$GROUP_NAME" "$filespec"
+echo
+exit
 
 
 if [ $UID -ne 0 ]; then
