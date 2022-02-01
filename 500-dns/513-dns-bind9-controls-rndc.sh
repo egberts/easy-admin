@@ -4,8 +4,9 @@
 #
 # Description:
 #
-#   Creates /etc/bind/named-controls.conf
-#   Creates /etc/bind/named-key.conf
+#   Creates /etc/bind/controls-named.conf  # template
+#   Creates /etc/bind/keys-named.conf  # template
+#   Creates /etc/bind/controls-rndc-127.0.0.1.conf
 #   Creates /etc/bind/rndc.conf (RNDC_CONF_FILESPEC)
 #   Creates /etc/bind/keys/rndc.key (RNDC_KEY_FILESPEC)
 #     apparmor check
@@ -80,10 +81,21 @@
 #  For 'rndc.key', ensure file ownership to 'root:root'
 #  For 'rndc.key', ensure world file permissions 'r--' (read)
 #
+
+RNDC_IP4_ADDR="127.0.0.1"
+RNDC_IP6_ADDR="::1"
+
+# /etc/bind/controls-rndc-named.conf
+CONTROLS_RNDC_LOCALHOST_CONF_FILENAME="controls-rndc-localhost-named.conf"
+
 echo "Configure RNDC control channel and its various security settings."
 echo
 
+
+
 source ./maintainer-dns-isc.sh
+# INSTANCE_ETC_NAMED_BIND_DIRSPEC=
+
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   # absolute (rootfs?)
@@ -98,6 +110,8 @@ else
   fi
   flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
 fi
+
+INSTANCE_CONTROLS_RNDC_LOCALHOST_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CONTROLS_RNDC_LOCALHOST_CONF_FILENAME"
 
 echo "NOTE: REMOTELY-IP-speaking, named.conf provides a way for"
 echo "      a separate end-user and sysadmin to individually update their:"
@@ -123,7 +137,10 @@ rndc-confgen -a \
         -c "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC" \
 	-k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
+flex_chmod 0640 "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
+flex_chown "root:$GROUP_NAME" "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
 echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
+
 
 filename="$RNDC_CONF_FILENAME"
 filepath="$INSTANCE_RNDC_CONF_DIRSPEC"
@@ -135,14 +152,15 @@ cat << RNDC_MASTER_CONF | tee ${BUILDROOT}${CHROOT_DIR}/${filespec} > /dev/null
 # Path: ${filepath}
 # Title: RNDC configuration file
 # Read-only: false
-# IP interface: inet 127.0.0.1
+# IP interface: inet $RNDC_IP4_ADDR
+# IP interface: inet $RNDC_IP6_ADDR
 # IP Port: 953
 # Generator: $(basename $0)
 # Created on: $(date)
 #
 options {
 	default-key "${RNDC_KEYNAME}";
-	default-server 127.0.0.1;
+	default-server ${RNDC_IP4_ADDR};
 	default-port ${RNDC_PORT};
 	};
 
@@ -154,6 +172,46 @@ echo
 flex_chmod 0640 "$filespec"
 flex_chown "root:$GROUP_NAME" "$filespec"
 
+filename="$CONTROLS_RNDC_LOCALHOST_CONF_FILENAME"
+filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
+filespec="${filepath}/$filename"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
+cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+#
+# File: ${filename}
+# Path: ${filepath}
+# Title: Control access to localhost Bind9 (named) daemon by RNDC key
+# Read-only: false
+# IP interface: inet $RNDC_IP4_ADDR
+# IP interface: inet6 $RNDC_IP6_ADDR
+# IP Port: 953
+#
+# Description:
+#   To be included by a $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC include file.
+#
+# Generator: $(basename $0)
+# Created on: $(date)
+#
+
+controls {
+	inet ${RNDC_IP4_ADDR} port ${RNDC_PORT} allow {
+		${RNDC_IP4_ADDR}/32;
+       		} keys {
+			"${RNDC_KEYNAME}";
+	       	};
+	inet ${RNDC_IP6_ADDR} port ${RNDC_PORT} allow {
+		::1/32;
+       		} keys {
+			"${RNDC_KEYNAME}";
+	       	};
+	};
+
+NAMED_KEY_CONF
+flex_chmod 0640 "$filespec"
+flex_chown "root:$GROUP_NAME" "$filespec"
+echo
+
+# /etc/bind/controls-named.conf
 filename="$(basename $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
 filepath="$(dirname $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
 filespec="${filepath}/$filename"
@@ -162,10 +220,7 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
-# Title: Control access to Bind9 (named) daemon by RNDC key 
-# Read-only: false
-# IP interface: inet 127.0.0.1
-# IP Port: 953
+# Title: Control access to Bind9 (named) daemon by RNDC key
 #
 # Description:
 #   To be included by $INSTANCE_NAMED_CONF_FILESPEC file
@@ -174,19 +229,15 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 # Created on: $(date)
 #
 
-controls {
-	inet 127.0.0.1 port ${RNDC_PORT} allow { 
-		127.0.0.1/32;
-       		} keys { 
-			"${RNDC_KEYNAME}";
-	       	};
-	};
+include "${INSTANCE_CONTROLS_RNDC_LOCALHOST_CONF_FILESPEC}";
 
 NAMED_KEY_CONF
 
 flex_chmod 0640 "$filespec"
 flex_chown "root:$GROUP_NAME" "$filespec"
 echo
+
+#
 
 # Must check if file exist otherwise run named.conf init script
 if [ ! -f "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_NAMED_CONF_FILESPEC" ]; then
