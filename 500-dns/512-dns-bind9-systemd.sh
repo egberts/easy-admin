@@ -95,7 +95,7 @@ if [ "$systemd_unitname" == "bind" ]; then
 # File: ${FILENAME}
 # Path: ${TEMPLATE_SYSD_DROPIN_DIRSPEC}
 # Title: systemd unit conflict detection
-# Creator: $(basename $0)
+# Creator: $(basename "$0")
 # Created on: $(date)
 #
 # Description:
@@ -130,7 +130,7 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 # File: ${FILENAME}
 # Path: ${FILEPATH}
 # Title: ISC Bind9 named daemon systemd unit
-# Creator: $(basename $0)
+# Creator: $(basename "$0")
 # Created on: $(date)
 #
 # Description:
@@ -171,7 +171,7 @@ AssertPathIsDirectory=
 AssertPathIsReadWrite=
 
 AssertPathIsDirectory=${INSTANCE_SYSCONFDIR}/%I
-AssertFileIsExecutable=${named_bin_filespec}
+AssertFileIsExecutable=${named_sbin_filespec}
 AssertFileIsExecutable=/usr/sbin/rndc
 
 ## AssertPathExists=/run/bind/%I
@@ -305,7 +305,7 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 # File: $FILENAME
 # Path: $FILEPATH
 # Title: ISC Bind9 named unit service file
-# Creator: $(basename $0)
+# Creator: $(basename "$0")
 # Created on: $(date)
 #
 

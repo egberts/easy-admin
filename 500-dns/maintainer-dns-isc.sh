@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # File: maintainer-dns-isc.sh
 # Title: Common settings for ISC DNS 
 #
@@ -184,7 +184,9 @@ fi
 # Redhat/Fedora already uses 'slaves' zone type for a subdirectory 
 # (but that could change to 'secondaries')
 DEFAULT_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}"
+# shellcheck disable=SC2054
 DEFAULT_ZONE_DB_DIRNAME_A=("primaries", "secondaries", "hints", "mirrors", "redirects", "stubs", "masters", "slaves")
+# shellcheck disable=SC2054
 DEFAULT_ZONE_DB_DIRNAME_ALT_A=("primary", "secondary", "hint", "mirror", "redirect", "stub")
 
 # DNSSEC-related & managed-keys/trust-anchors
@@ -205,6 +207,7 @@ DEFAULT_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
 # Make the SysV/systemd-selected ones the default, then let user choose it
 # if there are more than one
 named_bins_a=()
+# shellcheck disable=SC2207
 named_bins_a=($(which -a named | awk '{print $1}'))
 
 # If there is more than one, use first one as the user-default
@@ -212,7 +215,8 @@ if [ ${#named_bins_a[@]} -ge 4 ]; then
 
   # Quick and see if systemctl cat named.service can clue us to which binary
   systemd_named_bin="$(systemctl cat "${systemd_unitname}.service" | grep "ExecStart="|awk -F= '{print $2}' | awk '{print $1}')"
-  if [ $? -eq 0 ] && [ -n "$systemd_named_bin" ]; then
+  retsts=$?
+  if [ $retsts -eq 0 ] && [ -n "$systemd_named_bin" ]; then
     default_named_bin="$systemd_named_bin"
     echo "Choosing systemd-default: $systemd_named_bin"
   else
@@ -276,9 +280,9 @@ named_rrchecker_filespec="${named_bin_dirspec}/named-rrchecker"
 # scan /etc/named/*.conf for any
 # Prompt for named.conf
 
-if [ -z "$INSTANCE" -a -z "$1" ]; then
+if [ -z "$INSTANCE" ] && [ -z "$1" ]; then
   # DEFAULT_NAMED_CONF_FILESPEC="/etc/named.conf"  # TODO: temporary
-  SYSTEMD_NAMED_CONF="$(systemctl cat "${systemd_unitname}.service"|egrep "Environment\s*=\s*NAMEDCONF\s*="|awk -F= '{print $3}')"
+  SYSTEMD_NAMED_CONF="$(systemctl cat "${systemd_unitname}.service"|grep -E "Environment\s*=\s*NAMEDCONF\s*="|awk -F= '{print $3}')"
   if [ -n "$SYSTEMD_NAMED_CONF" ]; then
     echo "systemd ${systemd_unitname}.service unit uses this config file: $SYSTEMD_NAMED_CONF"
   else

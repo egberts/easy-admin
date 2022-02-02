@@ -117,7 +117,7 @@ cat << NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$INSTANCE_NAMED_CONF_FILES
 # Path: $(dirname "$INSTANCE_NAMED_CONF_FILESPEC")
 # Title: Main named.conf configuration file for ISC Bind9 name server
 # Instance: ${INSTANCE}
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -146,18 +146,20 @@ function create_header()
   owner=$2
   perms=$3
   title=$4
-  filename="$(basename $FILESPEC)"
-  filepath="$(dirname $FILESPEC)"
+  filename="$(basename "$FILESPEC")"
+  filepath="$(dirname "$FILESPEC")"
   echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC ..."
   cat << CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 # File: $filename
 # Path: $filepath
 # Title: $title
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 
 CH_EOF
+flex_chown "$owner" "$FILESPEC"
+flex_chmod "$perms" "$FILESPEC"
 }
 
 

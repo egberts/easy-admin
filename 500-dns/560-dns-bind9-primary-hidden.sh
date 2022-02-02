@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # File: 560-dns-bind-primary-hidden.sh
 # Title: Convert this primary into a hidden primary
 # Description:
@@ -43,15 +43,17 @@ fi
 
 #    - Find domain's nameserver hostname via 'NS' resource record.
 NS_LIST=()
+# shellcheck disable=SC2207
 NS_LIST=($(dig +short "$DOMAIN_NAME" NS ))
 
 # run through each primary-secondary nameservers to get its SOA MNAME
 # make sure they are all the same
 MNAME_LIST=()
-for this_ns in ${NS_LIST[@]}; do
+for this_ns in "${NS_LIST[@]}"; do
+  # shellcheck disable=SC2086
   MNAME_LIST+=("$(dig +short @${this_ns} "$DOMAIN_NAME" SOA | awk '{print $1}')")
 done
-MNAME_REDUCED_LIST="$(echo ${MNAME_LIST[*]} | xargs -n1 | sort -u | xargs)"
+MNAME_REDUCED_LIST="$(echo "${MNAME_LIST[*]}" | xargs -n1 | sort -u | xargs)"
 if [ "$(echo "$MNAME_REDUCED_LIST" | wc -w)" -ge 2 ]; then
   echo "Your public nameservers (both primary and secondaries) "
   echo "do not have consistent SOA MNAME"
@@ -60,9 +62,8 @@ if [ "$(echo "$MNAME_REDUCED_LIST" | wc -w)" -ge 2 ]; then
   exit 13
 fi
 
-FOUND=0
-for this_ns in ${NS_LIST[@]}; do
-  if [ $LOCALHOST_MNAME == $this_ns ]; then
+for this_ns in "${NS_LIST[@]}"; do
+  if [ "$LOCALHOST_MNAME" == "$this_ns" ]; then
     echo "this host ($LOCALHOST_MNAME) IS one of the public server."
     echo "You need to move off to another host for a new hidden-primary/master."
     echo "Aborted."
@@ -74,12 +75,14 @@ echo "public nameserver for $DOMAIN_NAME TLD."
 echo
 
 SELECTED_NS="$MNAME_REDUCED_LIST"
+# shellcheck disable=SC2086
 PUBLIC_PRIMARY_IP4_ADDR="$(dig +short $SELECTED_NS A)"
 
 #  That this host will be updating (as a hidden-primary/master),
 #  is the remote hostname of the publicly-advertised nameserver correct?
 #    - Ensure that zone database SOA MNAME has this remote hostname
 # On the remote primary, SOA MNAME and its remote NS RR must be identical
+# shellcheck disable=SC2086
 DOMAIN_SOA="$(dig @${SELECTED_NS} +short $DOMAIN_NAME SOA)"
 DOMAIN_SOA_MNAME="$(echo "$DOMAIN_SOA" | awk '{print tolower($1)}')"
 
@@ -93,6 +96,7 @@ else
 fi
 
 HIDDEN_PRIMARY_NS_IP4_ADDR="$(ip route get "$PUBLIC_PRIMARY_IP4_ADDR" | awk '{print $7}' | xargs)"
+# shellcheck disable=SC2086
 DOMAIN_SOA="$(dig @${HIDDEN_PRIMARY_NS_IP4_ADDR} +short $DOMAIN_NAME SOA)"
 DOMAIN_SOA_MNAME="$(echo "$DOMAIN_SOA" | awk '{print tolower($1)}')"
 
@@ -121,7 +125,7 @@ cat << NAMED_PRIMARY_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # File: $filename
 # Path: $filepath
 # Title: Declare the Hidden Primary (Master) 
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 # Description:
@@ -187,8 +191,10 @@ flex_chmod 0640 "$filespec"
 # 'also-notify' statement of 'zone' clause for each appropriate zones
 # that are to be hidden from this 'hidden primary' nameserver.
 # Also requires 'notify explicit;' when using 'also-notify;'
+# shellcheck disable=SC2034
 ZONE_FILENAME="mz.$DOMAIN_NAME"
-ADDRLIST_NOTIFY_ZONE_FILESPEC="$INSTANCE_ETC_NAMED_CONF/$ADDRLIST_NOTIFY_ZONE_FILENAME"
+# shellcheck disable=SC2034
+ADDRLIST_NOTIFY_ZONE_FILESPEC="${INSTANCE_ETC_NAMED_CONF}/$ADDRLIST_NOTIFY_ZONE_FILENAME"
 NOTIFY_OPTIONS_NAMED_CONF_FILENAME="options-notify-named.conf"
 NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILENAME="options-internal-bastion-named.conf"
 NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILENAME"
@@ -205,7 +211,7 @@ cat << NOTIFY_OPTIONS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # File: $filename
 # Path: $filepath
 # Title: Notify sub-options within 'options' clause
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -262,7 +268,7 @@ flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 
 touch "${BUILDROOT}${CHROOT_DIR}$NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILESPEC"
-filename="$(basename $INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC)"
+filename="$(basename "$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC")"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
@@ -271,7 +277,7 @@ cat << OPTIONS_LISTENON_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/nu
 # File: $filename
 # Path: $filepath
 # Title: 'listen-on' part of 'options' clause for named.conf
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 # To be included within $INSTANCE_OPTIONS_NAMED_CONF_FILESPEC

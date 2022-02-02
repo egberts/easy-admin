@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # File: 507-dns-bind-class-chaos.sh
 # Title: Set up the 'bind' zone in class CHAOS (as opposed to class IN)
 #
@@ -44,7 +44,7 @@ if [ "${BUILDROOT:0:1}" != '/' ]; then
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
 fi
 if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" == '/' ]]; then
-  SUDO_BIN=sudo
+  # SUDO_BIN=sudo
   echo "Writing files as 'root'..."
 else
   echo "Writing ALL files into $BUILDROOT as user '$USER')..."
@@ -80,7 +80,7 @@ cat << DB_CH_BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 ; File: $filename
 ; Path: $filepath
 ; Title: Resource Record database for the 'bind' zone, CHAOS class
-; Generator: $(basename $0)
+; Generator: $(basename "$0")
 ; Created on: $(date)
 ;
 $TTL 3600
@@ -114,7 +114,7 @@ cat << PZ_BIND_CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # File: $filename
 # Path: $filepath
 # Title: Zone configuration for the 'bind' zone, CHAOS class
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 # To be included from within a view clause
@@ -151,7 +151,7 @@ cat << NOTIFY_OPTIONS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # File: $filename
 # Path: $filepath
 # Title: Notify sub-options within 'options' clause
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 # To be included from within the ${VIEW_NAMED_CONF_FILENAME} config file

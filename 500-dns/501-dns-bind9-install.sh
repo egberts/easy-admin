@@ -5,7 +5,7 @@
 echo "Install ISC Bind9 server, complete with development and document packages"
 echo
 
-source ./distro-os.sh
+source ../distro-os.sh
 
 case $ID in
   debian|devuan)

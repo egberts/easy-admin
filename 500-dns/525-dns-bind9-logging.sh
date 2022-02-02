@@ -39,16 +39,16 @@ fi
 
 # Generate generic `logging-named.conf`
 # /etc/bind/logging-named.conf
-filename="$(basename $INSTANCE_LOGGING_NAMED_CONF_FILESPEC)"
-filepath="$(dirname $INSTANCE_LOGGING_NAMED_CONF_FILESPEC)"
+filename="$(basename "$INSTANCE_LOGGING_NAMED_CONF_FILESPEC")"
+filepath="$(dirname "$INSTANCE_LOGGING_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/${filespec}"
-cat << RNDC_LOGGING_CONF | tee ${BUILDROOT}${CHROOT_DIR}/${filespec} > /dev/null
+cat << RNDC_LOGGING_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
 # Title: Logging configuration file for ISC Bind9 named daemon
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 # To be included by: ${INSTANCE_NAMED_CONF_FILESPEC}
@@ -65,8 +65,8 @@ flex_chown "root:$GROUP_NAME" "$filespec"
 echo
 
 # Create the /etc/bind/logging-channels-named.conf
-filename="$(basename $INSTANCE_CHANNEL_NAMED_CONF_FILESPEC)"
-filepath="$(dirname  $INSTANCE_CHANNEL_NAMED_CONF_FILESPEC)"
+filename="$(basename "$INSTANCE_CHANNEL_NAMED_CONF_FILESPEC")"
+filepath="$(dirname  "$INSTANCE_CHANNEL_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
 cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
@@ -81,7 +81,7 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 #   logging statement for BIND.
 #   To be included by $INSTANCE_LOGGING_NAMED_CONF_FILESPEC file
 #
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -265,8 +265,8 @@ echo
 
 
 # Create the /etc/bind/logging-categories-named.conf
-filename="$(basename $INSTANCE_CATEGORY_NAMED_CONF_FILESPEC)"
-filepath="$(dirname  $INSTANCE_CATEGORY_NAMED_CONF_FILESPEC)"
+filename="$(basename "$INSTANCE_CATEGORY_NAMED_CONF_FILESPEC")"
+filepath="$(dirname  "$INSTANCE_CATEGORY_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
 cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
@@ -278,7 +278,7 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 # Description:
 #   To be included by $INSTANCE_LOGGING_NAMED_CONF_FILESPEC file
 #
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -321,34 +321,36 @@ if [ $UID -ne 0 ]; then
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 fi
 if [ "$REPLY" != 'n' ]; then
+  pushd . > /dev/null
   if [ -n "$CHROOT_DIR" ]; then
     # Check syntax of named.conf file
     named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
+    cd "${BUILDROOT}${CHROOT_DIR}" || exit 21
   fi
 
-  pushd . > /dev/null
-  cd ${BUILDROOT}${CHROOT_DIR}
+# shellcheck disable=SC2086
   sudo $named_checkconf_filespec -c \
     -i \
     -p \
     -x \
     $named_chroot_opt \
-    $INSTANCE_NAMED_CONF_FILESPEC \
+    "$INSTANCE_NAMED_CONF_FILESPEC" \
     >/dev/null
   retsts=$?
   if [ $retsts -ne 0 ]; then
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
+# shellcheck disable=SC2086
     sudo $named_checkconf_filespec -c \
       -i \
       -p \
       -x \
       $named_chroot_opt \
-      $INSTANCE_NAMED_CONF_FILESPEC
+      "$INSTANCE_NAMED_CONF_FILESPEC"
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
-    popd
+    popd || exit 16
     exit $retsts
   fi
-  popd > /dev/null
+  popd > /dev/null || exit 16
   if [ $retsts -ne 0 ]; then
     exit $retsts
   else

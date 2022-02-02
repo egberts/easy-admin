@@ -146,7 +146,7 @@ filename="$RNDC_CONF_FILENAME"
 filepath="$INSTANCE_RNDC_CONF_DIRSPEC"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/${filespec}"
-cat << RNDC_MASTER_CONF | tee ${BUILDROOT}${CHROOT_DIR}/${filespec} > /dev/null
+cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}/${filespec}" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -155,7 +155,7 @@ cat << RNDC_MASTER_CONF | tee ${BUILDROOT}${CHROOT_DIR}/${filespec} > /dev/null
 # IP interface: inet $RNDC_IP4_ADDR
 # IP interface: inet $RNDC_IP6_ADDR
 # IP Port: 953
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 # Example usage:
@@ -193,7 +193,7 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 # Description:
 #   To be included by a $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC include file.
 #
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -216,8 +216,8 @@ flex_chown "root:$GROUP_NAME" "$filespec"
 echo
 
 # /etc/bind/controls-named.conf
-filename="$(basename $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
-filepath="$(dirname $INSTANCE_CONTROLS_NAMED_CONF_FILESPEC)"
+filename="$(basename "$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC")"
+filepath="$(dirname "$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
 cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
@@ -229,7 +229,7 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 # Description:
 #   To be included by $INSTANCE_NAMED_CONF_FILESPEC file
 #
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -257,7 +257,7 @@ cat << NAMED_KEY_CLAUSE_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/
 # File: $filename
 # Path: $filepath
 # Title: This file holds all the 'key' clauses for named.conf 
-# Generator: $(basename $0)
+# Generator: $(basename "$0")
 # Created on: $(date)
 #
 
@@ -302,31 +302,33 @@ if [ "$REPLY" != 'n' ]; then
   if [ -n "$CHROOT_DIR" ]; then
     # Check syntax of named.conf file
     named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
+    cd "${BUILDROOT}${CHROOT_DIR}" || exit 16
   fi
 
   pushd . > /dev/null
-  cd ${BUILDROOT}${CHROOT_DIR}
+# shellcheck disable=SC2086
   sudo $named_checkconf_filespec -c \
     -i \
     -p \
     -x \
     $named_chroot_opt \
-    $INSTANCE_NAMED_CONF_FILESPEC \
+    "$INSTANCE_NAMED_CONF_FILESPEC" \
     >/dev/null
   retsts=$?
   if [ $retsts -ne 0 ]; then
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
+# shellcheck disable=SC2086
     sudo $named_checkconf_filespec -c \
       -i \
       -p \
       -x \
-      $named_chroot_opt \
-      $INSTANCE_NAMED_CONF_FILESPEC
+      "$named_chroot_opt" \
+      "$INSTANCE_NAMED_CONF_FILESPEC"
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
-    popd
-    exit $retsts
+    popd || exit 15
+    retsts=$?
   fi
-  popd > /dev/null
+  popd || exit 15
   if [ $retsts -ne 0 ]; then
     exit $retsts
   else
