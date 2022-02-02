@@ -5,7 +5,11 @@
 #
 #   Formerly called 'hidden master'.
 
-HIDDEN_PRIMARY_NS_IP4_ADDR="$(ip route get 8.8.8.8 | awk '{print $7}' | xargs)"
+echo "Set up a hidden-primary nameserver"
+echo "  (formerly known as 'hidden-master')"
+echo "This script requires a properly working primary/secondary nameservers"
+echo
+
 HIDDEN_KEYNAME="offsite-key"
 HIDDEN_PRIMARY_PORT=353
 PRIMARY_NAME="primary_list_downstream_public_nameserver"
@@ -88,6 +92,7 @@ else
   exit 13
 fi
 
+HIDDEN_PRIMARY_NS_IP4_ADDR="$(ip route get "$DOMAIN_NAME" | awk '{print $7}' | xargs)"
 DOMAIN_SOA="$(dig @${HIDDEN_PRIMARY_NS_IP4_ADDR} +short $DOMAIN_NAME SOA)"
 DOMAIN_SOA_MNAME="$(echo "$DOMAIN_SOA" | awk '{print tolower($1)}')"
 
@@ -107,11 +112,11 @@ echo
 
 #
 
-filename="$(basename "$INSTANCE_MASTERS_NAMED_CONF_FILESPEC")"
-filepath="$(dirname "$INSTANCE_MASTERS_NAMED_CONF_FILESPEC")"
+filename="$(basename "$INSTANCE_PRIMARY_NAMED_CONF_FILESPEC")"
+filepath="$(dirname "$INSTANCE_PRIMARY_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
-cat << NAMED_MASTERS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
+cat << NAMED_PRIMARY_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: $filename
 # Path: $filepath
@@ -174,7 +179,7 @@ cat << NAMED_MASTERS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 primaries $PRIMARY_NAME {
     $PUBLIC_PRIMARY_IP4_ADDR port $HIDDEN_PRIMARY_PORT key $HIDDEN_KEYNAME;
 };
-NAMED_MASTERS_EOF
+NAMED_PRIMARY_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 
