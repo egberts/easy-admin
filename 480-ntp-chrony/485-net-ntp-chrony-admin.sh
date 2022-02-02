@@ -97,7 +97,7 @@ else
   HAVE_IPV6=0
 fi
 
-if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" = '/' ]]; then
+if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" == '/' ]]; then
   SUDO_BIN=sudo
   echo "Writing ALL files as 'root'..."
 else
