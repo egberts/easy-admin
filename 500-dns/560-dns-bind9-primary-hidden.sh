@@ -92,7 +92,7 @@ else
   exit 13
 fi
 
-HIDDEN_PRIMARY_NS_IP4_ADDR="$(ip route get "$DOMAIN_NAME" | awk '{print $7}' | xargs)"
+HIDDEN_PRIMARY_NS_IP4_ADDR="$(ip route get "$PUBLIC_PRIMARY_IP4_ADDR" | awk '{print $7}' | xargs)"
 DOMAIN_SOA="$(dig @${HIDDEN_PRIMARY_NS_IP4_ADDR} +short $DOMAIN_NAME SOA)"
 DOMAIN_SOA_MNAME="$(echo "$DOMAIN_SOA" | awk '{print tolower($1)}')"
 
