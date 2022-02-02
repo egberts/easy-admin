@@ -1,5 +1,5 @@
 #!/bin/bash
-# File: 510-dns-bind9-reset-config.sh
+# File: 510-dns-bind9-config-new.sh
 # Title:  Restart Bind9 configuration from scratch
 # Description:
 #   Builds out the basic framework of named.conf via include files
@@ -85,10 +85,23 @@ flex_mkdir "$DEFAULT_LIB_DIRSPEC"
 flex_chown root:bind "$DEFAULT_LIB_DIRSPEC"
 flex_chmod 0750      "$DEFAULT_LIB_DIRSPEC"
 
+# /var/lib/bind
 flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
 flex_chown root:bind "$VAR_LIB_NAMED_DIRSPEC"
 flex_chmod 0750      "$VAR_LIB_NAMED_DIRSPEC"
 
+# formerly masters/ subdirectory
+# /var/lib/bind[/instance]/primaries
+flex_mkdir "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
+flex_chown root:bind "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
+flex_chmod 0750      "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
+
+# /var/lib/bind[/instance]/secondaries
+flex_mkdir "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
+flex_chown root:bind "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
+flex_chmod 0750      "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
+
+# /var/lib/bind[/instance]/dynamic
 flex_mkdir "$INSTANCE_DYNAMIC_DIRSPEC"
 flex_chown root:bind "$INSTANCE_DYNAMIC_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_DYNAMIC_DIRSPEC"

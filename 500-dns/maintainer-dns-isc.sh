@@ -105,6 +105,7 @@ esac
 
 log_dir="/var/log/$LOG_SUB_DIRNAME"
 
+
 if [ -n "$ETC_SUB_DIRNAME" ]; then
   extended_sysconfdir="${sysconfdir}/${ETC_SUB_DIRNAME}"
 else
@@ -125,9 +126,13 @@ SYSTEMD_NAMED_SERVICE="${SYSTEMD_NAMED_UNITNAME}.$SYSTEMD_SERVICE_FILETYPE"
 SYSTEMD_NAMED_INSTANCE_SERVICE="${SYSTEMD_NAMED_UNITNAME}@.$SYSTEMD_SERVICE_FILETYPE"
 
 INSTANCE_ETC_NAMED_DIRSPEC="${extended_sysconfdir}"
-INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/$INSTANCE"
-INSTANCE_LOG_DIRSPEC="/var/log/${LOG_SUB_DIRNAME}/$INSTANCE"
-INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}/$INSTANCE"
+INSTANCE_NAMED_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}/${INSTANCE_NAMED_CONF_FILENAME}"
+
+INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
+INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
+INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
+INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}"
+INSTANCE_LOG_DIRSPEC="/var/log/${LOG_SUB_DIRNAME}"
 INSTANCE_RNDC_CONF_DIRSPEC="$RNDC_CONF_DIRSPEC"
 INSTANCE_RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/keys"
 
@@ -141,7 +146,7 @@ if [ -n "$INSTANCE" ]; then
   INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}/$INSTANCE"
   INSTANCE_LOG_DIRSPEC="/var/log/$LOG_SUB_DIRNAME/$INSTANCE"
   INSTANCE_RNDC_CONF_DIRSPEC="${RNDC_CONF_DIRSPEC}/$INSTANCE"
-  INSTANCE_RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/${INSTANCE}/keys"
+  INSTANCE_RNDC_KEY_DIRSPEC="${INSTANCE_RNDC_CONF_DIRSPEC}/${INSTANCE}/keys"
 
   INSTANCE_RNDC_CONF_FILESPEC="${INSTANCE_RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
   INSTANCE_RNDC_KEY_FILESPEC="${INSTANCE_RNDC_KEY_DIRSPEC}/$RNDC_KEY_FILENAME"
@@ -241,9 +246,9 @@ if [ ${#named_bins_a[@]} -ge 4 ]; then
   # echo "'named' selected: ${named_bin}"
 else
   named_bin="${named_bins_a[0]}"
-  echo "Only one 'named' found: $(echo ${named_bins_a[*]} | xargs)"
+  # echo "Only one 'named' found: $(echo ${named_bins_a[*]} | xargs)"
 fi
-echo "Using 'named' binary in: $named_bin"
+# echo "Using 'named' binary in: $named_bin"
 
 
 # Now ensure that we use the same tools as  this daemon
@@ -296,7 +301,6 @@ else
     NAMED_CONF_FILESPEC="$1"
   fi
   if [ -n "$INSTANCE" ]; then
-    #INSTANCE_NAMED_CONF_FILESPEC="$DEFAULT_NAMED_CONF_FILESPEC"
     echo "Instance-defined named.conf: $INSTANCE_NAMED_CONF_FILESPEC"
   fi
 fi
@@ -311,13 +315,13 @@ DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
-INSTANCE_NAMED_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}/${INSTANCE_NAMED_CONF_FILENAME}"
-
 INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}"
 INSTANCE_INIT_DEFAULT_FILENAME="${sysvinit_unitname}"
 INSTANCE_CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
 INSTANCE_KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 INSTANCE_DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
+INSTANCE_DB_PRIMARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/primaries"
+INSTANCE_DB_SECONDARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/secondaries"
 INSTANCE_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 INSTANCE_RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 if [ -n "$INSTANCE" ]; then
@@ -328,6 +332,8 @@ if [ -n "$INSTANCE" ]; then
   INSTANCE_CONF_KEYS_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
   INSTANCE_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
   INSTANCE_DYNAMIC_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/dynamic"
+  INSTANCE_DB_PRIMARIES_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/primaries"
+  INSTANCE_DB_SECONDARIES_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/secondaries"
   INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 fi
 INSTANCE_INIT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$INSTANCE_INIT_DEFAULT_FILENAME"
@@ -388,4 +394,49 @@ INSTANCE_STATS_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/${STATS_NAMED_
 INSTANCE_TRUST_ANCHORS_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$TRUST_ANCHORS_NAMED_CONF_FILENAME"
 INSTANCE_VIEW_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$VIEW_NAMED_CONF_FILENAME"
 INSTANCE_ZONE_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$ZONE_NAMED_CONF_FILENAME"
+
+# ACLs Match List (AML) names defined through 'acl' clauses of named.conf
+#
+# Legend:
+#   PUBLIC/PRIVATE = WAN/LAN, Internet/HomeLAN
+#   EXTERNAL/INTERNAL = used only within the same bastion host
+#   OUTWARD/INWARD = used to reference OUTWARD the physical wire (or vmnet)
+#                    and INWARD via within in-host communication (loopback)
+#
+
+# control_rndc_interior used for relocation of RNDC control connections
+# typically 127.0.0.130 (or something)
+CONTROL_RNDC_INTERIOR_AML="aml_rndc_control_channel"
+
+# AML netdev interfaces 
+# ('localhost' is a named builtin AML)
+# common external red network IP address(es)
+PUBLIC_OUTWARD_AML="aml_public_border_ip_addrs"  # plural only in multi-homed
+
+# PUBLIC bastion (an instance of named) has outward/inward netdevs.
+
+# used only in multi-named bastion setup
+PUBLIC_INWARD_AML="aml_bastion_public_interior_ip_addr"
+
+# INWARD netdev (loopback) is used between PUBLIC and PRIVATE bastions
+BASTION_PRIVATE_PUBLIC_AML="aml_bastion_public_private_interior_ip_addr"
+
+# used only in multi-named bastion setup
+PRIVATE_INWARD_AML="aml_bastion_private_interior_ip_addr"
+
+# PRIVATE bastion (an instance of named) has outward/inward netdevs.
+
+# common private green network IP address(es)
+PRIVATE_OUTWARD_AML="aml_private_border_ip_addrs"
+
+# nameservers, various
+
+# public secondary/slave nameserver(s) AML
+PUBLIC_PRIMARY_NS_AML="aml_trusted_downstream_secondary_nameservers"
+
+# public primary/master nameserver AML (used only in bastion setup)
+PUBLIC_PRIMARY_NS_AML="aml_trusted_downstream_primary_nameserver"
+
+# private primary/master nameserver AML (used only in bastion setup)
+PRIVATE_PRIMARY_NS_AML="aml_trusted_homelan_primary_nameserver"
 
