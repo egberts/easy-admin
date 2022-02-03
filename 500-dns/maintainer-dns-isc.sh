@@ -286,7 +286,7 @@ if [ -z "$INSTANCE" ] && [ -z "$1" ]; then
   if [ -n "$SYSTEMD_NAMED_CONF" ]; then
     echo "systemd ${systemd_unitname}.service unit uses this config file: $SYSTEMD_NAMED_CONF"
   else
-    echo "No named.conf found in 'systemctl cat ${systemd_unitname}.service'"
+    # echo "No named.conf found in 'systemctl cat ${systemd_unitname}.service'"
     # Execute 'named -V' to get 'named configuration' default setting
     SBIN_NAMED_CONF_FILESPEC="$("$named_bin" -V|grep 'named configuration:'|awk '{print $3}')"
     # Might be an older 'named -V' with no output
@@ -295,7 +295,7 @@ if [ -z "$INSTANCE" ] && [ -z "$1" ]; then
       NAMED_CONF_FILESPEC="$DEFAULT_NAMED_CONF_FILESPEC"
       echo "Using ISC default named.conf: $DEFAULT_NAMED_CONF_FILESPEC"
     else
-      echo "Binary 'named' has a built-in config default: $SBIN_NAMED_CONF_FILESPEC"
+      # echo "Binary 'named' has a built-in config default: $SBIN_NAMED_CONF_FILESPEC"
       NAMED_CONF_FILESPEC="$SBIN_NAMED_CONF_FILESPEC"
     fi
   fi

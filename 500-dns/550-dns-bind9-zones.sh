@@ -102,7 +102,7 @@ cat << ZONE_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 
 zone "$ZONE_NAME" IN
 {
-    //// type 'master' is the server reads the zone data direct from
+    //// type 'primary' is the server reads the zone data direct from
     //// local storage (a zone file) and provides authoritative
     //// answers for the zone.
     //
@@ -242,9 +242,9 @@ include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
 ///        To only let 2 AML thru, use: !{ !{A; B;}; any; };
 ///        !{ !{trusted_downstream_nameservers_acl; localhost; }; any; };
 ///        key ddns-dhcpd-to-bind9-a;
-///        key hidden-master-key;
+///        key hidden-primary-key;
 ///        !{ !localhost; any; };
-///        key master-to-slave-key; // only localhost can use key
+///        key primary-to-secondary-key; // only localhost can use key
 ///        localhost; // not so useful for unsecured RNDC uses
 ///        none;
 ///        };
