@@ -1,0 +1,13 @@
+Key files are denoted by
+   - Zone name
+   - Key type
+   - Random number
+
+
+Key types are:
+
+   5 -
+   8 - RSA/SHA-256 	RSASHA256
+   157 - HMAC-MD5, only used for (ISC DHCP) dhcpd <--> named (ISC Bind9)
+   163 - HMAC-SHA256 (used for local-ddns)
+

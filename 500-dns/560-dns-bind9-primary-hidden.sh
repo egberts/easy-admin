@@ -263,6 +263,26 @@ include "$NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILESPEC"; // BASTION_INTERN
 		localhost;
 		${PUBLIC_PRIMARY_IP4_ADDR};
 		};
+
+	// notify-to-soa
+	//
+	// If yes, do not check the name servers defined in the NS RRset
+	// against this zone's SOA MNAME.
+	// Normally a NOTIFY message is not sent to the SOA MNAME 
+	// (SOA ORIGIN), as it is supposed to contain the name of 
+	// the ultimate primary server. Sometimes, however, a 
+	// secondary server is listed as the SOA MNAME in hidden 
+	// primary configurations; in that case, the ultimate 
+	// primary should be set to still send NOTIFY messages 
+	// to all the name servers listed in the NS RRset.
+	//
+	// 'notify-to-soa' can be used in 'options clause if
+	// all Zones/Views needs this.
+	//
+	// The 'notify-to-soa' default is 'no'.
+
+	notify-to-soa yes;
+
 NOTIFY_OPTIONS_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
