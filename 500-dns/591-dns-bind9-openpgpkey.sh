@@ -109,6 +109,7 @@ WARN_FOUND="$(grep -c -i "warning:" /tmp/opengpgkey.cmd)"
 if [ $retsts -ne 0 ] || [ $WARN_FOUND -ne 0 ]; then
   echo "No PGP found for $EMAIL_ADDR"
   echo "Aborted."
+  exit $retsts
 fi
 
 flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC"
