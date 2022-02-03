@@ -13,7 +13,7 @@ source ./maintainer-dns-isc.sh
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-primaries-named.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
@@ -63,8 +63,10 @@ INSTANCE_ZONE_CONF_EXTN_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${ZONE_CONF_EXTN
 
 ZONE_DB_FILENAME="db.${ZONE_NAME}"
 
-ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/${ZONE_DB_FILENAME}"
-INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}"
+ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
+ZONE_DB_FILESPEC="${ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
+
+INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
 INSTANCE_ZONE_DB_FILESPEC="${INSTANCE_ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
 INSTANCE_ZONE_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
@@ -235,7 +237,8 @@ include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
 ///        external_bastion_ip_acl;
 ///    };
 ///    update-policy local;
-///    allow-transfer {
+///
+///    allow-transfer {  // for public
 ///        To only let 2 AML thru, use: !{ !{A; B;}; any; };
 ///        !{ !{trusted_downstream_nameservers_acl; localhost; }; any; };
 ///        key ddns-dhcpd-to-bind9-a;
@@ -245,6 +248,20 @@ include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
 ///        localhost; // not so useful for unsecured RNDC uses
 ///        none;
 ///        };
+///    allow-transfer { trusted_residential_network_white_acl; }; // internal
+///    forwarders {}; // internal-only
+///    allow-update {  // internal-only
+///        !{ !localhost; any; };
+///        // only localhost got past this point here
+///        // no one can update except localhost RNDC
+///        key "rndc-key"; // only RNDC on localhost
+///
+///        //  'allow-update' on a "locally" view is essential for
+///        //  communication between ISC-DHCP and BIND9
+///        key "DDNS_UPDATER"; // only isc-dhcpd on localhost
+///        // dnssec-policy leo_secured_domain; // available in Bind 9.15.8+
+///    };
+
 
 
 };

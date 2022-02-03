@@ -19,7 +19,7 @@ source ./maintainer-dns-isc.sh
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-primaries-named.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-primaries-hidden-named.sh"
 fi
 echo
 
