@@ -1,3 +1,33 @@
+General setup
+
+1.  system settings
+1.  Initialization
+2.  RNDC control
+3.  logging
+5.  zones
+  1.  localhost
+  2.  pz.1.0.0.172.in-addr.arpa.
+6.  
+write public_named_config:q
+
+* create_sysv_default
+* create_systemd_bind9_service
+x create_rndc_key_confs
+* create_rndc_commands
+* create_named_conf_controls_rndc
+  create_tsig_keys_intra_bastion
+  create_named_conf_acl
+  create_named_conf_trusted_keys
+* create_named_conf_logging
+* create_named_conf_masters
+  create_named_conf_servers
+  create_named_conf_options
+  create_named_conf_zone_public
+  create_named_conf
+fi
+
+
+
 # TODO: Need to introduce more auto-determination based on current settings and
 # setups.
 #

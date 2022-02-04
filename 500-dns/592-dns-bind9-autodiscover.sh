@@ -1,7 +1,14 @@
 #!/bin/bash
 # File: 592-dns-bind-autodiscover.sh
-# Title:  Set up autodiscovering by remote email client for your email server
+# Title:  Set up autodiscovering by remote Microsoft-only email client 
 #
+# Description:
+#
+#   Uses both SRV and HTTP (noticed it is not HTTPS?)
+#
+# References:
+#  * https://www.icdsoft.com/en/kb/view/1698_automatic_e_mail_configuration_autodiscover_autoconfig
+
 
 source ./maintainer-dns-isc.sh
 
@@ -174,6 +181,40 @@ ZONE_HTML_AC_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"
 echo
+
+# Add 'autodiscover' subdomain to your domain
+
+AUTODISCOVER_DB_FILESPEC="/var/lib/bind[/instance]/master/db.autodiscover.$DOMAIN_NAME"
+filespec="$AUTODISCOVER_DB_FILESPEC"
+filename="$(basename $filespec)"
+filepath="$(dirname $filespec)"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+;
+;  Autodiscover email support
+\$ORIGIN $DOMAIN_NAME
+autodiscover	IN	CNAME	$DOMAIN_NAME
+AUTODISCOVER_DB_EOF
+flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chmod "0640"             "$filespec"
+echo
+
+# APPEND the 'autodiscover' subdomain zone database to your domain zone database
+DOMAIN_DB_FILESPEC="/var/lib/bind[/instance]/master/db.$DOMAIN_NAME"
+filespec="$DOMAIN_DB_FILESPEC"
+filename="$(basename $filespec)"
+filepath="$(dirname $filespec)"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+;
+;  Add the Autodiscover email support
+\$INCLUDE \"${AUTODISCOVER_DB_FILESPEC}\"
+autodiscover	IN	CNAME	$DOMAIN_NAME
+AUTODISCOVER_DB_EOF
+flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chmod "0640"             "$filespec"
+echo
+
 
 echo "Done."
 
