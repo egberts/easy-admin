@@ -4,17 +4,50 @@
 #
 # Description:
 #
-#   Uses both DNS and HTTP (noticed it is not HTTPS?)
+#   Assist remote mail clients (Apple Mail, Thunderbird, Outlook) in
+#   finding your SMTP/IMAP/POP3 servers.
+#
+# MOZILLA THUNDERBIRD:
+# MICROSOFT OUTLOOK:
+#   The Outlook mail client performs the following AutoDiscover phases 
+#   to detect the server endpoint URLs:
+#
+#    Phase 1 – The client performs a Secure Copy Protocol 
+#    (SCP) lookup against the local Active Directory. 
+#    If your client isn’t domain-joined, AutoDiscover skips this step.
+#    NOTE: This Phase 1 is totally ignored here in this script.
+#
+#    Phase 2 – The client sends a request to the following 
+#    URLs and validates the results. These endpoints are only 
+#    available using HTTPS.
+#
+#     * https://company.tld/autodiscover/autodiscover.xml
+#     * https://autodiscover.company.tld/autodiscover/autodiscover.xml
+#
+#    Phase 3 – The client performs a DNS lookup to 
+#    autodiscover.company.tld and sends an unauthenticated GET 
+#    request to the derived endpoint from the user’s email 
+#    address. If the server returns a 302 redirect, the client 
+#    resends the AutoDiscover request against the returned HTTPS endpoint.
+#
+#   Can use 'autoconfig.DOMAIN_NAME IN A 127.0.0.1' to disable
+#   Can use 'autodiscover.DOMAIN_NAME IN A 127.0.0.1' to disable
+#
+# APPLE MAIL:
 #
 # Environment variables, overridable
 #   HTDOCS_DIR - HTTP document root directory (default /var/lib/www)
 #
 # Dependencies:
+#    dig (bind9-dnsutils)
+#    nslookup (bind9-dnsutils)
 #    awk (gawk)
 #    coreutils
 #
 # References:
 #  * https://www.icdsoft.com/en/kb/view/1698_automatic_e_mail_configuration_autodiscover_autoconfig
+#  * https://netwinsite.com/surgemail/help/autodiscover.htm
+#  * https://docs.aws.amazon.com/workmail/latest/adminguide/autodiscover.html
 
 echo "Set up autoconfig for remote Mozilla-only email client (thunderbird)"
 echo
@@ -316,16 +349,36 @@ filepath="$(dirname $filespec)"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
 cat << ZONE_DB_MAIN_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
 \$ORIGIN ${ZONE_FQDN}
+; 
+; File: $filename
+; Path: $filepath
+; Title:  Auto set-up of various remote mail clients
 ;
 ; 
 ${ZONE_FQDN}		IN	TXT	"mailconf=${url_autoconfig_xml_filename}"
+;
+; Must use HTTPS (443) by remote mail client during SMTP autodiscovery
+_autodiscover._tcp	IN	SRV	0 0 443 ${ZONE_FQDN}
+
+;
+;  Mozilla Thunderbird mail client
 autoconfig		IN	CNAME	${ZONE_FQDN}
+
+;
+;  Microsoft Outlook mail client
+autodiscover		IN	CNAME	${ZONE_FQDN}
+
+;  Apple Mail client uses 'mail.DOMAIN.COM'
+;  Microsoft Outlook mail client uses 'mail.DOMAIN.COM' as fall-back
+mail			IN	CNAME	${ZONE_FQDN}
+
 
 ZONE_DB_MAIN_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"
 echo
 
+# Mozilla Thunderbird mail client autoconfig settings
 
 # URL:/support/email/config/thunderbird/imap-thunderbird/imap
 
