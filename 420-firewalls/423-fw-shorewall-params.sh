@@ -15,11 +15,9 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   rm -f "$FILE_SETTINGS_FILESPEC"
 fi
 
-source ../easy-admin-installer.sh
-
 DEFAULT_ETC_CONF_DIRNAME="shorewall"
 
-source ../distro-os.sh
+source ./maintainer-fw-shorewall.sh
 
 shorewall_dirspec="$extended_sysconfdir"
 if [ "${BUILDROOT:0:1}" != "/" ]; then
@@ -213,22 +211,32 @@ default_gw_netdevs_A=()
 default_gw_netdevs_A+=("$(ip -4 -o route show|grep "^default"|awk '{print $5}')")
 default_gw_ip4_A=()
 default_gw_ip4_A+=("$(ip -4 -o route show|grep "^default"|awk '{print $3}')")
+# Bug: it is possible to have a double  entry of gateway for same interface
+# workable, valid, but not kosher.  Sort unique them out of these arrays
+#    ip -4 -o route show
+#    default via 192.168.1.1 dev enp4s0 
+#    default via 192.168.1.1 dev enp4s0 proto dhcp metric 100 
+default_gw_netdevs_A=($(echo ${default_gw_netdevs_A[*]} | xargs -n1 | sort -u | xargs ))
+default_gw_ip4_A=($(echo ${default_gw_ip4_A[*]} | xargs -n1 | sort -u | xargs ))
+
 echo "Netdev(s) to gateway: $(echo ${default_gw_netdevs_A[*]}|xargs)"
 default_gateways=""
 if [ "${#default_gw_netdevs_A[@]}" -eq 1 ]; then
   default_gateways="${default_gw_netdevs_A[0]}"
 fi
 echo "default_gw_ip4_A: ${default_gw_ip4_A[*]}"
+echo "default_gateways: $default_gateways"
 
 # Select Public IP using default gateway as a default prompt
 single_gateway=
-read -rp "Enter in netdev(s) for Public-side network: " -ei${default_gateways}
+read -rp "Enter in netdev(s) for Public-side network: " -ei"${default_gateways}"
 public_netdevs="$REPLY"
 
 # if multi-home (multiple default gateway), then no 'routeback' option
-interfaces_routeback_option=1
+interfaces_multi_homed=0
 if [ "$(echo $public_netdevs|wc -w)" -gt 1 ]; then
-  interfaces_routeback_option=0
+  # If multi-homed, turn off 'routeback'
+  interfaces_multi_homed=1
 fi
 
 shorewall_interfaces_filename="interfaces"
@@ -537,7 +545,9 @@ cat << SHOREWALL_CONF_EOF | tee "${interfaces_output}" >/dev/null
 #
 #   nosmurfs
 #     IPv4 only. Filter packets for smurfs (packets with
-#     a broadcast address as the source).
+#     a broadcast address as the source).  
+#
+#     'nosmurfs' is typically used on bridge-only interface.
 #
 #     Smurfs will be optionally logged based on the setting
 #     of SMURF_LOG_LEVEL in shorewall.conf(5). After logging,
@@ -808,6 +818,7 @@ cat << SHOREWALL_CONF_EOF | tee "${interfaces_output}" >/dev/null
 #                      interface (anti-spoofing measure).
 #    nosmurfs - Filter packets for smurfs (packets with a
 #                   broadcast address as the source).
+#               'nosmurfs' is typically used on bridge-only interface.
 #    tcpflags - Packets arriving on this interface are checked
 #                   for certain illegal combinations of TCP flags.
 #    upnp - Incoming requests from this interface may be remapped
@@ -827,22 +838,33 @@ SHOREWALL_CONF_EOF
 echo ""
 
 echo "Processing public-side interfaces ..."
+echo "public_netdevs: $public_netdevs"
 for this_public_netdev in $public_netdevs; do
 
   echo "  Processing $this_public_netdev public-side interface ..."
 
   # Stick in the defaults
   # (must assumes at least ONE interface option, due to CSV pre-construct)
-  INTF_OPTS="logmartians,tcpflags,nosmurfs,routefilter"
+  INTF_OPTS="logmartians,tcpflags,routefilter"
+
+  # If a bridge-only, then MUST append a 'nosmurfs' option
 
   # 'routeback' option, only if not a multi-home (multiple default route)
-  if [ "$interfaces_routeback_option" -le 1 ]; then
+  if [ "$interfaces_multi_homed" -eq 0 ]; then
+    echo "Singular-homed interfaces"
     INTF_OPTS+=",routeback"
-  else
-    # if it is a bridge, MUST do a routeback
-    echo "    $this_public_netdev is a bridge type, must do a 'routeback'"
     is_a_bridge="$(ip -o -4 link show dev $this_public_netdev type bridge)"
     if [ -n "$is_a_bridge" ]; then
+      INTF_OPTS+=",nosmurfs"
+    fi
+  else
+    echo "Multi-home interface"
+    echo "    Multi-homed $this_public_netdev is a bridge type, must do a 'routeback'"
+    INTF_OPTS+=",nosmurfs"
+    # Check if netdev is a 'type bridge'
+    is_a_bridge="$(ip -o -4 link show dev $this_public_netdev type bridge)"
+    if [ -n "$is_a_bridge" ]; then
+      echo "    Multi-homed $this_public_netdev is a bridge type, must do a 'nosmurfs'"
       INTF_OPTS+=",routeback"
     fi
   fi
@@ -863,6 +885,7 @@ for this_public_netdev in $public_netdevs; do
   intfname_netdev="UNKNOWN_IP"
   default_gw_ip="255.255.255.255"
   for this_gw_device in ${default_gw_netdevs_A[@]}; do
+    echo "idx: $idx"
     if [ "$this_public_netdev" == "${this_gw_device}" ]; then
       default_gw_ip="${default_gw_ip4_A[$idx]}"
       echo "    Gateway IP: ${default_gw_ip}"
@@ -872,7 +895,10 @@ for this_public_netdev in $public_netdevs; do
     ((idx++))
   done
   echo "Locating MAC address of gateway router on $this_public_netdev ..."
-  gw_macaddr="$(ip -o -4 neigh show|grep "^${default_gw_ip}"|awk '{print $5}')"
+  echo "default_gw_ip: $default_gw_ip"
+  echo "default_gw_ip: $default_gw_ip"
+  gw_macaddr="$(ip -o -4 neigh show|grep -E "^${default_gw_ip} "|awk '{print $5}')"
+  echo "count(gw_macaddr): $(echo ${gw_macaddr} | wc -w)"
   echo "    Found MAC address of gateway router: $gw_macaddr"
   echo "Leave blank AND press ENTER if you:"
   echo "  1. wish to listen to other traffic next to this gateway router."
@@ -921,15 +947,15 @@ for this_private_netdev in $selected_private_netdevs_list; do
 
   echo "  Processing $this_private_netdev non-public-side interface ..."
 
-  # Stick in the defaults
-  # (must assumes at least ONE interface option, due to CSV pre-construct)
-  INTF_OPTS="logmartians,tcpflags,nosmurfs,routefilter"
+  # Seed interface options with the defaults
+  # (must assumes at least 1 interface option, due to varibale CSV comma appends)
+  INTF_OPTS="logmartians,tcpflags,routefilter"
 
-  # if it is a bridge, MUST do a routeback
-  #echo "    $this_private_netdev is a bridge type, must do a 'routeback'"
+  # if non-public interface is a bridge
   is_a_bridge="$(ip -o -4 link show dev $this_private_netdev type bridge)"
   if [ -n "$is_a_bridge" ]; then
     INTF_OPTS+=",routeback"
+    INTF_OPTS+=",nosmurf"
   fi
 
   # autodetect 'dhcp' option for any kind of netdev
@@ -955,7 +981,7 @@ for this_private_netdev in $selected_private_netdevs_list; do
     fi
     ((idx++))
   done
-  echo "$zone_netdev \$$intfname_netdev $INTF_OPTS" >> "$interfaces_output"
+  echo "$zone_netdev	\$$intfname_netdev	$INTF_OPTS" >> "$interfaces_output"
   echo ""
 done
 
