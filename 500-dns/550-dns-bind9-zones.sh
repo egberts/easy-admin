@@ -20,8 +20,13 @@ else
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
   flex_mkdir "$ETC_NAMED_DIRSPEC"
   flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
+  flex_mkdir "$VAR_CACHE_DIRSPEC"
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ETC_NAMED_DIRSPEC ..."
   flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VAR_LIB_NAMED_DIRSPEC ..."
   flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VAR_CACHE_NAMED_DIRSPEC ..."
+  flex_mkdir "$INSTANCE_VAR_CACHE_NAMED_DIRSPEC"
 fi
 echo
 
@@ -53,7 +58,9 @@ fi
 
 
 ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
-ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-zone-named.conf"
+
+# Vim syntax https://github.com/egberts/vim-syntax-bind-named now supports 'pz.*'
+ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
 
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 ZONE_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${ZONE_CONF_FILENAME}"
@@ -76,18 +83,63 @@ INSTANCE_ZONE_JOURNAL_DIRSPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
 INSTANCE_ZONE_JOURNAL_FILESPEC="${INSTANCE_ZONE_JOURNAL_DIRSPEC}/$ZONE_JOURNAL_FILENAME"
 
 
-# Create the zone configuration extension file so other scripts
-# can pile on more statements and its value settings
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_DIRSPEC ..."
+flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
+flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_DB_DIRSPEC"
+flex_chmod 0750               "$INSTANCE_ZONE_DB_DIRSPEC"
 
-flex_touch "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
-flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_CONF_EXTN_FILESPEC"
-flex_chmod 0640 "$INSTANCE_ZONE_CONF_EXTN_FILESPEC"
+#    journal "${INSTANCE_ZONE_JOURNAL_FILESPEC}";
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_JOURNAL_DIRSPEC ..."
+flex_mkdir "$INSTANCE_ZONE_JOURNAL_DIRSPEC"
+flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_JOURNAL_DIRSPEC"
+flex_chmod 0750               "$INSTANCE_ZONE_JOURNAL_DIRSPEC"
 
+#    key-directory "${INSTANCE_ZONE_KEYS_DIRSPEC}";
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_KEYS_DIRSPEC ..."
+flex_mkdir "${INSTANCE_ZONE_KEYS_DIRSPEC}"
+flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_KEYS_DIRSPEC"
+flex_chmod 0750               "$INSTANCE_ZONE_KEYS_DIRSPEC"
 
-# Create THE zone configuration file
+# include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
+filespec="$INSTANCE_ZONE_CONF_EXTN_FILESPEC"
+filename="$ZONE_CONF_EXTN_FILENAME"
+filepath="$INSTANCE_ZONE_CONF_DIRSPEC"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_CONF_EXTN_FILESPEC ..."
+cat << ZONE_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_CONF_EXTN_FILESPEC" > /dev/null
+#
+# File: ${filename}
+# Path: ${filepath}
+# Title: Zone '${ZONE_NAME}' extension configuration file
+# Generator: $(basename "$0")
+# Date: $(date)
+#
 
-filename="$(basename "$INSTANCE_ZONE_CONF_FILESPEC")"
-filepath="$(dirname "$INSTANCE_ZONE_CONF_FILESPEC")"
+ZONE_EXTN_CONF_EOF
+flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chmod 0640               "$filespec"
+
+#    file "${INSTANCE_ZONE_DB_FILESPEC}";
+filespec="$INSTANCE_ZONE_DB_FILESPEC"
+filename="$ZONE_DB_FILENAME"
+filepath="$INSTANCE_ZONE_DB_DIRSPEC"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_FILESPEC ..."
+cat << ZONE_EXTN_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_FILESPEC" > /dev/null
+#
+# File: ${filename}
+# Path: ${filepath}
+# Title: Extension to the zone '${ZONE_NAME}' database file
+# Generator: $(basename "$0")
+# Date: $(date)
+#
+
+ZONE_EXTN_DB_EOF
+flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chmod 0640 "$filespec"
+
+# Lastly, create THE zone configuration file
+
+filename="$ZONE_CONF_FILENAME"
+filepath="$INSTANCE_ZONE_CONF_DIRSPEC"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
 cat << ZONE_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
@@ -138,6 +190,7 @@ zone "$ZONE_NAME" IN
 
     file "${INSTANCE_ZONE_DB_FILESPEC}";
 
+
     //// 'key-directory' is the directory where the public and 
     //// private DNSSEC key files should be found when 
     //// performing a dynamic update of secure zones, if 
@@ -155,8 +208,8 @@ zone "$ZONE_NAME" IN
     //// with “.jnl” appended. 
     //// This is applicable to primary and secondary zones.
 
-
     journal "${INSTANCE_ZONE_JOURNAL_FILESPEC}";
+
 
     //// If keys are present in the key directory the first 
     //// time the zone is loaded, the zone will be signed 
@@ -229,8 +282,10 @@ zone "$ZONE_NAME" IN
 
     inline-signing yes;
 
+
 // Allow for extensible settings
 include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
+
 
 ///    // Some more stuff that needs to be done elsewhere
 ///    allow-query {
@@ -262,13 +317,11 @@ include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
 ///        // dnssec-policy leo_secured_domain; // available in Bind 9.15.8+
 ///    };
 
-
-
 };
 
 ZONE_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
+echo
 
 echo "Done."
-
