@@ -1,0 +1,38 @@
+Design of Easy Admin for Shorewall firewall
+===========================================
+
+Breakdown
+---------
+
+Shorewall needs the following configuration files made by the end-user.
+The ordering of these files are:
+
+1. params
+2. interfaces
+3. policy
+4. zones
+5. rules
+
+Ideal Questionnaries Workflow
+-----------------------------
+Auto-detect available netdev and IP-assigned interfaces
+Auto-detect gateways, multi-homed if need be
+Auto-detect bridged netdevs
+Auto-detect forwarding netdevs
+Ask for 'labeling' scheme of firewall zones (colors, animal, places)
+
+Set up 'params' file
+  - Add labels to each netdev interfaces
+
+Set up 'interfaces' file
+
+  - Seed ALL interfaces with 'logmartians,tcpflags,routefilter'
+  - Auto-configure public-facing 'interfaces' with
+    - 'upnp' if public-interface
+    - 'nosmurfs' if non-public or bridging interface
+    - 'routeback' if not a bridging interface
+    - 'dhcp' if dynamically assigned IP address
+  - Auto-configure non-public-facing 'interfaces' with
+    - 'maclist' if user wants it
+
+
