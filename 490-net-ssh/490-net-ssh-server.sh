@@ -4,7 +4,7 @@
 #
 # Env Vars (and its default setting):
 #   SSHD_CONF="$BUILDROOT/etc/ssh/sshd_config"
-#   ALGORITHM_USED="ed25519"  # or "ecdsa"
+#   ALGORITHM_USED="ed25519"  # but not "ecdsa" and certainly not "rsa"
 #   BUILDROOT="build"
 #   CHROOT_DIR=""
 #   PREFIX="/usr"
