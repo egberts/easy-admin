@@ -1,14 +1,16 @@
-Other files that named daemon tries to open are:
+Some strange undocumented things that `strace -f` picked up while analyzing `named` daemon.  OK, not strange, just unfamiliar.
+
+Other files that `named` daemon tries to open are:
 
 
-dmz2.tsigkeys ; dmz2 is a BIND view
-gateway.tsigkeys ; gateway is a BIND view
-white.tsigkeys ; white is a BIND view
-dmz.tsigkeys ; dmz is a BIND view
-green.tsigkeys ; green is a BIND view
-blue.tsigkeys ; blue is a BIND view
-virtualnet.tsigkeys ; virtualnet is a BIND view
-chaos.tsigkeys ; chaos is a BIND view
-_bind.tsigkeys ; _bind is an unknown BIND view
+`dmz2.tsigkeys` ; dmz2 is a BIND view
+`gateway.tsigkeys` ; gateway is a BIND view
+`white.tsigkeys` ; white is a BIND view
+`dmz.tsigkeys` ; dmz is a BIND view
+`green.tsigkeys` ; green is a BIND view
+`blue.tsigkeys` ; blue is a BIND view
+`virtualnet.tsigkeys` ; virtualnet is a BIND view
+`chaos.tsigkeys` ; chaos is a BIND view
+`_bind.tsigkeys` ; _bind is an unknown BIND view
 
-
+Obviously, `.tsigkeys` file type is being used.
