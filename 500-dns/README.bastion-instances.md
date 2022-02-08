@@ -3,6 +3,7 @@ Bastion DNS server - by instance
 
 Normally, nameserver (named) daemon is a single process on a host/server.
 
+```
 #     single-named (any view, any zones)
 #     +------------------------------------------
 #     | public |
@@ -14,11 +15,19 @@ Normally, nameserver (named) daemon is a single process on a host/server.
 #     | HomeNet| 
 #     +------------------------------------------
 #
+```
 
-Single named can do pretty much everything: authoritative, 
-recursive, resolver, forwarding, stub, zone mirroring, and even a root server.
+A single `named` daemon can do pretty much everything: 
 
-Some further DNS nameserver conceptualizations (of which some 
+* authoritative, 
+* recursive, 
+* resolver, 
+* forwarding, 
+* stub, 
+* zone mirroring, and even 
+* root server.
+
+Some further DNS nameserver conceptualizations (some of which 
 are covered within this document) are: 
 
 * split-horizon
@@ -36,7 +45,7 @@ Split-horizon entails defining multiple views to provide different
 DNS record sets to different client hosts.
 
 One downside, the split-horizon does cache DNS records between multiple views:
-so if one cached entry got poisoned, all 'views' suffers.
+so if one common cached entry got poisoned, all 'views' suffers. 
 
 The general idea of a bastion is to keep the inside stuff private and
 away from lookie-loo outsiders, including cached DNS records.
@@ -50,6 +59,7 @@ group without having to experience any potential cross-view cache
 poisoning: to do avoidance of cache poisoning, we
 turn to separate daemons (and thusly separate configuration files).
 
+```
 #     Bastion (two-named)  [optional]
 #     +------------------------------------------
 #     | public |
@@ -65,7 +75,7 @@ turn to separate daemons (and thusly separate configuration files).
 #     | HomeNet| 
 #     +------------------------------------------
 #
-
+```
 
 Unlike the split-horizon (single named daemon) DNS that handles 
 everything from all netdev interfaces, to handling all DNS queryings, 
@@ -105,11 +115,11 @@ Several methods of bastion DNS server are:
 1.  chroot per daemon per netdev interface
 
 Hence, following security dictates:
-  - each RNDC key shall be unique and made readable-only to different group ID
-  - default 'rndc' shall not use /etc/bind/rndc.key (delete them)
+- each RNDC key shall be unique and made readable-only to different group ID
+- default 'rndc' shall not use /etc/bind/rndc.key (delete them)
 
 So, what method is the most secured way for 'rndc' to handle both daemons?
-
+```
 Method 1 - For bastion setups
   generate two different rndc.key
     cd /etc/bind
@@ -167,9 +177,9 @@ Method 1 - For bastion setups
 
     # end-user has copy of RNDC key
     rndc -c ./rndc-end-user.conf status
+```
 
-
-
+```
 Method 2 - For multiple end-users or system admins
   generate two different rndc.conf, each into two different files:
     cd /etc/bind
@@ -188,11 +198,12 @@ Method 2 - For multiple end-users or system admins
         -u bind
     # cut last-half of rndc-public.conf, paste to /etc/bind/named-controls.conf
     # cut last-half of rndc-private.conf, append to /etc/bind/named-controls.conf
-
+```
 
 By extension, we can also run multiple bastions to provide 
 further separation of network overlays.
 
+```
 #     Bastion (multiple-named)  [supported]
 #     +--------+------------------+--------+
 #     | public |                  |loopback|
@@ -216,3 +227,4 @@ further separation of network overlays.
 #     |ns2     | (new DNS world)  |        |
 #     +--------+---------------------------+
 #
+```
