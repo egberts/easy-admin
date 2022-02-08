@@ -27,9 +27,9 @@ Partial Configuration
 Subdirectory `partial-configs` under `BUILDROOT` holds the many `named`
 configuration settings collected for creation of final `named.conf`.
 
-Partial-Configs Organization
+Partial-Configs Organization (obsoleted)
 ----------------------------
-
+OBSOLETED:  Partial-config holding area is going away in favor of re-reading the generated configuration file for end-user simplicity.  Safe to ignore this section.
 Configuration of `named.conf` are nested by:
 
 * IP interface
