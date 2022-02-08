@@ -3,15 +3,15 @@ Bind9.:wq
 
 BUILD directory
 ===============
-A temporary '$CWD/build' directory is created to store all the user settings
-of the upcoming Bind9 named.conf configurations.  BUILDROOT envar is defined
+A temporary `$PWD/build` directory is created to store all the user settings
+of the upcoming Bind9 `named.conf` configurations.  `$BUILDROOT` environment variable is defined
 as './build'.
 
-Also BUILDROOT is suffix with a `CHROOT_DIR` envar value in event of 
-desired `chroot named`.  Example: `./build/var/chroot/named`.
+Also `BUILDROOT` is suffix with a `CHROOT_DIR` envar value in event of 
+starting its daemon with `chroot named`.  Example: `./build/var/chroot/named`.
 
 Subdirectories are:
-
+```
    ./build/partial-configs
    ./build/etc/bind
    ./build/usr/bin
@@ -20,7 +20,7 @@ Subdirectories are:
    ./build/var/bind/cache
    ./build/var/bind/lib   (zone files)
    ./build/var/bind/lib   (zone files)
-
+```
 Partial Configuration
 ---------------------
 
@@ -88,10 +88,10 @@ compromises (such as memory leakage or network abuse/misuse).
 Instance holds the following information:
 
 * Name of instance; to aid with end-user visualization: eg.:
- * public/private,
- * internet/dmz/homelan, 
- * hot/cold, 
- * red/black
+  * public/private,
+  * internet/dmz/homelan, 
+  * hot/cold, 
+  * red/black
 
 NOTE: In some rare cases, such hot-side may refer to a white-lab (closed network).
 
