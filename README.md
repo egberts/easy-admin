@@ -41,18 +41,15 @@ By layering functionality of common environment variables, I was able to easily 
 
 ```
     999-custom-easy-admin-scripts.sh
-       ^
        |
        V
-     maintainer-xxx-xxxx.sh
-       ^
+    maintainer-xxx-xxxx.sh
        |
        V
-     distro-os.sh
-       ^
+    distro-os.sh
        |
        V
-     easy-admin-installer.sh
+    easy-admin-installer.sh
 ```
 
 The first script layer is `easy-admin-installer.sh`.  It is extremely similar to `install` tool found in `autotool` but extended to work in `chroot`, `BUILDROOT` and mini private-root filesystem.  Contains no active scripting but mostly contains functions for psuedo emulating `mkdir`, `chown`, `chmod`, `chcon`, and `touch`.
@@ -60,5 +57,13 @@ The first script layer is `easy-admin-installer.sh`.  It is extremely similar to
 Second script is `distro-os.sh`.  As the filename implies, it deals with quirkiness of each distribution of Linux OS.  Some example of quirks are where to put the `/run` or `/var/run`, and `sudo` or `wheel` group.
 
 Third script is `maintainer-xxx-xxxx.sh`.  Yeah, each maintainer of the software also throw in their own quirks as well such as unique package name, systemd unit service name. `/etc/<what-name-is-that>` configuration subdirectory name, and many many more.
+
+File Permission/Ownership
+=========================
+Each scripts generates a shell scripts to ensure file permissions and file ownerships of generated configuration files.
+
+Each script prompts system admins on HOW they want their end-users to interact with such tools and actually ensures this.
+
+Also, having a statically-generated shell script that evokes 'chown/chmod/chcon' ensures that nothing gets changed between distros and between package updates.  Meets your QA and Common Criteria too.  You do know that distros do do reset file permissions and ownership (much to system admins' angst).  This is why some distros chosen over others by the serious system administrators.
 
 [![Lint Code Base](https://github.com/egberts/easy-admin/actions/workflows/super-linter.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/super-linter.yml) [![Codacy Security Scan](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml) 
