@@ -326,7 +326,7 @@ ask for its remote nameserver’s full hostname. use as SOA MNAME.
 6.  
 
 
-
+```
 # TODO: Need to introduce more auto-determination based on current settings and
 # setups.
 #
@@ -433,7 +433,7 @@ ask for its remote nameserver’s full hostname. use as SOA MNAME.
 #         echo consult manual for systemd-resolverd/resolvconf if
 #         echo /etc/resolv.conf is managed (symlinked)
 #
-
+```
 
 
 
