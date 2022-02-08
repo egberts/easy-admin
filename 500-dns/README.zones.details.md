@@ -117,7 +117,7 @@ Secondary zone file gets directly maintained and dished out by a secondary names
 
 You can peek at a secondary zone file, but not change it.
 
-First Line - Zone File Format
+First Lines - Zone File Format
 -----------------------------
 First line of a zone file contains enough information to describe this zone (or
 domain name part not having a period symbol.)
@@ -152,7 +152,7 @@ More frequently than not, each line with a number has a comment after its number
 
 Those numbers's comment will be detailed in further sections.
 
-First Value of First Set of Lines - Zone File Format
+MNAME - First Value of First Set of Lines - Zone File Format
 --------------------------------------------
 First value in the zone file begins with what this zone file controls: 
 
@@ -223,7 +223,7 @@ That's the `86400` part of the first line:
 
     example.tld.  86400  SOA  ns1.example.tld. admin.example.tld. 2020103437 1200 180 1209600 10800
 
-TTL usefulness is when we might be moving to another nameserver, and to do that we must shorten this TTL firstly.  
+TTL usefulness comes into play when we might be moving to another nameserver, and to do that we must shorten this TTL firstly (which means plan waaaaay ahead) for undisrupted DNS moves.
 
 CAVEAT: Decreasing TTL would increase DNS network traffic by however divisable we cut this TTL.  Cut TTL in half, we double traffic; third, triple ...
 
@@ -261,6 +261,8 @@ this zone file.  Nothing to do with original zone text file.
 
 It is very often that the hostname of the host that is running the DNS server is
 used as this SOA primary nameserver.
+
+In some documentation, `MNAME` refers to this.  `MNAME` stands for primary master name.
 
 HIDDEN-MASTER: The name of the controlling nameserver doesn't have to be the
 same host that your nameserver is running on.  
