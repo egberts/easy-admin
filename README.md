@@ -1,6 +1,6 @@
 # easy-admin
-These scripts are for easy Debian (and some Redhat) system administration for a
-simple bare minimum server.
+These scripts are for easy system administration for a
+simple bare minimum server.  These got started within Debian, but soon expanded to include CentOS, Fedora, Redhat, and ArchLinux.  
 
 Scripts that would only help white-lab managers; and also to help us bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 
@@ -35,5 +35,30 @@ Some features are:
 ** Chrony NTP server/client
 ** DNS, ISC Bind9: authoritative, bastion/split-horizon, resolver
 
+Script Nesting
+==============
+By layering functionality of common environment variables, I was able to easily fold in other Linux distros into the script.
+
+```
+    999-custom-easy-admin-scripts.sh
+       ^
+       |
+       V
+     maintainer-xxx-xxxx.sh
+       ^
+       |
+       V
+     distro-os.sh
+       ^
+       |
+       V
+     easy-admin-installer.sh
+```
+
+The first script layer is `easy-admin-installer.sh`.  It is extremely similar to `install` tool found in `autotool` but extended to work in `chroot`, `BUILDROOT` and mini private-root filesystem.  Contains no active scripting but mostly contains functions for psuedo emulating `mkdir`, `chown`, `chmod`, `chcon`, and `touch`.
+
+Second script is `distro-os.sh`.  As the filename implies, it deals with quirkiness of each distribution of Linux OS.  Some example of quirks are where to put the `/run` or `/var/run`, and `sudo` or `wheel` group.
+
+Third script is `maintainer-xxx-xxxx.sh`.  Yeah, each maintainer of the software also throw in their own quirks as well such as unique package name, systemd unit service name. `/etc/<what-name-is-that>` configuration subdirectory name, and many many more.
 
 [![Lint Code Base](https://github.com/egberts/easy-admin/actions/workflows/super-linter.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/super-linter.yml) [![Codacy Security Scan](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml/badge.svg)](https://github.com/egberts/easy-admin/actions/workflows/codacy-analysis.yml) 
