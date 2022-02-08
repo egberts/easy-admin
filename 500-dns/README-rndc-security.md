@@ -11,3 +11,5 @@ And further access control by IP address.
 
 Read-only is good for QA folks, Common Criteria 
 enforcer, and selected end-users.
+
+Also, it is getting increasingly important that "world" file permission of `rndc` binary must be dropped and lowered to at most `0750`.
