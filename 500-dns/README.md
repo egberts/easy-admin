@@ -166,32 +166,32 @@ when stepping through the following suggested workflow:
 
 * initialization
 * View(s)
- * no view, single zone
-  * Root Server
- * one view, single zone
- * departmental compartmentalization; N-views, same interface
- * split-horizon; N-views, different interfaces
- * bastion; one-view, different daemon instances
+* * no view, single zone
+* * * Root Server
+* * one view, single zone
+* * departmental compartmentalization; N-views, same interface
+* * split-horizon; N-views, different interfaces
+* * bastion; one-view, different daemon instances
 * Zone
- * Zone clause, user-defined
- * Zone database, user-defined
- * Zones, standard
+* * Zone clause, user-defined
+* * Zone database, user-defined
+* * Zones, standard
 * Interaction with other DNS servers
- * secondary(s) (formerly known as slave)
- * hidden-primary (formerly known as hidden-master)
- * split-NOTIFY/AXFR traffic
- * localhost /etc/resolv.conf
+* * secondary(s) (formerly known as slave)
+* * hidden-primary (formerly known as hidden-master)
+* * split-NOTIFY/AXFR traffic
+* * localhost /etc/resolv.conf
 * Protocol Security
- * Recursion allowed
- * Querying rights
- * Transfer rights
- * Forwarding rights
+* * Recursion allowed
+* * Querying rights
+* * Transfer rights
+* * Forwarding rights
 * Customized Resource Records (RR)
- * Mail (SMTP/IMAP4/POP3/SUBMISSION/SMTPS/IMAP4S/POP3S/SUBMISSIONS)
- * Autodiscover/Autoconfig for remote email clients to find your email server
- * SSHFP
- * BIMI
- * OpenPGPKey
+* * Mail (SMTP/IMAP4/POP3/SUBMISSION/SMTPS/IMAP4S/POP3S/SUBMISSIONS)
+* * Autodiscover/Autoconfig for remote email clients to find your email server
+* * SSHFP
+* * BIMI
+* * OpenPGPKey
 
 
 View
@@ -210,7 +210,7 @@ assign toward a a view clause
 
 * If view is on the public-side, flip ‘recursion’ to disable.
 
- * If this view is not a hidden-master, set ‘allow-query’ 
+** If this view is not a hidden-master, set ‘allow-query’ 
 to its interface IP address in view clause, otherwise use ‘none;’
 
 * If this view is on the private-side, prompt user for 
