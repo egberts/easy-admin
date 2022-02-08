@@ -31,9 +31,12 @@ Some features are:
 * custom hardened kernel building
 * easier systemctl usage
 * autoconfigurator for:
-** DHCP
-** Chrony NTP server/client
-** DNS, ISC Bind9: authoritative, bastion/split-horizon, resolver
+  * SSH (OpenSSH)
+  * Network managers (`systemd-networkd`, `NetworkManager`, `ifupdown`)
+  * DHCP
+  * Chrony NTP server/client
+  * DNS, ISC Bind9: authoritative, bastion/split-horizon, resolver
+  * Shorewall firewall (coming)
 
 Script Nesting
 ==============
