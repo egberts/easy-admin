@@ -498,7 +498,7 @@ if [ "$REPLY" != 'n' ]; then
 
   # Check syntax of named.conf file
   named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
-  cd "${BUILDROOT}${CHROOT_DIR}" || exit 16
+  # cd "${BUILDROOT}${CHROOT_DIR}" || exit 16
 
 # shellcheck disable=SC2086
 # sudo /usr/sbin/named-checkconf -c -i -p -x -t build /etc/bind/named.conf
@@ -520,10 +520,10 @@ if [ "$REPLY" != 'n' ]; then
       "$named_chroot_opt" \
       "$INSTANCE_NAMED_CONF_FILESPEC"
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
-    popd || exit 15
+    # popd || exit 15
     retsts=$?
   fi
-  popd || exit 15
+  # popd || exit 15
   if [ $retsts -ne 0 ]; then
     exit $retsts
   else
