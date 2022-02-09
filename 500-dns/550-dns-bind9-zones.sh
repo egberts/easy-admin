@@ -3,7 +3,7 @@
 # Title: Create a zone
 # Description:
 #
-DEFAULT_ZONE_NAME="egbert.net"
+DEFAULT_ZONE_NAME="example.test"
 
 echo "Create a zone in ISC Bind9"
 echo
@@ -161,83 +161,83 @@ zone "$ZONE_NAME" IN
     type ${ZONE_TYPE_NAME};
 
 
-    //// file statement defines the file used by the zone in 
-    //// quoted string format, for instance, "secondary/example.com" - 
-    //// or whatever convention you use. The file entry is 
-    //// mandatory for 'primary' and 'hint' zone types and 
-    //// optional - but highly recommended - for 'secondary' and 
-    //// not required for forward zones. 
+    //// file statement defines the file used by the zone in
+    //// quoted string format, for instance, "secondary/example.com" -
+    //// or whatever convention you use. The file entry is
+    //// mandatory for 'primary' and 'hint' zone types and
+    //// optional - but highly recommended - for 'secondary' and
+    //// not required for forward zones.
     ////
     //// The file may be an absolute path or relative to directory.
     //// But ISC Bind9 team highly recommend absolute path notation
     //// due to 'directory' statement being able to shift the
     //// current working directory under the daemon during reading
     //// of the named.conf file.  Some file-related statements
-    //// may work before this 'directory' statement and the later 
+    //// may work before this 'directory' statement and the later
     //// file-related will NOT work: and vice-versa.
     ////
-    //// Note: If a type 'secondary' has a file statement then any zone 
-    //// transfer will cause it to update this zone database file. 
-    //// If the 'secondary' is reloaded then it will read this file 
-    //// and immediately start answering queries for the domain. 
-    //// If no file is specified it will immediately try to contact 
-    //// the 'primary' and initiate a zone transfer. 
-    //// For obvious reasons the 'secondary' cannot do zone queries 
-    //// until this zone transfer gets completed. 
-    //// If the 'primary' is not available or the 'secondary' 
-    //// fails to contact the 'primary', for whatever reason, the 
+    //// Note: If a type 'secondary' has a file statement then any zone
+    //// transfer will cause it to update this zone database file.
+    //// If the 'secondary' is reloaded then it will read this file
+    //// and immediately start answering queries for the domain.
+    //// If no file is specified it will immediately try to contact
+    //// the 'primary' and initiate a zone transfer.
+    //// For obvious reasons the 'secondary' cannot do zone queries
+    //// until this zone transfer gets completed.
+    //// If the 'primary' is not available or the 'secondary'
+    //// fails to contact the 'primary', for whatever reason, the
     //// zone may be left with no effective Authoritative Name Servers.
 
     file "${INSTANCE_ZONE_DB_FILESPEC}";
 
 
-    //// 'key-directory' is the directory where the public and 
-    //// private DNSSEC key files should be found when 
-    //// performing a dynamic update of secure zones, if 
-    //// different than the current working directory. 
+    //// 'key-directory' is the directory where the public and
+    //// private DNSSEC key files should be found when
+    //// performing a dynamic update of secure zones, if
+    //// different than the current working directory.
     ////
-    //// Note that this option has no effect on the paths for 
-    //// files containing non-DNSSEC keys such as bind.keys, 
+    //// Note that this option has no effect on the paths for
+    //// files containing non-DNSSEC keys such as bind.keys,
     //// rndc.key, or session.key.
 
     key-directory "${INSTANCE_ZONE_KEYS_DIRSPEC}";
 
 
-    //// 'journal' allows the default journal’s filename to 
-    //// be overridden. The default is the zone’s filename 
-    //// with “.jnl” appended. 
+    //// 'journal' allows the default journal’s filename to
+    //// be overridden. The default is the zone’s filename
+    //// with “.jnl” appended.
     //// This is applicable to primary and secondary zones.
 
     journal "${INSTANCE_ZONE_JOURNAL_FILESPEC}";
 
 
-    //// If keys are present in the key directory the first 
-    //// time the zone is loaded, the zone will be signed 
-    //// immediately, without waiting for an rndc sign or 
-    //// rndc loadkeys command. (Those commands can still be 
+    //// If keys are present in the key directory the first
+    //// time the zone is loaded, the zone will be signed
+    //// immediately, without waiting for an rndc sign or
+    //// rndc loadkeys command. (Those commands can still be
     //// used when there are unscheduled key changes, however.)
-    //// 
-    //// When new keys are added to a zone, the TTL is set to 
-    //// match that of any existing DNSKEY RRset. If there is 
-    //// no existing DNSKEY RRset, then the TTL will be set to 
-    //// the TTL specified when the key was created (using the 
+    ////
+    //// When new keys are added to a zone, the TTL is set to
+    //// match that of any existing DNSKEY RRset. If there is
+    //// no existing DNSKEY RRset, then the TTL will be set to
+    //// the TTL specified when the key was created (using the
     //// dnssec-keygen -L option), if any, or to the SOA TTL.
-    //// 
-    //// If you wish the zone to be signed using NSEC3 instead 
-    //// of NSEC, submit an NSEC3PARAM record via dynamic 
-    //// update prior to the scheduled publication and 
-    //// activation of the keys. If you wish the NSEC3 chain to 
-    //// have the OPTOUT bit set, set it in the flags field of 
-    //// the NSEC3PARAM record. The NSEC3PARAM record will not 
-    //// appear in the zone immediately, but it will be stored 
-    //// for later reference. When the zone is signed and the 
-    //// NSEC3 chain is completed, the NSEC3PARAM record will 
+    ////
+    //// If you wish the zone to be signed using NSEC3 instead
+    //// of NSEC, submit an NSEC3PARAM record via dynamic
+    //// update prior to the scheduled publication and
+    //// activation of the keys. If you wish the NSEC3 chain to
+    //// have the OPTOUT bit set, set it in the flags field of
+    //// the NSEC3PARAM record. The NSEC3PARAM record will not
+    //// appear in the zone immediately, but it will be stored
+    //// for later reference. When the zone is signed and the
+    //// NSEC3 chain is completed, the NSEC3PARAM record will
     //// appear in the zone.
-    //// 
-    //// Using the auto-dnssec option requires the zone to be 
-    //// configured to allow dynamic updates, by adding an 
-    //// allow-update or update-policy statement to the zone 
-    //// configuration. If this has not been done, the 
+    ////
+    //// Using the auto-dnssec option requires the zone to be
+    //// configured to allow dynamic updates, by adding an
+    //// allow-update or update-policy statement to the zone
+    //// configuration. If this has not been done, the
     //// configuration will fail.
     ////
     //// The "rndc loadkeys" command requires a "auto-dnssec maintain"
@@ -249,18 +249,18 @@ zone "$ZONE_NAME" IN
     auto-dnssec maintain;
 
 
-    //// When a zone is configured with auto-dnssec maintain; 
-    //// its key repository must be checked periodically to 
-    //// see if any new keys have been added or any existing 
-    //// keys’ timing metadata has been updated 
-    //// (see dnssec-keygen: DNSSEC key generation tool and 
-    //// dnssec-settime: set the key timing metadata for 
-    //// a DNSSEC key). 
+    //// When a zone is configured with auto-dnssec maintain;
+    //// its key repository must be checked periodically to
+    //// see if any new keys have been added or any existing
+    //// keys’ timing metadata has been updated
+    //// (see dnssec-keygen: DNSSEC key generation tool and
+    //// dnssec-settime: set the key timing metadata for
+    //// a DNSSEC key).
     ////
-    //// The dnssec-loadkeys-interval option sets the 
-    //// frequency of automatic repository checks, in minutes. 
-    //// The default is 60 (1 hour), the minimum is 1 
-    //// (1 minute), and the maximum is 1440 (24 hours); 
+    //// The dnssec-loadkeys-interval option sets the
+    //// frequency of automatic repository checks, in minutes.
+    //// The default is 60 (1 hour), the minimum is 1
+    //// (1 minute), and the maximum is 1440 (24 hours);
     //// any higher value is silently reduced.
     ////
     //// The 'rndc loadkeys' command forces named to check for
@@ -269,16 +269,16 @@ zone "$ZONE_NAME" IN
     dnssec-load-interval 30;
 
 
-    //// If 'inline-signing' is yes, this enables “bump in 
-    //// the wire” signing of a zone, where a unsigned zone 
-    //// is transferred in or loaded from disk and a 
-    //// signed version of the zone is served with, 
-    //// possibly, a different serial number. 
+    //// If 'inline-signing' is yes, this enables “bump in
+    //// the wire” signing of a zone, where a unsigned zone
+    //// is transferred in or loaded from disk and a
+    //// signed version of the zone is served with,
+    //// possibly, a different serial number.
     ////
     //// This behavior is disabled by default.
     //
-    // DO NOT use inline DNSSEC signing on a 'primary', 
-    // only on a 'secondary'. 
+    // DO NOT use inline DNSSEC signing on a 'primary',
+    // only on a 'secondary'.
 
     inline-signing yes;
 
