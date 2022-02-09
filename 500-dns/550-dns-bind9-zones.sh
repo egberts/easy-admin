@@ -1,11 +1,11 @@
 #!/bin/bash
 # File: 550-dns-bind-zones.sh
-# Title: Create a zone
+# Title: Create the zone's database
 # Description:
 #
 DEFAULT_ZONE_NAME="example.test"
 
-echo "Create a zone in ISC Bind9"
+echo "Create a zone configuration file for ISC Bind9"
 echo
 
 source ./maintainer-dns-isc.sh
@@ -29,6 +29,33 @@ else
   flex_mkdir "$INSTANCE_VAR_CACHE_NAMED_DIRSPEC"
 fi
 echo
+
+ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
+INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
+
+# Wait, try and find all available zones to choose from
+# Also, do we try to leverage 'named-checkconf -z' to get the list of zones?
+#   using named-checkconf requires a valid working 'named.conf'
+#   this tool will break if 'named.conf et. al.' is not 'correct' syntax-wise
+#   makes 'inclusion' of new zone a bit harder
+# or do we try script cookie-cutter 'Xz.xxxxx.domain.tld' file format?
+#   script would controls who gets included into 'zones-named.conf' list file.
+# or do we locate files having 'zone' keyword/clause and go with that?
+#   past evocation of this script might leave some lingering past zones
+#   might not be included by main 'named.conf' or 'zones-named.conf'
+# or try all of above, then 'sort -u' the zone names?
+ZONE_TYPES="pz mz sz ch hint"
+for this_zone_type in $ZONE_TYPES; do
+  echo "Trying $this_zone_type zone type"
+  THIS_ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
+  THIS_ZONE_CONF_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${THIS_ZONE_CONF_FILENAME}"
+  FIND_TYPE="$(find $INSTANCE_ZONE_CONF_DIRSPEC -name "${this_zone_type}.*" -print) | xargs"
+  if [ -f "$THIS_ZONE_CONF_FILESPEC" ]; then
+    echo "FOUND: $THIS_ZONE_CONF_FILESPEC file."
+  fi
+
+done
+
 
 # Ask the user for the zone name (in form of a domain name)
 if [ -n "$DEFAULT_ZONE_NAME" ]; then

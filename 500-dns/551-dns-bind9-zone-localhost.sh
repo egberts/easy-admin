@@ -5,7 +5,7 @@
 #
 DEFAULT_ZONE_NAME="localhost."
 
-echo "Create a localhost zone in ISC Bind9"
+echo "Create a 'localhost' zone for ISC Bind9"
 echo
 
 source ./maintainer-dns-isc.sh

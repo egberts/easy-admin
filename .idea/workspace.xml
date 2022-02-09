@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="Split apart the 'nm-misc' file into three separate options.">
+    <list default="true" id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="Rename filename to reflect its own functionalities better">
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/400-network-managers/403-net-resolv-check.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/403-nm-resolver-check.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/400-network-managers/405-network-manager-wifi-privacy.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-wifi-privacy.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/400-network-managers/430-net-public-nmcli.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/430-nm-NetworkManager-nmcli-public-LAN-interface.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/400-network-managers/433-net-bridge-private-nmcli.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/433-nm-NetworkManager-nmcli-bridge-interface-private.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/400-network-managers/435-net-wireguard-nmcli.sh" beforeDir="false" afterPath="$PROJECT_DIR$/400-network-managers/435-net-wireguard-nmcli.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/500-dns/593-dns-bind9-autoconfig.sh" beforeDir="false" afterPath="$PROJECT_DIR$/500-dns/593-dns-bind9-autoconfig.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,7 +35,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/400-network-managers" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-own-dhcp-client-resolver-disable.sh" />
     <property name="settings.editor.selected.configurable" value="preferences.editor.code.editing" />
   </component>
   <component name="RecentsManager">
@@ -46,7 +43,7 @@
       <recent name="$PROJECT_DIR$/400-network-managers" />
     </key>
   </component>
-  <component name="RunManager" selected="Shell Script.404-network-manager-nm-misc.sh">
+  <component name="RunManager" selected="Shell Script.nm-resolve-disable">
     <configuration name="404-network-manager-nm-misc.sh" type="ShConfigurationType" temporary="true">
       <option name="SCRIPT_TEXT" value="" />
       <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
@@ -88,7 +85,14 @@
       <option name="project" value="LOCAL" />
       <updated>1643380323312</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Rename filename to reflect its own functionalities better">
+      <created>1643380770389</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1643380770389</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -104,6 +108,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Split apart the 'nm-misc' file into three separate options." />
-    <option name="LAST_COMMIT_MESSAGE" value="Split apart the 'nm-misc' file into three separate options." />
+    <MESSAGE value="Rename filename to reflect its own functionalities better" />
+    <option name="LAST_COMMIT_MESSAGE" value="Rename filename to reflect its own functionalities better" />
   </component>
 </project>

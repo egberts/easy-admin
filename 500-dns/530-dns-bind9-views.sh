@@ -2,9 +2,44 @@
 # File: 550-dns-bind-views.sh
 # Title: Create a view
 # Description:
+#   Creates a view clause configuration file for inclusion
+#   by ISC Bind9 named daemon configuration (`named.conf`) 
+#   file.  
+#
+#   Also creates an accompany extension config file
+#   (included by its view config file) for accomodating 
+#   additional settings by other scripts.
+#
+#   Then tacks on an 'include' clause of this 'view' into the
+#   `views-named.conf` for final reading by `named.conf`
+#
+#
+#   DESIGN RATIONALE
+#
+#   Views are commonly netdev-centric but some views 
+#   can be departmental-centric (within the same IP interface
+#   but having different subnets, regardless of whether its
+#   IP interface has one or more assigned IP addresses.)
+#
+#   This script only offers (for the moment) the netdev-centric
+#   approach of creating views (one view per IP interface).
+#
+#   Ability to do departmental-centric (one view per multiple 
+#   subnet within same IP interface/subnet) is harder on the bash 
+#   programming with regard to required IP subnet masking,
+#   calculation and validation.  If you need this, you have 
+#   elevated beyond the need of this and related script files.
+#
+# User Questionnarie Workflow
+#  if only one available IP-assigned netdev interface
+#    echo "No view needed; go straight to creating zone(s); aborted"
+#    exit
+#  fi
+#  # Work on one new view at a time (re-run script for another new view)
 #
 # Environment Names
 #   VIEW_NAME - The name of the view to create
+#   VERBOSE - see more things less tersely
 #
 DEFAULT_VIEW_NAME="${VIEW_NAME:-public}"
 
@@ -34,33 +69,35 @@ else
 fi
 echo
 
+# Compile a list of IP-assigned interfaces
+SYS_IP4_NETDEVS_A=($(ip -o -4 address show | awk '{print $4}'))
+SYS_IP4_NETDEVS_COUNT="${#SYS_IP4_NETDEVS_A[@]}"
+# echo "IP addresses are    : ${SYS_IP4_NETDEVS_A[*]}"
+
+# How many IP-assigned interfaces are available for assignment to a view?
+AVAIL_IP4_NETDEVS_A=($(echo "${SYS_IP4_NETDEVS_A[*]}" | xargs -n1 | grep -v 127.0.0.1 | xargs) )
+AVAIL_IP4_NETDEVS_COUNT="${#AVAIL_IP4_NETDEVS_A[@]}"
+echo "This system has     : $AVAIL_IP4_NETDEVS_COUNT available IP interfaces for view-assignments."
+echo "View-assignable IPs : ${AVAIL_IP4_NETDEVS_A[*]}"
+echo
+
+if [ "$AVAIL_IP4_NETDEVS_COUNT" -le 1 ]; then  # TBS: -le
+  echo "Not enough IP interfaces to justify needed a view."
+  echo "No need to create a view, go straight to defining zone(s)."
+  exit 13
+fi
+echo
+
 # Ask the user for the view name (in form of a domain name) if not given via
 # VIEW_NAME env var.
 if [ -z "$VIEW_NAME" ]; then
   if [ -n "$DEFAULT_VIEW_NAME" ]; then
     read_opt="-i${DEFAULT_VIEW_NAME}"
   fi
-  read -rp "Enter in name of domain: " -e ${read_opt}
+  read -rp "Enter in name of a new view: " -e ${read_opt}
   VIEW_NAME="$REPLY"
 fi
 
-# Compile a list of IP-assigned interfaces
-SYS_IP4_NETDEVS_A=($(ip -o -4 address show | awk '{print $4}'))
-SYS_IP4_NETDEVS_COUNT="${#SYS_IP4_NETDEVS_A[@]}"
-echo "This system has     : $SYS_IP4_NETDEVS_COUNT IP-assigned interfaces."
-echo "IP addresses are    : ${SYS_IP4_NETDEVS_A[*]}"
-
-# How many IP-assigned interfaces are available for assignment to a view?
-AVAIL_IP4_NETDEVS_A=($(echo "${SYS_IP4_NETDEVS_A[*]}" | xargs -n1 | grep -v 127.0.0.1 | xargs) )
-AVAIL_IP4_NETDEVS_COUNT="${#AVAIL_IP4_NETDEVS_A[@]}"
-echo "View-assignable IPs : ${AVAIL_IP4_NETDEVS_A[*]}"
-
-if [ "$AVAIL_IP4_NETDEVS_COUNT" -eq 0 ]; then  # TBS: -le
-  echo "No need to create a view, go straight to defining view."
-  echo "  there is only $AVAIL_IP4_NETDEVS_COUNT IP-assigned interface."
-  exit 13
-fi
-echo
 echo "Done."
 
 # Determine recursion
@@ -111,6 +148,10 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 # Generator: $(basename "$0")
 # Date: $(date)
 # Description:
+#   To validate the syntax of all named configuration files, execute:
+#
+#     named-checkconf $INSTANCE_NAMED_CONF_FILESPEC
+#
 #   This file gets included by $INSTANCE_VIEW_CONF_FILESPEC configuration file.
 #
 # Settings that goes into the extension  view configuration file
@@ -136,11 +177,8 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 #    catalog-zones
 #    deny-answer-addresses { address_match_element; ... } [
 #        except-from { string; ... } ];
-#    deny-answer-aliases { string; ... } [ except-from { string; ...
-        } ];
+#    deny-answer-aliases { string; ... } [ except-from { string; ...  } ];
 #    dialup dialup_options; [ Opt, View, Zone ]
-#    disable-algorithms
-#    disable-ds-digest
 #    disable-empty-zones
 #    dlz string { }
 #    dns64 netprefix { }
@@ -277,9 +315,9 @@ flex_chmod 0640               "$filespec"
 # Lastly, create THE view configuration file
 
 # Settings that goes into this main part of view configuration file
-#    dnssec-enable ( yes | no ); [ Opt, View ]
 #    auth-nxdomain (yes | no); [ Opt, View ]
 #    disable-algorithms string { string; ... }; [ Opt, View ]
+#    disable-ds-digest
 #    dnssec-must-be-secure domain ( yes | no); [ Opt, View ]
 #    hostname hostname_string; ; [ Opt, View ]
 #    key-directory path_name; [ Opt, View, Zone ]
@@ -299,6 +337,10 @@ cat << VIEW_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # Created on: $(date)
 #
 # Description:
+#   To validate the syntax of all named configuration files, execute:
+#
+#     named-checkconf $INSTANCE_NAMED_CONF_FILESPEC
+#
 #   This file gets included by named.conf.
 #   This file includes the '${INSTANCE_VIEW_CONF_EXTN_FILESPEC}' extension
 #   configuration file.
@@ -341,20 +383,15 @@ cat << VIEW_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 
 view "$VIEW_NAME" IN
 {
-
-    dnssec-enable yes;
-
-    key-directory quoted_string;
+    // Should view have their own key directory (or leave that to the zones?)
 
     // conform to RFC 1035
     auth-nxdomain no;
 
-    max-rsa-exponent-size 4096;
-
     // disables the SHA-256 digest for .net TLD only.
     disable-ds-digests "net" { "SHA-256"; };
 
-    disable-algorithms "${FQ_ZONE_NAME}" {
+    disable-algorithms "*" {
         RSAMD5;  // 1
         DH;      // DH;      // 2 - current standard
         DSA;     // DSA/SHA1;
@@ -377,12 +414,6 @@ view "$VIEW_NAME" IN
         255;
         };
 
-    # The timeout is short because they don't need to allow for
-    # much slowness on our metropolitan-area fibre network.
-    # 5 seconds is based on my rough eyeball assessment when
-    # typical DNS-over-TCP (DoT) connections are unlikely to be
-    # ...
-    tcp-clients 25;
     # following tcp-* is available at 9.15+
     ## tcp-idle-timeout 50;  # 5 seconds
     ## tcp-initial-timeout 25;  # 2.5 seconds minimal permitted
@@ -413,7 +444,7 @@ cat << VIEW_CONF_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
     check-spf warn;
     check-srv-cname fail;
     check-wildcard no;
-    update-check-ksk boolean;  # new since 9.6
+    update-check-ksk yes;  # new since 9.6
     // multiple-cnames no;  // obsoleted in ISC Bind named v9.14
 
 
@@ -436,5 +467,70 @@ VIEW_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
+
+# Finally insert the view into the main named.conf file via 
+# its extensible `views-named.conf` file.
+
+# filespec="$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
+# filename="$(basename $INSTANCE_VIEW_NAMED_CONF_FILESPEC)"
+# filepath="$(dirname $INSTANCE_VIEW_NAMED_CONF_FILESPEC)"
+echo "Appending 'include "${BUILDROOT}${CHROOT_DIR}/$filespec"; to ${BUILDROOT}${CHROOT_DIR}$INSTANCE_VIEW_NAMED_CONF_FILESPEC ..."
+echo "include \"$filespec\";" >> "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
+echo 
+
+if [ $UID -ne 0 ]; then
+  echo "NOTE: Unable to perform syntax-checking this in here."
+  echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"
+  echo "      ISC Bind9 Issue #3119"
+  echo "You can execute:"
+  echo "  $named_checkconf_filespec -i -p -c -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
+  read -rp "Do you want to sudo the previous command? (Y/n): " -eiY
+  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
+fi
+if [ "$REPLY" != 'n' ]; then
+  pushd . > /dev/null
+
+  if [ -n "$BUILDROOT" ]; then
+    # Check syntax of named.conf file
+    named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
+    # cd "${BUILDROOT}${CHROOT_DIR}" || exit 16
+  fi
+
+  # Check syntax of named.conf file
+  named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
+  cd "${BUILDROOT}${CHROOT_DIR}" || exit 16
+
+# shellcheck disable=SC2086
+# sudo /usr/sbin/named-checkconf -c -i -p -x -t build /etc/bind/named.conf
+
+  sudo $named_checkconf_filespec -c \
+    -i \
+    -p \
+    -x \
+    $named_chroot_opt \
+    "$INSTANCE_NAMED_CONF_FILESPEC" 
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
+# shellcheck disable=SC2086
+    sudo $named_checkconf_filespec \
+      -i \
+      -p \
+      -x \
+      "$named_chroot_opt" \
+      "$INSTANCE_NAMED_CONF_FILESPEC"
+    echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
+    popd || exit 15
+    retsts=$?
+  fi
+  popd || exit 15
+  if [ $retsts -ne 0 ]; then
+    exit $retsts
+  else
+    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_NAMED_CONF_FILESPEC"
+  fi
+fi
+echo
+
 
 echo "Done."
