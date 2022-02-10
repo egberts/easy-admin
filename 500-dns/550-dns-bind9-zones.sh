@@ -3,6 +3,26 @@
 # Title: Create the zone's database
 # Description:
 #
+#    Creates the default zone settings for a specified zone
+#    into a zone-clause-specific configuration file.
+#
+#    Creates the extension file for zone clause of a specified zone.
+#    This extension file contains user-specific and 
+#    security-centric customizations.
+#
+#    This script overwrites any pre-existing file of the specified 
+#    zone name (that it may find) along with its corresponding 
+#    zone-specific extension file (that it may find); but leaves 
+#    its specified accompanied zone database file alone (does 
+#    not overwrite zone databases).
+#
+#    If no corresponding zone database file is found, an empty
+#    zone database file gets created in an empty zone but with 
+#    a commented header file detailing which config file includes 
+#    this zone database file (for ease-of-admin).
+#
+#    We have a separate script for working with its zone database file.
+#
 DEFAULT_ZONE_NAME="example.test"
 
 echo "Create a zone configuration file for ISC Bind9"
@@ -37,12 +57,12 @@ VIEW_CONF_FILESUFFIX="named.conf"
 
 # Need to compile a list of defined views, if any.
 #  /etc/bind[/instance]/view-*-named.conf
-VIEWS_FILESPEC_A=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-*"))
+VIEWS_FILESPEC_A=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-named.conf"))
 idx=0
 prefix_len=${#VIEW_CONF_FILEPART}
 ((++prefix_len))
 VIEWS_A=()
-for this_view_filespec in $VIEWS_FILESPEC_A; do
+for this_view_filespec in ${VIEWS_FILESPEC_A[@]}; do
   temp="$(echo $(basename $this_view_filespec ) | cut -b ${prefix_len}- )"
   temp="$(echo $temp | sed -e "s/-named.conf//")"
   VIEWS_A[$idx]="$temp"
@@ -55,7 +75,6 @@ if [ "${#VIEWS_A[@]}" -le 0 ]; then
 fi
 echo "Found the following view(s): ${VIEWS_A[*]}"
 echo
-echo "First listed view is the default"
 PS3="ZONE $ZONE_NAME goes into which 'view'?: "
 select VIEW_NAME in ${VIEWS_A[@]} ; do
   retsts=$?
@@ -80,17 +99,38 @@ INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
 exit
 
 
-# Wait, try and find all available zones to choose from
+# Wait, try and find all available views to choose from
+#
+# By CLI cookie, detect WANTS_VIEW flag wanted or not (early user settings)
+#  - View is an important DNS security feature, 
+#    - probably should prompt for negative need of WANTS_VIEW flag, ONCE.
+#      - Ask only during initialization?
+#        -  Defaults to mandatory 'view' usage if no CLI cookie elsewhere
+#    - implement WANTS_VIEW flag LASTLY near I&T
+#    - TBD: identified mechanism between NEEDS_VIEW and WANTS_VIEW
+#
+# By view, find zones by 'include' statements within views-extension-named.conf
+#   - may break by views/options misconfiguration (result: find no zone)
+# By view, find zones by 'pz.zone-name' file name pattern
+# By view, find zones by a valid named-checkconf doing the find via syntax check
+#    - looks very attractive
+#    - may break by views/options misconfiguration (result: find no zone)
+#
+# By zone, views automatically determined from 'include' in 'views-named.conf'
+#
 # Also, do we try to leverage 'named-checkconf -z' to get the list of zones?
 #   using named-checkconf requires a valid working 'named.conf'
 #   this tool will break if 'named.conf et. al.' is not 'correct' syntax-wise
 #   makes 'inclusion' of new zone a bit harder
 # or do we try script cookie-cutter 'Xz.xxxxx.domain.tld' file format?
 #   script would controls who gets included into 'zones-named.conf' list file.
-# or do we locate files having 'zone' keyword/clause and go with that?
-#   past evocation of this script might leave some lingering past zones
-#   might not be included by main 'named.conf' or 'zones-named.conf'
+#   and user would controls which zone goes into which (pre-user-defined) view.
+# or do we locate files having 'zone' name pattern and go with that?
+#   past evocation of this script might pick up some lingering past zones
+#   no longer included by main 'named.conf' or 'zones-named.conf'
 # or try all of above, then 'sort -u' the zone names?
+#
+# 
 ZONE_TYPES="pz mz sz ch hint"
 for this_zone_type in $ZONE_TYPES; do
   echo "Trying $this_zone_type zone type"
