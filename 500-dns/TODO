@@ -1,0 +1,16 @@
+
+Adding ZOnes
+
+*.  Ask zone first, then view name, ( then view prompt then becomes optional)
+*.  Ask for view first, then zone name?  <--- forces end-user to think POV
+
+QQQ: Forcing User POV or ease of data-entry (possiblity of skipping view name)?
+
+Got the list of 'view' via 'find'
+VIEWS, select from
+
+Now get a list of "pz.<zone-name>"  
+ZONES, overwrite (Y/n)?
+
+Do we find these zone files under /etc/bind[/instance]/primary
+or at a more generalized /etc/bind[/instance] DIRSPEC?

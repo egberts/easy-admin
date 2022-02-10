@@ -321,12 +321,8 @@ if [ $UID -ne 0 ]; then
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 fi
 if [ "$REPLY" != 'n' ]; then
-  pushd . > /dev/null
-  if [ -n "$CHROOT_DIR" ]; then
-    # Check syntax of named.conf file
-    named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
-    cd "${BUILDROOT}${CHROOT_DIR}" || exit 21
-  fi
+  # Check syntax of named.conf file
+  named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
 
 # shellcheck disable=SC2086
   sudo $named_checkconf_filespec -c \
@@ -334,8 +330,7 @@ if [ "$REPLY" != 'n' ]; then
     -p \
     -x \
     $named_chroot_opt \
-    "$INSTANCE_NAMED_CONF_FILESPEC" \
-    >/dev/null
+    "$INSTANCE_NAMED_CONF_FILESPEC"
   retsts=$?
   if [ $retsts -ne 0 ]; then
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
@@ -347,10 +342,8 @@ if [ "$REPLY" != 'n' ]; then
       $named_chroot_opt \
       "$INSTANCE_NAMED_CONF_FILESPEC"
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
-    popd || exit 16
     exit $retsts
   fi
-  popd > /dev/null || exit 16
   if [ $retsts -ne 0 ]; then
     exit $retsts
   else

@@ -30,8 +30,55 @@ else
 fi
 echo
 
+VIEW_CONF_FILEPART="view.$VIEW_NAME"
+VIEW_CONF_FILESUFFIX="named.conf"
+
+
+
+# Need to compile a list of defined views, if any.
+#  /etc/bind[/instance]/view-*-named.conf
+VIEWS_FILESPEC_A=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-*"))
+idx=0
+prefix_len=${#VIEW_CONF_FILEPART}
+((++prefix_len))
+VIEWS_A=()
+for this_view_filespec in $VIEWS_FILESPEC_A; do
+  temp="$(echo $(basename $this_view_filespec ) | cut -b ${prefix_len}- )"
+  temp="$(echo $temp | sed -e "s/-named.conf//")"
+  VIEWS_A[$idx]="$temp"
+  ((++idx))
+done
+
+if [ "${#VIEWS_A[@]}" -le 0 ]; then
+  echo "No view defined.  Go back and define a view."
+  exit 7
+fi
+echo "Found the following view(s): ${VIEWS_A[*]}"
+echo
+echo "First listed view is the default"
+PS3="ZONE $ZONE_NAME goes into which 'view'?: "
+select VIEW_NAME in ${VIEWS_A[@]} ; do
+  retsts=$?
+  echo "REPLY: $REPLY"
+  echo "VIEW_NAME: $VIEW_NAME"
+  echo "retsts: $retsts"
+  if [ -z "$VIEW_NAME" ]; then
+    echo "Invalid input; select a digit"
+    continue
+  else
+    break
+  fi
+# only way to exit silently is Ctrl-D (end-input)
+done
+if [ -z "$REPLY" -a -z "$VIEW_NAME" ]; then
+  VIEW_NAME="${VIEWS_A[0]}"
+fi
+echo "VIEW_NAME: $VIEW_NAME"
+
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
+exit
+
 
 # Wait, try and find all available zones to choose from
 # Also, do we try to leverage 'named-checkconf -z' to get the list of zones?
@@ -85,6 +132,8 @@ fi
 
 
 ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
+VIEW_CONF_EXTN_FILENAME="${VIEW_CONF_FILEPART}-extension-$VIEW_CONF_FILESUFFIX"
+exit
 
 # Vim syntax https://github.com/egberts/vim-syntax-bind-named now supports 'pz.*'
 ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
@@ -97,17 +146,28 @@ INSTANCE_ZONE_CONF_EXTN_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${ZONE_CONF_EXTN
 
 ZONE_DB_FILENAME="db.${ZONE_NAME}"
 
-ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
+ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
+flex_mkdir "$ZONE_DB_DIRSPEC"
 ZONE_DB_FILESPEC="${ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
 INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
+flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
 INSTANCE_ZONE_DB_FILESPEC="${INSTANCE_ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
-INSTANCE_ZONE_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
+INSTANCE_ZONE_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}/keys"
+flex_mkdir "$INSTANCE_ZONE_KEYS_DIRSPEC"
 
 ZONE_JOURNAL_FILENAME="${ZONE_NAME}-${ZONE_TYPE_NAME}.jnl"
 INSTANCE_ZONE_JOURNAL_DIRSPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
 INSTANCE_ZONE_JOURNAL_FILESPEC="${INSTANCE_ZONE_JOURNAL_DIRSPEC}/$ZONE_JOURNAL_FILENAME"
+
+VIEW_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
+VIEW_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${VIEW_CONF_FILENAME}"
+INSTANCE_VIEW_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
+INSTANCE_VIEW_CONF_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_FILENAME}"
+INSTANCE_VIEW_CONF_EXTN_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_EXTN_FILENAME}"
+
+exit 
 
 
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_DIRSPEC ..."
@@ -293,7 +353,7 @@ zone "$ZONE_NAME" IN
     //// The 'rndc loadkeys' command forces named to check for
     //// key updates immediately.
 
-    dnssec-load-interval 30;
+    dnssec-loadkeys-interval 30;
 
 
     //// If 'inline-signing' is yes, this enables “bump in
@@ -350,5 +410,13 @@ ZONE_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
+
+#
+# Now insert the zone into a 'view' using $VIEW_NAME
+
+echo "$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
+inc_pragma="include \"$filespec\";"
+echo "Appending $inc_pragma into ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
+echo "$inc_pragma" >> "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
 
 echo "Done."
