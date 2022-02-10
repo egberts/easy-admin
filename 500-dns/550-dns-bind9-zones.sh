@@ -36,6 +36,8 @@ echo
 
 source ./maintainer-dns-isc.sh
 
+VIEW_CONF_FILEPART_SUFFIX="view."
+
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
@@ -57,10 +59,10 @@ fi
 echo
 
 
-ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
-INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
+### zone_conf_dirspec="${ETC_NAMED_DIRSPEC}" not needed
+instance_zone_conf_dirspec="${INSTANCE_ETC_NAMED_DIRSPEC}"
 
-VIEW_CONF_FILESUFFIX="named.conf"
+view_conf_filesuffix="named.conf"
 
 
 # Wait, try and find all available views to choose from
@@ -96,79 +98,83 @@ VIEW_CONF_FILESUFFIX="named.conf"
 #
 # 
 if [ 0 -ne 0 ]; then
-ZONE_TYPES="pz mz sz ch hint"
-for this_zone_type in $ZONE_TYPES; do
+zone_types="pz mz sz ch hint"
+for this_zone_type in $zone_types; do
   echo "Trying $this_zone_type zone type"
-  THIS_ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
-  THIS_ZONE_CONF_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${THIS_ZONE_CONF_FILENAME}"
-  FIND_TYPE="$(find $INSTANCE_ZONE_CONF_DIRSPEC -name "${this_zone_type}.*" -print) | xargs"
-  if [ -f "$THIS_ZONE_CONF_FILESPEC" ]; then
-    echo "FOUND: $THIS_ZONE_CONF_FILESPEC file."
+  this_zone_conf_filename="${zone_type_filetype}.${zone_name}"
+  this_zone_conf_filespec="${instance_zone_conf_dirspec}/${this_zone_conf_filename}"
+  find_type="$(find $instance_zone_conf_dirspec -name "${this_zone_type}.*" -print) | xargs"
+  if [ -f "$this_zone_conf_filespec" ]; then
+    echo "FOUND: $this_zone_conf_filespec file."
   fi
 
 done
 fi # false
 
 
-# Ask the user for the zone name (in form of a domain name)
+# Ask the user for the zone name (in form of a fully-qualified domain name)
 if [ -n "$DEFAULT_ZONE_NAME" ]; then
   read_opt="-i${DEFAULT_ZONE_NAME}"
 fi
-read -rp "Enter in name of domain: " -e ${read_opt}
-ZONE_NAME="$REPLY"
-# ZONE_NAME_LEN="${#REPLY}"
-# if [ "${ZONE_NAME:${ZONE_NAME_LEN}}" != '.' ]; then
-  # ZONE_NAME+='.'
-# fi
+read -rp "Enter in domain name: " -e ${read_opt}
+zone_name="$REPLY"
+zone_name_len="${#REPLY}"
+((zone_name_len--))
+# crop the '.' off, if any
+if [ "${zone_name:${zone_name_len}}" == '.' ]; then
+  echo "Trimming extraneous suffix period (.) symbol ..."
+  zone_name="${zone_name:0:-1}"
+fi
+fq_domain_name="${zone_name}."
+
+zone_db_filename="db.${zone_name}"
 
 # Ask for the type of zone that this nameserver will perform on this domain
-read -rp "Is this host a Primary or Secondary for $ZONE_NAME?: (P/s): "
+read -rp "Is this host a Primary or Secondary for $zone_name?: (P/s): "
 REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 if [ "$REPLY" == 's' ]; then
   echo "Secondary (or Slave)"
-  ZONE_TYPE_FILETYPE="sz"
-  ZONE_TYPE_NAME="secondary"
-  ZONE_TYPE_NAME_C="Secondary"
+  zone_type_filetype="sz"
+  zone_type_name="secondary"
+  zone_type_name_c="Secondary"
 else
   echo "Primary (or Master)"
-  ZONE_TYPE_FILETYPE="pz"
-  ZONE_TYPE_NAME="primary"
-  ZONE_TYPE_NAME_C="Primary"
+  zone_type_filetype="pz"
+  zone_type_name="primary"
+  zone_type_name_c="Primary"
 fi
 
 
-VIEW_CONF_FILEPART_SUFFIX="view."
-
-ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
-ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
+zone_conf_filename="${zone_type_filetype}.${zone_name}"
+zone_conf_extn_filename="${zone_conf_filename}-extension.conf"
 
 # Need to compile a list of defined views, if any.
 #  /etc/bind[/instance]/view-*-named.conf
-VIEWS_FILESPEC_A=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-named.conf"))
+views_filespec_a=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-named.conf"))
 idx=0
 prefix_len=${#VIEW_CONF_FILEPART_SUFFIX}
 ((++prefix_len))
-VIEWS_A=()
-for this_view_filespec in ${VIEWS_FILESPEC_A[@]}; do
+views_a=()
+for this_view_filespec in ${views_filespec_a[@]}; do
   temp="$(echo $(basename $this_view_filespec ) | cut -b ${prefix_len}- )"
   temp="$(echo $temp | sed -e "s/-named.conf//")"
-  VIEWS_A[$idx]="$temp"
+  views_a[$idx]="$temp"
   ((++idx))
 done
 
-if [ "${#VIEWS_A[@]}" -le 0 ]; then
+if [ "${#views_a[@]}" -le 0 ]; then
   echo "No view defined.  Go back and define a view."
   exit 7
 fi
-echo "Found the following view(s): ${VIEWS_A[*]}"
+echo "Found the following view(s): ${views_a[*]}"
 echo
-PS3="ZONE $ZONE_NAME goes into which 'view'?: "
-select VIEW_NAME in ${VIEWS_A[@]} ; do
+PS3="ZONE $zone_name goes into which 'view'?: "
+select view_name in ${views_a[@]} ; do
   retsts=$?
   echo "REPLY: $REPLY"
-  echo "VIEW_NAME: $VIEW_NAME"
+  echo "view_name: $view_name"
   echo "retsts: $retsts"
-  if [ -z "$VIEW_NAME" ]; then
+  if [ -z "$view_name" ]; then
     echo "Invalid input; select a digit"
     continue
   else
@@ -176,99 +182,103 @@ select VIEW_NAME in ${VIEWS_A[@]} ; do
   fi
 # only way to exit silently is Ctrl-D (end-input)
 done
-if [ -z "$REPLY" -a -z "$VIEW_NAME" ]; then
-  VIEW_NAME="${VIEWS_A[0]}"
+if [ -z "$REPLY" -a -z "$view_name" ]; then
+  view_name="${views_a[0]}"
 fi
-echo "VIEW_NAME: $VIEW_NAME"
-VIEW_CONF_FILEPART="${VIEW_CONF_FILEPART_SUFFIX}$VIEW_NAME"
-VIEW_CONF_EXTN_FILENAME="${VIEW_CONF_FILEPART}-extension-$VIEW_CONF_FILESUFFIX"
+echo "view_name: $view_name"
+view_conf_filepart="${VIEW_CONF_FILEPART_SUFFIX}$view_name"
+view_conf_extn_filename="${view_conf_filepart}-extension-$view_conf_filesuffix"
 
-ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
-ZONE_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${ZONE_CONF_FILENAME}"
-INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
-INSTANCE_ZONE_CONF_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${ZONE_CONF_FILENAME}"
-INSTANCE_ZONE_CONF_EXTN_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${ZONE_CONF_EXTN_FILENAME}"
+### ZONE_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${zone_conf_filename}" # not needed
+instance_zone_conf_filespec="${instance_zone_conf_dirspec}/${zone_conf_filename}"
+instance_zone_conf_extn_filespec="${instance_zone_conf_dirspec}/${zone_conf_extn_filename}"
 
-ZONE_DB_FILENAME="db.${ZONE_NAME}"
+zone_db_dirspec="${VAR_LIB_NAMED_DIRSPEC}/${zone_type_name}"
+flex_mkdir "$zone_db_dirspec"
+zone_db_filespec="${zone_db_dirspec}/${zone_db_filename}"
 
-ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
-flex_mkdir "$ZONE_DB_DIRSPEC"
-ZONE_DB_FILESPEC="${ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
+instance_zone_db_dirspec="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${zone_type_name}"
+flex_mkdir "$instance_zone_db_dirspec"
+instance_zone_db_filespec="${instance_zone_db_dirspec}/${zone_db_filename}"
 
-INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
-flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
-INSTANCE_ZONE_DB_FILESPEC="${INSTANCE_ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
+instance_zone_keys_dirspec="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${zone_type_name}/keys"
+flex_mkdir "$instance_zone_keys_dirspec"
 
-INSTANCE_ZONE_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}/keys"
-flex_mkdir "$INSTANCE_ZONE_KEYS_DIRSPEC"
+zone_journal_filename="${zone_name}-${zone_type_name}.jnl"
+instance_zone_journal_dirspec="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
+instance_zone_journal_filespec="${instance_zone_journal_dirspec}/$zone_journal_filename"
 
-ZONE_JOURNAL_FILENAME="${ZONE_NAME}-${ZONE_TYPE_NAME}.jnl"
-INSTANCE_ZONE_JOURNAL_DIRSPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
-INSTANCE_ZONE_JOURNAL_FILESPEC="${INSTANCE_ZONE_JOURNAL_DIRSPEC}/$ZONE_JOURNAL_FILENAME"
-
-VIEW_CONF_FILENAME="${VIEW_CONF_FILEPART}-$VIEW_CONF_FILESUFFIX"
-VIEW_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
-VIEW_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${VIEW_CONF_FILENAME}"
-INSTANCE_VIEW_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
-INSTANCE_VIEW_CONF_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_FILENAME}"
-INSTANCE_VIEW_CONF_EXTN_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_EXTN_FILENAME}"
+view_conf_filename="${view_conf_filepart}-$view_conf_filesuffix"
+#### view_conf_dirspec="${ETC_NAMED_DIRSPEC}"  # not needed
+#### view_conf_filespec="${ETC_NAMED_DIRSPEC}/${view_conf_filename}"  # not needed
+instance_view_conf_dirspec="${INSTANCE_ETC_NAMED_DIRSPEC}"
+instance_view_conf_filespec="${instance_view_conf_dirspec}/${view_conf_filename}"
+instance_view_conf_extn_filespec="${instance_view_conf_dirspec}/${view_conf_extn_filename}"
 
 
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_DIRSPEC ..."
-flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
-flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_DB_DIRSPEC"
-flex_chmod 0750               "$INSTANCE_ZONE_DB_DIRSPEC"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_zone_db_dirspec ..."
+flex_mkdir "$instance_zone_db_dirspec"
+flex_chown "root:$GROUP_NAME" "$instance_zone_db_dirspec"
+flex_chmod 0750               "$instance_zone_db_dirspec"
 
-#    journal "${INSTANCE_ZONE_JOURNAL_FILESPEC}";
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_JOURNAL_DIRSPEC ..."
-flex_mkdir "$INSTANCE_ZONE_JOURNAL_DIRSPEC"
-flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_JOURNAL_DIRSPEC"
-flex_chmod 0750               "$INSTANCE_ZONE_JOURNAL_DIRSPEC"
+#    journal "${instance_zone_journal_filespec}";
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_zone_journal_dirspec ..."
+flex_mkdir "$instance_zone_journal_dirspec"
+flex_chown "root:$GROUP_NAME" "$instance_zone_journal_dirspec"
+flex_chmod 0750               "$instance_zone_journal_dirspec"
 
-#    key-directory "${INSTANCE_ZONE_KEYS_DIRSPEC}";
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_KEYS_DIRSPEC ..."
-flex_mkdir "${INSTANCE_ZONE_KEYS_DIRSPEC}"
-flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_KEYS_DIRSPEC"
-flex_chmod 0750               "$INSTANCE_ZONE_KEYS_DIRSPEC"
+#    key-directory "${instance_zone_keys_dirspec}";
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_zone_keys_dirspec ..."
+flex_mkdir "${instance_zone_keys_dirspec}"
+flex_chown "root:$GROUP_NAME" "$instance_zone_keys_dirspec"
+flex_chmod 0750               "$instance_zone_keys_dirspec"
 
-# include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
-filespec="$INSTANCE_ZONE_CONF_EXTN_FILESPEC"
-filename="$ZONE_CONF_EXTN_FILENAME"
-filepath="$INSTANCE_ZONE_CONF_DIRSPEC"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_CONF_EXTN_FILESPEC ..."
-cat << ZONE_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_CONF_EXTN_FILESPEC" > /dev/null
+# include "${instance_zone_conf_extn_filespec}";
+filespec="$instance_zone_conf_extn_filespec"
+filename="$zone_conf_extn_filename"
+filepath="$instance_zone_conf_dirspec"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_zone_conf_extn_filespec ..."
+cat << ZONE_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$instance_zone_conf_extn_filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
-# Title: Extension to ${ZONE_TYPE_NAME_C} '${ZONE_NAME}' zone clause config.
+# Title: Extension to ${zone_type_name_c} '${zone_name}' zone clause config.
 # Generator: $(basename "$0")
 # Date: $(date)
 #
-# This file gets included in by ${ZONE_TYPE_NAME} zone clause file
-# for the '${ZONE_NAME}' zone:
-#    '${INSTANCE_ZONE_CONF_FILESPEC}'
+# This file gets included in by ${zone_type_name} zone clause file
+# for the '${zone_name}' zone:
+#    '${instance_zone_conf_filespec}'
 #
 
 ZONE_EXTN_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640               "$filespec"
 
-#    file "${INSTANCE_ZONE_DB_FILESPEC}";
-filespec="$INSTANCE_ZONE_DB_FILESPEC"
-filename="$ZONE_DB_FILENAME"
-filepath="$INSTANCE_ZONE_DB_DIRSPEC"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_FILESPEC ..."
-cat << ZONE_EXTN_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_FILESPEC" > /dev/null
+#    file "${instance_zone_db_filespec}";
+filespec="$instance_zone_db_filespec"
+filename="$zone_db_filename"
+filepath="$instance_zone_db_dirspec"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_zone_db_filespec ..."
 #
-# File: ${filename}
-# Path: ${filepath}
-# Title: ${ZONE_TYPE_NAME_C} Zone database file for the '${ZONE_NAME}'
-# Generator: $(basename "$0")
-# Date: $(date)
+#  need name servers' IP, RI and hostname to flesh this database file out
+#  so leave it just header-only
 #
-# This file is referenced solely by the ${ZONE_TYPE_NAME_C} '${ZONE_NAME}'
-# zone clause configuration file: ${INSTANCE_ZONE_CONF_FILESPEC}
-#
+cat << ZONE_EXTN_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$instance_zone_db_filespec" > /dev/null
+\$ORIGIN ${fq_domain_name}
+; could use '$ORIGIN .' but we are being explicit here
+; and would not support the accidential transferring of zone clause to other 
+; disparate domain names.
+;
+; File: ${filename}
+; Path: ${filepath}
+; Title: ${zone_type_name_c} Zone database file for the '${zone_name}'
+; Generator: $(basename "$0")
+; Date: $(date)
+;
+; This file is referenced solely by the ${zone_type_name_c} '${zone_name}'
+; zone clause configuration file: ${instance_zone_conf_filespec}
+;
 
 ZONE_EXTN_DB_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
@@ -276,32 +286,32 @@ flex_chmod 0640 "$filespec"
 
 # Lastly, create THE zone configuration file
 
-filename="$ZONE_CONF_FILENAME"
-filepath="$INSTANCE_ZONE_CONF_DIRSPEC"
+filename="$zone_conf_filename"
+filepath="$instance_zone_conf_dirspec"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
 cat << ZONE_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: $filename
 # Path: $filepath
-# Title: ${ZONE_TYPE_NAME_C} Zone Configuration file for $ZONE_NAME domain.
+# Title: ${zone_type_name_c} Zone Configuration file for $zone_name domain.
 # Generator: $(basename "$0")
 # Created on: $(date)
 #
 # This file includes the accompanying extension file:
-#    '${INSTANCE_ZONE_CONF_EXTN_FILESPEC}'
+#    '${instance_zone_conf_extn_filespec}'
 # This file gets included by the view clause configuration file:
-#    '${INSTANCE_VIEW_CONF_EXTN_FILESPEC}'
+#    '${instance_view_conf_extn_filespec}'
 #
 # Description:
 
-zone "$ZONE_NAME" IN
+zone "$zone_name" IN
 {
     //// type 'primary' is the server reads the zone data direct from
     //// local storage (a zone file) and provides authoritative
     //// answers for the zone.
     //
-    type ${ZONE_TYPE_NAME};
+    type ${zone_type_name};
 
 
     //// file statement defines the file used by the zone in
@@ -331,7 +341,7 @@ zone "$ZONE_NAME" IN
     //// fails to contact the 'primary', for whatever reason, the
     //// zone may be left with no effective Authoritative Name Servers.
 
-    file "${INSTANCE_ZONE_DB_FILESPEC}";
+    file "${instance_zone_db_filespec}";
 
 
     //// 'key-directory' is the directory where the public and
@@ -343,7 +353,7 @@ zone "$ZONE_NAME" IN
     //// files containing non-DNSSEC keys such as bind.keys,
     //// rndc.key, or session.key.
 
-    key-directory "${INSTANCE_ZONE_KEYS_DIRSPEC}";
+    key-directory "${instance_zone_keys_dirspec}";
 
 
     //// 'journal' allows the default journal’s filename to
@@ -351,7 +361,7 @@ zone "$ZONE_NAME" IN
     //// with “.jnl” appended.
     //// This is applicable to primary and secondary zones.
 
-    journal "${INSTANCE_ZONE_JOURNAL_FILESPEC}";
+    journal "${instance_zone_journal_filespec}";
 
 
     //// If keys are present in the key directory the first
@@ -421,13 +431,14 @@ zone "$ZONE_NAME" IN
     //// This behavior is disabled by default.
     //
     // DO NOT use inline DNSSEC signing on a 'primary',
-    // only on a 'secondary'.
+    // only on a 'secondary'.  This is only true
+    // for older Bind 9.6 or older
 
     inline-signing yes;
 
 
 // Allow for extensible settings
-include "${INSTANCE_ZONE_CONF_EXTN_FILESPEC}";
+include "${instance_zone_conf_extn_filespec}";
 
 
 ///    // Some more stuff that needs to be done elsewhere
@@ -468,11 +479,11 @@ flex_chmod 0640 "$filespec"
 echo
 
 #
-# Now insert the zone into a 'view' using $VIEW_NAME
+# Now insert the zone into a 'view' using $view_name
 
-echo "$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
+echo "$instance_view_conf_extn_filespec"
 inc_pragma="include \"$filespec\";"
-echo "Appending $inc_pragma into ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
-echo "$inc_pragma" >> "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
+echo "Appending $inc_pragma into ${BUILDROOT}${CHROOT_DIR}/$instance_view_conf_extn_filespec"
+echo "$inc_pragma" >> "${BUILDROOT}${CHROOT_DIR}/$instance_view_conf_extn_filespec"
 
 echo "Done."
