@@ -10,6 +10,12 @@
 #    This extension file contains user-specific and 
 #    security-centric customizations.
 #
+#    Determine which view does this zone belongs to.
+#      TBS: Do we create and nest by a view subdirectory or not (not for now)
+#        - It would only hold a tiny number of zones (enterprise-y?)
+#          - Hard to re-do directory tree if large number of zones (PRO)
+#          - zone file names are already segregated by zone type (CON)
+#
 #    This script overwrites any pre-existing file of the specified 
 #    zone name (that it may find) along with its corresponding 
 #    zone-specific extension file (that it may find); but leaves 
@@ -50,53 +56,12 @@ else
 fi
 echo
 
-VIEW_CONF_FILEPART="view.$VIEW_NAME"
-VIEW_CONF_FILESUFFIX="named.conf"
-
-
-
-# Need to compile a list of defined views, if any.
-#  /etc/bind[/instance]/view-*-named.conf
-VIEWS_FILESPEC_A=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-named.conf"))
-idx=0
-prefix_len=${#VIEW_CONF_FILEPART}
-((++prefix_len))
-VIEWS_A=()
-for this_view_filespec in ${VIEWS_FILESPEC_A[@]}; do
-  temp="$(echo $(basename $this_view_filespec ) | cut -b ${prefix_len}- )"
-  temp="$(echo $temp | sed -e "s/-named.conf//")"
-  VIEWS_A[$idx]="$temp"
-  ((++idx))
-done
-
-if [ "${#VIEWS_A[@]}" -le 0 ]; then
-  echo "No view defined.  Go back and define a view."
-  exit 7
-fi
-echo "Found the following view(s): ${VIEWS_A[*]}"
-echo
-PS3="ZONE $ZONE_NAME goes into which 'view'?: "
-select VIEW_NAME in ${VIEWS_A[@]} ; do
-  retsts=$?
-  echo "REPLY: $REPLY"
-  echo "VIEW_NAME: $VIEW_NAME"
-  echo "retsts: $retsts"
-  if [ -z "$VIEW_NAME" ]; then
-    echo "Invalid input; select a digit"
-    continue
-  else
-    break
-  fi
-# only way to exit silently is Ctrl-D (end-input)
-done
-if [ -z "$REPLY" -a -z "$VIEW_NAME" ]; then
-  VIEW_NAME="${VIEWS_A[0]}"
-fi
-echo "VIEW_NAME: $VIEW_NAME"
 
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
-exit
+
+ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
+VIEW_CONF_FILESUFFIX="named.conf"
 
 
 # Wait, try and find all available views to choose from
@@ -131,6 +96,7 @@ exit
 # or try all of above, then 'sort -u' the zone names?
 #
 # 
+if [ 0 -ne 0 ]; then
 ZONE_TYPES="pz mz sz ch hint"
 for this_zone_type in $ZONE_TYPES; do
   echo "Trying $this_zone_type zone type"
@@ -142,6 +108,7 @@ for this_zone_type in $ZONE_TYPES; do
   fi
 
 done
+fi # false
 
 
 # Ask the user for the zone name (in form of a domain name)
@@ -171,12 +138,50 @@ else
 fi
 
 
-ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
-VIEW_CONF_EXTN_FILENAME="${VIEW_CONF_FILEPART}-extension-$VIEW_CONF_FILESUFFIX"
-exit
+VIEW_CONF_FILEPART_SUFFIX="view."
 
-# Vim syntax https://github.com/egberts/vim-syntax-bind-named now supports 'pz.*'
-ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
+ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
+
+# Need to compile a list of defined views, if any.
+#  /etc/bind[/instance]/view-*-named.conf
+VIEWS_FILESPEC_A=($(find build/etc/bind -name "view.*-named.conf" ! -name "*-extension-named.conf"))
+idx=0
+prefix_len=${#VIEW_CONF_FILEPART_SUFFIX}
+((++prefix_len))
+VIEWS_A=()
+for this_view_filespec in ${VIEWS_FILESPEC_A[@]}; do
+  temp="$(echo $(basename $this_view_filespec ) | cut -b ${prefix_len}- )"
+  temp="$(echo $temp | sed -e "s/-named.conf//")"
+  VIEWS_A[$idx]="$temp"
+  ((++idx))
+done
+
+if [ "${#VIEWS_A[@]}" -le 0 ]; then
+  echo "No view defined.  Go back and define a view."
+  exit 7
+fi
+echo "Found the following view(s): ${VIEWS_A[*]}"
+echo
+PS3="ZONE $ZONE_NAME goes into which 'view'?: "
+select VIEW_NAME in ${VIEWS_A[@]} ; do
+  retsts=$?
+  echo "REPLY: $REPLY"
+  echo "VIEW_NAME: $VIEW_NAME"
+  echo "retsts: $retsts"
+  if [ -z "$VIEW_NAME" ]; then
+    echo "Invalid input; select a digit"
+    continue
+  else
+    break
+  fi
+# only way to exit silently is Ctrl-D (end-input)
+done
+if [ -z "$REPLY" -a -z "$VIEW_NAME" ]; then
+  VIEW_NAME="${VIEWS_A[0]}"
+fi
+echo "VIEW_NAME: $VIEW_NAME"
+VIEW_CONF_FILEPART="${VIEW_CONF_FILEPART_SUFFIX}$VIEW_NAME"
+VIEW_CONF_EXTN_FILENAME="${VIEW_CONF_FILEPART}-extension-$VIEW_CONF_FILESUFFIX"
 
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 ZONE_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${ZONE_CONF_FILENAME}"
@@ -206,8 +211,6 @@ VIEW_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${VIEW_CONF_FILENAME}"
 INSTANCE_VIEW_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
 INSTANCE_VIEW_CONF_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_FILENAME}"
 INSTANCE_VIEW_CONF_EXTN_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_EXTN_FILENAME}"
-
-exit 
 
 
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_DIRSPEC ..."
