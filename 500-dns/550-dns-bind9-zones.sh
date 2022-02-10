@@ -60,7 +60,6 @@ echo
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
 
-ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
 VIEW_CONF_FILESUFFIX="named.conf"
 
 
@@ -141,6 +140,7 @@ fi
 VIEW_CONF_FILEPART_SUFFIX="view."
 
 ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
+ZONE_CONF_EXTN_FILENAME="${ZONE_CONF_FILENAME}-extension.conf"
 
 # Need to compile a list of defined views, if any.
 #  /etc/bind[/instance]/view-*-named.conf
@@ -206,6 +206,7 @@ ZONE_JOURNAL_FILENAME="${ZONE_NAME}-${ZONE_TYPE_NAME}.jnl"
 INSTANCE_ZONE_JOURNAL_DIRSPEC="${INSTANCE_VAR_CACHE_NAMED_DIRSPEC}"
 INSTANCE_ZONE_JOURNAL_FILESPEC="${INSTANCE_ZONE_JOURNAL_DIRSPEC}/$ZONE_JOURNAL_FILENAME"
 
+VIEW_CONF_FILENAME="${VIEW_CONF_FILEPART}-$VIEW_CONF_FILESUFFIX"
 VIEW_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 VIEW_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${VIEW_CONF_FILENAME}"
 INSTANCE_VIEW_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
@@ -239,9 +240,13 @@ cat << ZONE_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_CONF_E
 #
 # File: ${filename}
 # Path: ${filepath}
-# Title: Zone '${ZONE_NAME}' extension configuration file
+# Title: Extension to ${ZONE_TYPE_NAME_C} '${ZONE_NAME}' zone clause config.
 # Generator: $(basename "$0")
 # Date: $(date)
+#
+# This file gets included in by ${ZONE_TYPE_NAME} zone clause file
+# for the '${ZONE_NAME}' zone:
+#    '${INSTANCE_ZONE_CONF_FILESPEC}'
 #
 
 ZONE_EXTN_CONF_EOF
@@ -257,9 +262,12 @@ cat << ZONE_EXTN_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_FILES
 #
 # File: ${filename}
 # Path: ${filepath}
-# Title: Extension to the zone '${ZONE_NAME}' database file
+# Title: ${ZONE_TYPE_NAME_C} Zone database file for the '${ZONE_NAME}'
 # Generator: $(basename "$0")
 # Date: $(date)
+#
+# This file is referenced solely by the ${ZONE_TYPE_NAME_C} '${ZONE_NAME}'
+# zone clause configuration file: ${INSTANCE_ZONE_CONF_FILESPEC}
 #
 
 ZONE_EXTN_DB_EOF
@@ -279,6 +287,11 @@ cat << ZONE_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # Title: ${ZONE_TYPE_NAME_C} Zone Configuration file for $ZONE_NAME domain.
 # Generator: $(basename "$0")
 # Created on: $(date)
+#
+# This file includes the accompanying extension file:
+#    '${INSTANCE_ZONE_CONF_EXTN_FILESPEC}'
+# This file gets included by the view clause configuration file:
+#    '${INSTANCE_VIEW_CONF_EXTN_FILESPEC}'
 #
 # Description:
 
