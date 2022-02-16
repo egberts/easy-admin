@@ -7,8 +7,9 @@
 #    into a zone-clause-specific configuration file.
 #
 #    Creates the extension file for zone clause of a specified zone.
-#    This extension file contains user-specific and 
-#    security-centric customizations.
+#    This extension file contains user-specific and
+#    security-centric customizations which are filled in later
+#    (after the later IP assignment to each 'view')
 #
 #    Determine which view does this zone belongs to.
 #      TBS: Do we create and nest by a view subdirectory or not (not for now)
@@ -16,16 +17,17 @@
 #          - Hard to re-do directory tree if large number of zones (PRO)
 #          - zone file names are already segregated by zone type (CON)
 #
-#    This script overwrites any pre-existing file of the specified 
-#    zone name (that it may find) along with its corresponding 
-#    zone-specific extension file (that it may find); but leaves 
-#    its specified accompanied zone database file alone (does 
+#    This script overwrites any pre-existing file of the specified
+#    zone name (that it may find) along with its corresponding
+#    zone-specific extension file (that it may find); but leaves
+#    its specified accompanied zone database file alone (does
 #    not overwrite zone databases).
 #
 #    If no corresponding zone database file is found, an empty
-#    zone database file gets created in an empty zone but with 
-#    a commented header file detailing which config file includes 
-#    this zone database file (for ease-of-admin).
+#    zone database file gets created in an empty zone but with
+#    a commented header file detailing which config file includes
+#    this zone database file (for ease-of-admin). (OOPS, forwarder-only
+#    zone has no zone 'file' statement in its zone clause.)
 #
 #    We have a separate script for working with its zone database file.
 #
@@ -68,7 +70,7 @@ view_conf_filesuffix="named.conf"
 # Wait, try and find all available views to choose from
 #
 # By CLI cookie, detect WANTS_VIEW flag wanted or not (early user settings)
-#  - View is an important DNS security feature, 
+#  - View is an important DNS security feature,
 #    - probably should prompt for negative need of WANTS_VIEW flag, ONCE.
 #      - Ask only during initialization?
 #        -  Defaults to mandatory 'view' usage if no CLI cookie elsewhere
@@ -96,7 +98,7 @@ view_conf_filesuffix="named.conf"
 #   no longer included by main 'named.conf' or 'zones-named.conf'
 # or try all of above, then 'sort -u' the zone names?
 #
-# 
+#
 if [ 0 -ne 0 ]; then
 zone_types="pz mz sz ch hint"
 for this_zone_type in $zone_types; do
@@ -267,7 +269,7 @@ echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_zone_db_filespec ..."
 cat << ZONE_EXTN_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$instance_zone_db_filespec" > /dev/null
 \$ORIGIN ${fq_domain_name}
 ; could use '$ORIGIN .' but we are being explicit here
-; and would not support the accidential transferring of zone clause to other 
+; and would not support the accidential transferring of zone clause to other
 ; disparate domain names.
 ;
 ; File: ${filename}

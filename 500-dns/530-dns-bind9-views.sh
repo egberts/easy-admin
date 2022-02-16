@@ -3,11 +3,11 @@
 # Title: Create a view
 # Description:
 #   Creates a view clause configuration file for inclusion
-#   by ISC Bind9 named daemon configuration (`named.conf`) 
-#   file.  
+#   by ISC Bind9 named daemon configuration (`named.conf`)
+#   file.
 #
 #   Also creates an accompany extension config file
-#   (included by its view config file) for accomodating 
+#   (included by its view config file) for accomodating
 #   additional settings by other scripts.
 #
 #   Then tacks on an 'include' clause of this 'view' into the
@@ -16,18 +16,25 @@
 #
 #   DESIGN RATIONALE
 #
-#   Views are commonly netdev-centric but some views 
+#   Views are commonly netdev-centric but some views
 #   can be departmental-centric (within the same IP interface
-#   but having different subnets, regardless of whether its
-#   IP interface has one or more assigned IP addresses.)
+#   but having different subnets (or even single IP in case of NAT'd router),
+#   regardless of whether its IP interface has one or more
+#   assigned IP addresses.)
 #
 #   This script only offers (for the moment) the netdev-centric
-#   approach of creating views (one view per IP interface).
+#   approach of creating views.
+#     * one view per one netdev (a netdev may have one or more IP interface),
+#     * * netdev can only be used by at most one view (script limitation)
+#     * * a view can span more than one non-public netdev
+#     * * a view can span more than 1 public netdev w/ 'ip route' entries (rare)
+#     * A view must not have both public/non-public netdev (OpSec)
+#     *
 #
-#   Ability to do departmental-centric (one view per multiple 
-#   subnet within same IP interface/subnet) is harder on the bash 
+#   Ability to do departmental-centric (one view per multiple
+#   subnet within same IP interface/subnet) is harder on the bash
 #   programming with regard to required IP subnet masking,
-#   calculation and validation.  If you need this, you have 
+#   calculation and validation.  If you need this, you have
 #   elevated beyond the need of this and related script files.
 #
 # User Questionnarie Workflow
@@ -36,6 +43,19 @@
 #    exit
 #  fi
 #  # Work on one new view at a time (re-run script for another new view)
+#  while 1; do
+#    read -rp "Enter in view name: "
+#    PS3="Enter in a netdev to assign to 'view' view: "
+#    select this_netdev in list_available_IP_assigned_netdevs; do
+#      if REPLY matches public_ip; then
+#        auto_add_all_IP_subnets_on_this_netdev_to_this_view
+#        echo "This is a public 'view', no more interfaces"
+#        echo "Done with '$view' view."
+#        echo
+#        remove this_netdev from list_available_IP_assigned_netdevs
+#      fi
+#    done
+#  done
 #
 # Environment Names
 #   VIEW_NAME - The name of the view to create
@@ -131,7 +151,7 @@ FORWARDERS_A=()
 # # regardless of public-facing, IPv4 forwarding or zone settings
 # # if 'hidden-master'/'hidden-primary' then VIEW_MUST_NOT_HAVE_FORWARDER='yes'
 
-# 
+#
 if [ "$MUST_HAVE_FORWARDERS" == 'yes' ]; then
   FORWARDERS=1
 fi
@@ -186,38 +206,70 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 #
 #   This file gets included by $INSTANCE_VIEW_CONF_FILESPEC configuration file.
 #
-# Settings that goes into the extension  view configuration file
-#  additional-from-auth (yes | no) ; [ Opt, View ]  # obsoleted by 9.16???
-#    additional-from-cache (yes | no) ; [ Opt, View ]
+# Settings that goes into the extension part of its view configuration file
+#  RNDC-related
 #    allow-new-zones no;   // RNDC ACL
+#  Cache-related
+#    additional-from-cache (yes | no) ; [ Opt, View ]
+#    attach-cache string
+#    glue-cache boolean;
+#    max-cache-size size_in_bytes ; [ Opt, View ]
+#    max-cache-ttl seconds; [ Opt, View ]
+#    max-ncache-ttl seconds; [ Opt, View ]
+#    min-cache-ttl duration;
+#    min-ncache-ttl duration;
+#    prefetch integer;  [ View ]  # new since 9.6
+#  Notify-related
 #    allow-notify { address_match_list }; [ Opt, View, Zone ]
+#    also-notify { ip_addr [port ip_port] ; ... ] }; [ Opt, View, Zone ]
+#    notify ( yes | no | explicit | master-only ); [ Opt, View, Zone ]
+#    notify-delay integer;  [ View ]  # new since 9.6
+#    notify-source (ip4_addr | *) [port ip_port] ; [ Opt, View, Zone ]
+#    notify-source-v6 (ip6_addr | *) [port ip_port] ; [ Opt, View, Zone ]
+#    notify-to-soa ( yes | no ); [ View ]
+#  Query-related
 #    allow-query { address_match_list }; [ Opt, View, Zone ]
 #    allow-query-cache { address_match_list }; [ Opt, View, Zone ]
 #    allow-query-cache-on { address_match_list }; [ Opt, View, Zone ]
 #    allow-query-on { address_match_list }; [ Opt, View, Zone ]
-#    allow-recursion { address_match_list }; [ Opt, View ]
-#    allow-recursion-on { address_match_list }; [ Opt, View ]
-#    allow-transfer { address_match_list }; [ Opt, View, Zone ]
-#    allow-update { address_match_element; ... };
-#    allow-update-forwarding { address_match_list }; [ Opt, View, Zone ]
-#    also-notify { ip_addr [port ip_port] ; ... ] }; [ Opt, View, Zone ]
-#    alt-transfer-source ( ipv4 | * ) [ port ( integer | * )]; [ Opt, View, Zone ]
-#    alt-transfer-source-v6 ( ipv6 | * ) [ port ( integer | * ) ]; [ Opt, View, Zone ]
-#    attach-cache string
-#    auth-nxdomain boolean;
-#    cleaning-interval number; [ Opt, View ]
-#    catalog-zones
 #    deny-answer-addresses { address_match_element; ... } [
 #        except-from { string; ... } ];
 #    deny-answer-aliases { string; ... } [ except-from { string; ...  } ];
-#    dialup dialup_options; [ Opt, View, Zone ]
-#    disable-empty-zones
-#    dlz string { }
-#    dns64 netprefix { }
-#    dns64-contact string { }
-#    dns64-server string { }
-#    dnskey-sig-validity { }
-#    ### dnssec-lookaside domain trust-anchor domain; [ Opt, View ] obsoleted???
+#  CISecurity says not to use 'query-source[-v6]'
+#    query-source [ address ( ip_addr | * ) ] [ port ( ip_port | * ) ]; [ Opt, View ]
+#    query-source-v6 [ address ( ip_addr | * ) ] [ port ( ip_port | * ) ]; [ Opt, View ]
+#  Recursion-related
+#    allow-recursion { address_match_list }; [ Opt, View ]
+#    allow-recursion-on { address_match_list }; [ Opt, View ]
+#    match-recursive-only ( yes | no ) ; [ View ]
+#    max-recursion-depth integer;  [ View ] # new since 9.6
+#    max-recursion-queue integer;  [ View ] new since 9.6
+#    recursion ( yes | no ); [ Opt, View ]
+#  Transfer-related
+#    allow-transfer { address_match_list }; [ Opt, View, Zone ]
+#    alt-transfer-source ( ipv4 | * ) [ port ( integer | * )]; [ Opt, View, Zone ]
+#    alt-transfer-source-v6 ( ipv6 | * ) [ port ( integer | * ) ]; [ Opt, View, Zone ]
+#    ixfr-from-differences ( primary | master | secondary | slave |
+#        boolean );
+#    masterfile-format
+#    masterfile-style
+#    max-ixfr-ratio ( unlimited | percentage );  # new since 9.6
+#    max-transfer-idle-in minutes; [ Opt, View, Zone ]
+#    max-transfer-idle-out minutes; [ Opt, View, Zone ]
+#    max-transfer-time-in minutes; [ Opt, View, Zone ]
+#    max-transfer-time-out minutes; [ Opt, View, Zone ]
+#    provide-ixfr ( yes | no) ; [ Opt, View, server ]
+#    request-ixfr ( yes | no ); [ Opt, View, server ]
+#    transfer-format ( one-answer | many-answers ); [ Opt, View, server ]
+#    transfer-source (ip4_addr | *) [port ip_port] ; [ Opt, View, Zone ]
+#    transfer-source-v6 (ip6_addr | *) [port ip_port] ; [ Opt, View, Zone ]
+#    use-alt-transfer-source ( yes | no ); [ Opt, View, Zone ]
+#  Update-relatd
+#    allow-update { address_match_element; ... };
+#    allow-update-forwarding { address_match_list }; [ Opt, View, Zone ]
+#    serial-update-method ( date | increment | unixtime );  [ View ]  # new since 9.6
+#
+#  DNSSEC-related
 #    dnssec-accept-expired
 #    dnssec-dnskey-kskonly
 #    dnssec-loadkeys-intervale
@@ -226,119 +278,97 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 #    dnssec-secure-to-insecure
 #    dnssec-update-mode
 #    dnssec-validation
-#    dnstap { }
-#    dual-stack-servers [ port p_num ] { ( "id" [port p_num] |
-#                  ipv4 [port p_num] | ipv6 [port p_num] ); ... }; [ Opt, View ]
-#    dyndb string quote { }
-#    edns-udp-size size_in_bytes; [ Opt, View ]
+#    dnskey-sig-validity { }
+#    inline-signing boolean;
+#    nta-lifetime duration;  [ View ]  # new since 9.6
+#    nta-recheck duration;  [ View ]  # new since 9.6
+#    sig-signing-nodes integer ; [ Opt, View, Zone ]  # new since 9.6
+#    sig-signing-signatures integer ; [ Opt, View, Zone ]  # new since 9.6
+#    sig-signing-type integer ; [ Opt, View, Zone ]  # new since 9.6
+#    sig-validity-interval days ; [ Opt, View, Zone ]
+#    sig-validity-interval number ; [ Opt, View, Zone ]
+#    trust-anchor-telemetry boolean;  [ View ]  # new since 9.6
+#    trust-anchors { };  [ View ]  # new since 9.6
+#    trusted-keys { };  [ View ]  # new since 9.6
+#
+#  Daemon-related
+#    catalog-zones
+#    cleaning-interval number; [ Opt, View ]
+#    disable-empty-zones
 #    empty-contact
 #    empty-server string
-#    empty-zones-enable
-#    fetch-quota-params integer fixedpoint fixedpoint fixedpoint;
-#    fetches-per-server integer [ ( drop | fail ) ];
-#    fetches-per-zone integer [ ( drop | fail ) ];
-#    forward ( first | only );
-#    forwarders [ port integer ] [ dscp integer ] { ( ipv4_address
-#        | ipv6_address ) [ port integer ] [ dscp integer ]; ... };
-#    glue-cache boolean;
-#    ### heartbeat-interval minutes; [ Opt, View ]  # obsoleted
-#    inline-signing boolean;
-#    ixfr-from-differences ( primary | master | secondary | slave |
-#        boolean );
+#    dialup dialup_options; [ Opt, View, Zone ]
+#    dual-stack-servers [ port p_num ] { ( "id" [port p_num] |
+#                  ipv4 [port p_num] | ipv6 [port p_num] ); ... }; [ Opt, View ]
 #    key string {
 #        algorithm string;
 #        secret string;
 #    };
-#    lame-ttl duration;
-#    lmdb-mapsize sizeval; # ( new since 9.6)
-#    masterfile-format
-#    masterfile-style
-#    match-clients { address_match_list } ; [ View ]
-#    match-destinations { address_match_list } ; [ View ]
-#    match-recursive-only ( yes | no ) ; [ View ]
-#    max-cache-size size_in_bytes ; [ Opt, View ]
+#    plugin ( query ) string { };  [ View ]  # new since 9.6
+#    server netprefix { };  [ View ]  # new since 9.6
+#    v6-bias integer;  # new since 9.6
+#
+#  Dynamic zone-related
+#    empty-zones-enable
+#    dlz string { }
+#    dyndb string quote { }
+#    max-zone-ttl ( unlimited | duration );  [ View ]  # new since 9.6
+#    zone-statistics ( full | terse | none | boolean )  [ View ]  # new since 9.6
+#
+#  DNS protocol-related
+#    auth-nxdomain boolean;
+#    dns64 netprefix { }
+#    dns64-contact string { }
+#    dns64-server string { }
+#    dnstap { }
+#    edns-udp-size size_in_bytes; [ Opt, View ]
+#    forward ( first | only );
+#    forwarders [ port integer ] [ dscp integer ] { ( ipv4_address
+#        | ipv6_address ) [ port integer ] [ dscp integer ]; ... };
 #    max-clients-per-queue;  # new since 9.6
-#    max-cache-ttl seconds; [ Opt, View ]
-#    max-ixfr-ratio ( unlimited | percentage );  # new since 9.6
 #    max-journal-size size_in_bytes; [ Opt, View, Zone ]
-#    max-ncache-ttl seconds; [ Opt, View ]
 #    max-records integer; [ View ]   # new since 9.6
-#    max-recursion-depth integer;  [ View ] # new since 9.6
-#    max-recursion-queue integer;  [ View ] new since 9.6
 #    max-refresh-time seconds ; [ Opt, View, Zone ]
 #    max-retry-time seconds ; [ Opt, View, Zone ]
 #    max-stale-ttl duration; [ View ]  # new since 9.6
-#    max-transfer-idle-in minutes; [ Opt, View, Zone ]
-#    max-transfer-idle-out minutes; [ Opt, View, Zone ]
-#    max-transfer-time-in minutes; [ Opt, View, Zone ]
-#    max-transfer-time-out minutes; [ Opt, View, Zone ]
 #    max-udp-size integer; [ View ]  # new since 9.6
-#    max-zone-ttl ( unlimited | duration );  [ View ]  # new since 9.6
 #    message-compression boolean;  [ View ]  # new since 9.6
-#    min-cache-ttl duration;
-#    min-ncache-ttl duration;
-#    min-refresh-time seconds ; [ Opt, View, Zone ]
-#    min-retry-time seconds ; [ Opt, View, Zone ]
-#    minimal-any ( yes | no ) ; [ Opt, View ]   # new since 9.6
 #    minimal-responses ( yes | no ) ; [ Opt, View ]
 #    multi-master ( yes | no ) ; [ Opt, View, Zone ]
-#    new-zones-directory quoted_string;  [ View ]  # new since 9.6
 #    no-case-compress { address_match_element; ... };  [ View ]  # new since 9.6
-#    notify ( yes | no | explicit | master-only ); [ Opt, View, Zone ]
-#    notify-delay integer;  [ View ]  # new since 9.6
-#    notify-source (ip4_addr | *) [port ip_port] ; [ Opt, View, Zone ]
-#    notify-source-v6 (ip6_addr | *) [port ip_port] ; [ Opt, View, Zone ]
-#    notify-to-soa ( yes | no ); [ View ]
-#    nta-lifetime duration;  [ View ]  # new since 9.6
-#    nta-recheck duration;  [ View ]  # new since 9.6
 #    nxdomain-redirect string;  [ View ]  # new since 9.6
-#    plugin ( query ) string { };  [ View ]  # new since 9.6
 #    preferred-glue ( A | AAAA) ; [ Opt, View ]
-#    prefetch integer;  [ View ]  # new since 9.6
-#    provide-ixfr ( yes | no) ; [ Opt, View, server ]
-#    qname-minimization ( strict | relaxed | disabled | off ); [ View ]  # new #    since 9.6
-#  CISecurity says not to use 'query-source[-v6]'
-#    query-source [ address ( ip_addr | * ) ] [ port ( ip_port | * ) ]; [ Opt, View ]
-#    query-source-v6 [ address ( ip_addr | * ) ] [ port ( ip_port | * ) ]; [ Opt, View ]
-#    rate-limit { };  [ View ]  # new since 9.6
-#    recursion ( yes | no ); [ Opt, View ]
 #    request-expire ( yes | no ); [ Opt, View, server ]  # new since 9.6
-#    request-ixfr ( yes | no ); [ Opt, View, server ]
 #    request-nsid ( yes | no ); [ Opt, View, server ]  # new since 9.6
 #    require-serveri-cookie ( yes | no ); [ Opt, View, server ]  # new since 9.6
 #    resolver-nonbackoff-tries integer;  [ View ]  # new since 9.6
 #    resolver-query-timeout integer;  [ View ]  # new since 9.6
 #    resolver-retry-interval integer;  [ View ]  # new since 9.6
-#    response-padding { } block_size integer; [ View]  # new since 9.6
-#    response-policy { }; [ View]  # new since 9.6
 #    root-delegation-only [ exclude { namelist } ] ; [ Opt, View ]
 #    root-key-sentinel boolean; ; [ Opt, View ]
 #    rrset-order { order_spec ; [ order_spec ; ... ] ); [ Opt, View ]
 #    send-cookie boolean;  [ View ]  # new since 9.6
-#    serial-update-method ( date | increment | unixtime );  [ View ]  # new since 9.6
-#    server netprefix { };  [ View ]  # new since 9.6
-#    sig-validity-interval number ; [ Opt, View, Zone ]
 #    servfail-ttl duration;
-#    sig-signing-nodes integer ; [ Opt, View, Zone ]  # new since 9.6
-#    sig-signing-signatures integer ; [ Opt, View, Zone ]  # new since 9.6
-#    sig-signing-type integer ; [ Opt, View, Zone ]  # new since 9.6
-#    sig-validity-interval days ; [ Opt, View, Zone ]
-#    sortlist { address_match_list }; [ Opt, View ]
 #    stale-answer-enable boolean; [ View ]  # new since 9.6
 #    stale-answer-ttl duration; [ View ]  # new since 9.6
 #    synth-from-dnssec boolean;  [ View ]  # new since 9.6
-#    transfer-format ( one-answer | many-answers ); [ Opt, View, server ]
-#    transfer-source (ip4_addr | *) [port ip_port] ; [ Opt, View, Zone ]
-#    transfer-source-v6 (ip6_addr | *) [port ip_port] ; [ Opt, View, Zone ]
-#    trust-anchor-telemetry boolean;  [ View ]  # new since 9.6
-#    trust-anchors { };  [ View ]  # new since 9.6
-#    trusted-keys { };  [ View ]  # new since 9.6
-#    try-tcp-refresh boolean;  [ View ]  # new since 9.6
-#    use-alt-transfer-source ( yes | no ); [ Opt, View, Zone ]
-#    v6-bias integer;  # new since 9.6
 #    zero-no-soa-ttl boolean  # new since 9.6
 #    zero-no-soa-ttl-cache boolean  # new since 9.6
-#    zone-statistics ( full | terse | none | boolean )  [ View ]  # new since 9.6
+#
+#  Filtering/QoS/RateLimiting
+#    fetch-quota-params integer fixedpoint fixedpoint fixedpoint;
+#    fetches-per-server integer [ ( drop | fail ) ];
+#    fetches-per-zone integer [ ( drop | fail ) ];
+#    lame-ttl duration;
+#    lmdb-mapsize sizeval; # ( new since 9.6)
+#    match-clients { address_match_list } ; [ View ]
+#    match-destinations { address_match_list } ; [ View ]
+#    rate-limit { };  [ View ]  # new since 9.6
+#    sortlist { address_match_list }; [ Opt, View ]
+
+##############################################################
+#    minimal-any ( yes | no ) ; [ Opt, View ]   # new since 9.6
+#    qname-minimization ( strict | relaxed | disabled | off ); [ View ]  # new #    since 9.6
 
 VIEW_EXTN_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
@@ -459,6 +489,7 @@ view "$VIEW_NAME" IN
     ## tcp-keepalive-timeout 50;  # 5 seconds
     ## tcp-advertised-timeout 50;  # 5 seconds
 
+#    new-zones-directory quoted_string;  [ View ]  # new since 9.6
 
 
 VIEW_CONF_EOF
@@ -509,7 +540,7 @@ echo
 # THE GROUP OF VIEWS
 # THE GROUP OF VIEWS
 # THE GROUP OF VIEWS
-# Finally insert the view into the main named.conf file via 
+# Finally insert the view into the main named.conf file via
 # its extensible `views-named.conf` file.
 
 # filespec="$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
@@ -517,7 +548,7 @@ echo
 # filepath="$(dirname $INSTANCE_VIEW_NAMED_CONF_FILESPEC)"
 echo "Appending 'include "${BUILDROOT}${CHROOT_DIR}/$filespec"; to ${BUILDROOT}${CHROOT_DIR}$INSTANCE_VIEW_NAMED_CONF_FILESPEC ..."
 echo "include \"$filespec\";" >> "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
-echo 
+echo
 
 # SYNTAX CHECKING OF named.conf
 # SYNTAX CHECKING OF named.conf
@@ -552,7 +583,7 @@ if [ "$REPLY" != 'n' ]; then
     -p \
     -x \
     $named_chroot_opt \
-    "$INSTANCE_NAMED_CONF_FILESPEC" 
+    "$INSTANCE_NAMED_CONF_FILESPEC"
   retsts=$?
   if [ $retsts -ne 0 ]; then
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."

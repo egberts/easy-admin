@@ -166,6 +166,7 @@ when stepping through the following suggested workflow:
 
 * initialization
 * View(s)
+* * Ask end-user for the name of a new 'view' (ie., public, internal, dmz, dept)
 * * no view, single zone
 * * * Root Server
 * * one view, single zone
