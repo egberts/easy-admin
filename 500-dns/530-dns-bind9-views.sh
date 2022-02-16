@@ -102,10 +102,39 @@ echo "Done."
 
 # Determine recursion
 NEED_RECURSION=yes
+# if public interface then
+#   query end-user if recursion should be turned off
+# fi
 
 # Determine forwarders
-NEED_FORWARDERS=yes
+CAN_HAVE_FORWARDERS=yes
 FORWARDERS_A=()
+# if # of IP-interfaces is greater than 1 then
+#   while this_interfaces in list_ip4_addresses; do
+#     if this_interface is NOT a public-facing IPv4 interface then
+#       if this_interface has IPv4 forwarding enabled then
+#         for this_zone in zone_list; do
+#           if this_zone_ipv4 == this_interface then
+#             if this_zone clause has no file statement then
+#               MUST_FORWARDERS=yes
+#               FORWARDERS_TYPE=only
+#             fi
+#           fi
+#         fi
+#       fi
+#     fi
+#   done
+# fi
+
+# Prevention of forwarders
+#
+# # regardless of public-facing, IPv4 forwarding or zone settings
+# # if 'hidden-master'/'hidden-primary' then VIEW_MUST_NOT_HAVE_FORWARDER='yes'
+
+# 
+if [ "$MUST_HAVE_FORWARDERS" == 'yes' ]; then
+  FORWARDERS=1
+fi
 
 # Determine DNS Security ('dnssec-enable yes;')
 NEED_DNSSEC=yes
@@ -134,6 +163,9 @@ flex_chmod 0750               "$INSTANCE_VIEW_KEYS_DIRSPEC"
 
 
 
+# EXTENSION TO THE VIEW CLAUSE
+# EXTENSION TO THE VIEW CLAUSE
+# EXTENSION TO THE VIEW CLAUSE
 
 # include "${INSTANCE_VIEW_CONF_EXTN_FILESPEC}";
 filespec="$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
@@ -312,6 +344,9 @@ VIEW_EXTN_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640               "$filespec"
 
+# THE VIEW CLAUSE
+# THE VIEW CLAUSE
+# THE VIEW CLAUSE
 # Lastly, create THE view configuration file
 
 # Settings that goes into this main part of view configuration file
@@ -388,8 +423,9 @@ view "$VIEW_NAME" IN
     // conform to RFC 1035
     auth-nxdomain no;
 
-    // disables the SHA-256 digest for .net TLD only.
-    disable-ds-digests "net" { "SHA-256"; };
+    check-names response fail;
+    check-names slave fail;
+    check-names master fail;
 
     disable-algorithms "*" {
         RSAMD5;  // 1
@@ -414,6 +450,9 @@ view "$VIEW_NAME" IN
         255;
         };
 
+    // disables the SHA-256 digest for .net TLD only.
+    disable-ds-digests "net" { "SHA-256"; };
+
     # following tcp-* is available at 9.15+
     ## tcp-idle-timeout 50;  # 5 seconds
     ## tcp-initial-timeout 25;  # 2.5 seconds minimal permitted
@@ -424,7 +463,9 @@ view "$VIEW_NAME" IN
 
 VIEW_CONF_EOF
 
-# Write all the settings here for 'view' clause
+# THE VIEW CLAUSE, THE ENDING
+# THE VIEW CLAUSE, THE ENDING
+# THE VIEW CLAUSE, THE ENDING
 
 # Finish 'view' clause configuration here
 filename="$VIEW_CONF_FILENAME"
@@ -437,9 +478,6 @@ cat << VIEW_CONF_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
     check-integrity no;
     check-mx fail;
     check-mx-cname  fail;
-    check-names response fail;
-    check-names slave fail;
-    check-names master fail;
     check-sibling no;
     check-spf warn;
     check-srv-cname fail;
@@ -468,6 +506,9 @@ flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
 
+# THE GROUP OF VIEWS
+# THE GROUP OF VIEWS
+# THE GROUP OF VIEWS
 # Finally insert the view into the main named.conf file via 
 # its extensible `views-named.conf` file.
 
@@ -478,6 +519,9 @@ echo "Appending 'include "${BUILDROOT}${CHROOT_DIR}/$filespec"; to ${BUILDROOT}$
 echo "include \"$filespec\";" >> "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
 echo 
 
+# SYNTAX CHECKING OF named.conf
+# SYNTAX CHECKING OF named.conf
+# SYNTAX CHECKING OF named.conf
 if [ $UID -ne 0 ]; then
   echo "NOTE: Unable to perform syntax-checking this in here."
   echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"

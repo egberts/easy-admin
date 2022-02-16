@@ -180,28 +180,24 @@ touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC"
 create_header "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC"
 cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
 options {
-	version "Funky DNS, eh?";
 	directory "${INSTANCE_ETC_NAMED_DIRSPEC}";
-	key-directory "${INSTANCE_KEYS_DB_DIRSPEC}";
-	managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
 	dump-file "${DUMP_CACHE_FILESPEC}";
+	managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
+	max-rsa-exponent-size 4096;
 	pid-file "${INSTANCE_RUN_DIRSPEC}/named.pid";
-        statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
-        zone-statistics yes;
-	allow-query { any; };
-	recursion no;
 	server-id none;
-	transfer-format many-answers;
-	notify no;
-	max-transfer-time-in 60;
-	allow-transfer { none; };
+	session-keyalg "hmac-sha256";
+	session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
+	session-keyname "${DHCP_TO_BIND_KEYNAME}";
+        statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
+	version "Funky DNS, eh?";
 
-	allow-update {   # we edit zone file by using an editor, not 'rndc'
-		none;
-	};
+	// RNDC ACL
+	allow-new-zones no;
 
-	dnssec-accept-expired no;
-	dnssec-validation yes;
+	// conform to RFC1035
+	auth-nxdomain no;
+
 	disable-algorithms "egbert.net." { 
 		RSAMD5;		// 1
 		DH;		// 2 - current standard
@@ -224,7 +220,6 @@ options {
 		PRIVATEOID; 
 		255;
         	};
-
 	//  Delegation Signer Digest Algorithms [DNSKEY-IANA] [RFC7344]
 	//  https://tools.ietf.org/id/draft-ietf-dnsop-algorithm-update-01.html
 	disable-ds-digests "egbert.net" {
@@ -234,21 +229,24 @@ options {
 		GOST;		// 3 - has been deprecated by RFC6986
 		//		// SHA-384;  // 4 - Recommended
 		};
-
 	// disables the SHA-256 digest for .net TLD only.
 	disable-ds-digests "net" { "SHA-256"; };  // TBS: temporary
 
-	max-rsa-exponent-size 4096;
+	dnssec-accept-expired no;
+	dnssec-validation yes;
+	recursion no;
+	transfer-format many-answers;
+	allow-query { any; };
+	allow-transfer { none; };
+	allow-update {   # we edit zone file by using an editor, not 'rndc'
+		none;
+	};
+        forwarders { };
 
-	// conform to RFC1035
-	auth-nxdomain no;
-
-	session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
-	session-keyalg "hmac-sha256";
-	session-keyname "${DHCP_TO_BIND_KEYNAME}";
-
-	// RNDC ACL
-	allow-new-zones no;
+	key-directory "${INSTANCE_KEYS_DB_DIRSPEC}";
+	max-transfer-time-in 60;
+	notify no;
+        zone-statistics yes;
 
 OPTIONS_EOF
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC";
