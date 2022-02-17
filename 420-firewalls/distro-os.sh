@@ -5,49 +5,55 @@
 #   DEFAULT_PKG_NAME=
 #   DEFAULT_ETC_CONF_DIRNAME=
 #
-OS_TYPE="$(uname -s)"
 DEFAULT_ETC_CONF_DIRNAME="${DEFAULT_ETC_CONF_DIRNAME:-}"
 
-case $OS_TYPE in
-  Linux)
-    DISTRO_MANUF="$(lsb_release -s -i)"
-    case $DISTRO_MANUF in
-      Debian)
-        DISTRO_PREFIX=""
-        DISTRO_EXEC_PREFIX="/usr"
-        DISTRO_LOCALSTATEDIR=""
-        DISTRO_SYSCONFDIR="/etc"
-        if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
-           || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
-          DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
-        else
-          DEFAULT_PKG_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-        fi
-        # No USER_NAME
-        # No GROUP_NAME
-        ;;
-      Redhat)
-        DISTRO_PREFIX=""
-        DISTRO_EXEC_PREFIX="/usr"
-        DISTRO_LOCALSTATEDIR="/var"
-        DISTRO_SYSCONFDIR="/etc"
-        if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
-           || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
-          DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
-        else
-          DEFAULT_PKG_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
-        fi
-        # No USER_NAME
-        # No GROUP_NAME
-        ;;
-      *)
-        echo "Unknown Linux distro"
-        exit 3
-        ;;
-    esac
+source /etc/os-release
+
+case $ID in
+  debian|devuan)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc"
+    if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
+       || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
+      DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
+    else
+      DEFAULT_PKG_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    fi
+    # No USER_NAME
+    # No GROUP_NAME
+    ;;
+  redhat|centos|fedora)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR="/var"
+    DEFAULT_SYSCONFDIR="/etc"
+    if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
+       || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
+      DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
+    else
+      DEFAULT_PKG_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    fi
+    # No USER_NAME
+    # No GROUP_NAME
+    ;;
+  arch)
+    DEFAULT_PREFIX=""
+    DEFAULT_EXEC_PREFIX="/usr"
+    DEFAULT_LOCALSTATEDIR=""
+    DEFAULT_SYSCONFDIR="/etc"
+    if [ -z "${DEFAULT_ETC_CONF_DIRNAME}" ] \
+       || [ "${DEFAULT_ETC_CONF_DIRNAME:0:1}" == '/' ]; then
+      DEFAULT_PKG_SYSCONFDIR="/etc${DEFAULT_ETC_CONF_DIRNAME}"
+    else
+      DEFAULT_PKG_SYSCONFDIR="/etc/${DEFAULT_ETC_CONF_DIRNAME}"
+    fi
+    # No USER_NAME
+    # No GROUP_NAME
     ;;
   *)
-    echo "Unknown Operating System; undefined action; aborted."
+    echo "Unknown Linux distro"
     exit 3
     ;;
 esac

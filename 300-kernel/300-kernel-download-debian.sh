@@ -12,6 +12,15 @@
 #    # writes into ./linux-5.10
 #
 
+apt source build-essential
+apt source libncurses5-dev
+apt source bc kmod cpio
+apt source bison flex
+apt source libncurses5-dev
+apt source libelf-dev
+apt source libssl-dev
+apt source dwarves
+
 # Installs into local directory
 apt source --download linux-source
 apt source --download linux-headers-amd64
