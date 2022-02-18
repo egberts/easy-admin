@@ -13,6 +13,10 @@
 #   Then tacks on an 'include' clause of this 'view' into the
 #   `views-named.conf` for final reading by `named.conf`
 #
+#   First round of settings of view statements entails the 
+#   netdev-related IPv4 interfaces used toward '*-on', 'query-*'
+#   and '???-*' statements.
+#
 #
 #   DESIGN RATIONALE
 #
@@ -57,17 +61,23 @@
 #    done
 #  done
 #
+# Dependencies:
+#   ipcalc-ng
+#   awk (gawk)
+#   coreutils
+#
 # Environment Names
 #   VIEW_NAME - The name of the view to create
 #   VERBOSE - see more things less tersely
 #
-DEFAULT_VIEW_NAME="${VIEW_NAME:-public}"
+default_view_name="${VIEW_NAME:-public}"
 
 echo "Create a view in ISC Bind9"
 echo
 
 source ./maintainer-dns-isc.sh
 
+instance_view_conf_dirspec="${INSTANCE_ETC_NAMED_DIRSPEC}"
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
@@ -80,8 +90,8 @@ else
   flex_mkdir "$ETC_NAMED_DIRSPEC"
   flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
   flex_mkdir "$VAR_CACHE_DIRSPEC"
-  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ETC_NAMED_DIRSPEC ..."
-  flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_view_conf_dirspec ..."
+  flex_mkdir "$instance_view_conf_dirspec"
   echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VAR_LIB_NAMED_DIRSPEC ..."
   flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
   echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VAR_CACHE_NAMED_DIRSPEC ..."
@@ -89,46 +99,118 @@ else
 fi
 echo
 
-# Compile a list of IP-assigned interfaces
-SYS_IP4_NETDEVS_A=($(ip -o -4 address show | awk '{print $4}'))
-SYS_IP4_NETDEVS_COUNT="${#SYS_IP4_NETDEVS_A[@]}"
-# echo "IP addresses are    : ${SYS_IP4_NETDEVS_A[*]}"
-
-# How many IP-assigned interfaces are available for assignment to a view?
-AVAIL_IP4_NETDEVS_A=($(echo "${SYS_IP4_NETDEVS_A[*]}" | xargs -n1 | grep -v 127.0.0.1 | xargs) )
-AVAIL_IP4_NETDEVS_COUNT="${#AVAIL_IP4_NETDEVS_A[@]}"
-echo "This system has     : $AVAIL_IP4_NETDEVS_COUNT available IP interfaces for view-assignments."
-echo "View-assignable IPs : ${AVAIL_IP4_NETDEVS_A[*]}"
+## Ask the user for the view name (in form of a domain name) if not given via
+# VIEW_NAME env var.
+if [ -z "$VIEW_NAME" ]; then
+  if [ -n "$default_view_name" ]; then
+    read_opt="-i${default_view_name}"
+  fi
+  read -rp "Enter in name of a new view: " -e ${read_opt}
+  VIEW_NAME="$REPLY"
+fi
 echo
 
-if [ "$AVAIL_IP4_NETDEVS_COUNT" -le 1 ]; then  # TBS: -le
+# get list of unique IPv4-public-facing (gateway) netdev(s)
+gw_netdevs_a=($(ip -o route show  | grep default | awk '{print $5}' | xargs -n1 | sort -u | xargs))
+# echo "gw_netdevs_a: $gw_netdevs_a"
+# echo "gw_netdevs_a[*]: ${gw_netdevs_a[*]}"
+# echo "gw_netdevs_a[0]: ${gw_netdevs_a[0]}"
+
+# Compile a list of IP-assigned interfaces
+sys_ip4_netdevs_a=($(ip -o -4 address show | awk '{print $2}'))
+sys_ip4_addrs_a=($(ip -o -4 address show | awk '{print $4}'))
+sys_ip4_count="${#sys_ip4_netdevs_a[@]}"
+
+# How many IP-assigned interfaces are assignable to this view?
+
+sys_idx=0
+avail_ip4_gws_a=()
+avail_ip4_addrs_a=()
+avail_ip4_netdevs_a=()
+while [ $sys_idx -lt ${#sys_ip4_addrs_a[@]} ]; do
+  # Remove loopback
+  if [ "${sys_ip4_netdevs_a[$sys_idx]}" == "lo" ]; then
+    ((sys_idx++))
+    continue
+  fi
+  avail_ip4_addrs_a+=(${sys_ip4_addrs_a[$sys_idx]})
+  avail_ip4_netdevs_a+=(${sys_ip4_netdevs_a[$sys_idx]})
+  if [[ "${gw_netdevs_a[*]}" == *"${sys_ip4_netdevs_a[$sys_idx]}"* ]]; then
+    avail_ip4_gws_a+=("yes")
+  else
+    avail_ip4_gws_a+=("no")
+  fi
+  ((sys_idx++))
+done
+avail_ip4_count=${#avail_ip4_addrs_a[@]}
+# echo "New avail IP intf for view: ${avail_ip4_netdevs_a[@]}"
+# echo "New assignable IP addr: ${avail_ip4_addrs_a[@]}"
+
+
+if [ "$avail_ip4_count" -le 1 ]; then  # TBS: -le
   echo "Not enough IP interfaces to justify needed a view."
   echo "No need to create a view, go straight to defining zone(s)."
   exit 13
 fi
 echo
 
-# Ask the user for the view name (in form of a domain name) if not given via
-# VIEW_NAME env var.
-if [ -z "$VIEW_NAME" ]; then
-  if [ -n "$DEFAULT_VIEW_NAME" ]; then
-    read_opt="-i${DEFAULT_VIEW_NAME}"
-  fi
-  read -rp "Enter in name of a new view: " -e ${read_opt}
-  VIEW_NAME="$REPLY"
-fi
+## What type of view are we doing?
+## if forwarding?
+##   MAY_HAVE_ZONEFILE=yes
+##   ZONE_TYPE=forward
+## elseif resolving?
+##   MAY_HAVE_ZONEFILE=yes
+##   if caching?
+## elseif authoritative zone DNS server?"
+##   MAY_HAVE_ZONEFILE=yes
+## fi
 
-echo "Done."
+## Work on the 'allow-query' statement, when do we need this?
+## 
+## Prompt user to assign IP/netdev to this view
+
+selected_ips_a=()
+echo "Selected IPs: ${selected_ips_a[*]}"
+echo "Which IP subnet/netdev are covered by this '${VIEW_NAME}' view?"
+echo
+
+while [ 0 -ne 0 ]; do
+  # Display selection
+  avail_idx=0
+  let display_idx=$avail_idx+1
+  while [ $avail_idx -lt $avail_ip4_count ]; do
+    echo -n "${display_idx})	${avail_ip4_netdevs_a[$avail_idx]}	${avail_ip4_addrs_a[$avail_idx]}"
+    if [ "${avail_ip4_gws_a[$avail_idx]}" == 'yes' ]; then
+      echo "	(public-facing)"
+    else
+      echo
+    fi
+    ((display_idx++))
+    ((avail_idx++))
+  done
+  read -rp "Enter in 1 thru ${avail_ip4_count} (default is 1): " -ei1
+  let view_selected_ip4_idx=REPLY-1
+  echo "view_selected_ip4_idx: $view_selected_ip4_idx"
+  if [[ "yes" == "${avail_ip4_gws_a[$view_selected_ip4_idx]}" ]]; then
+    echo "Public-facing netdev selected; no more interface will be added."
+  fi
+done
+exit
+
+# Translate IPv4 address+prefix into a proper IPv4 subnet
+subnet=$(ipcalc-ng --no-decorate -n ${avail_ip4_addrs_a[$REPLY]})
+ip4_prefix=$(ipcalc-ng --no-decorate -p ${avail_ip4_addrs_a[$REPLY]})
+view_query="${subnet}/$ip4_prefix"
 
 # Determine recursion
-NEED_RECURSION=yes
+need_recursion=yes
 # if public interface then
 #   query end-user if recursion should be turned off
 # fi
 
 # Determine forwarders
-CAN_HAVE_FORWARDERS=yes
-FORWARDERS_A=()
+can_have_forwarders=yes
+forwarders_a=()
 # if # of IP-interfaces is greater than 1 then
 #   while this_interfaces in list_ip4_addresses; do
 #     if this_interface is NOT a public-facing IPv4 interface then
@@ -136,8 +218,8 @@ FORWARDERS_A=()
 #         for this_zone in zone_list; do
 #           if this_zone_ipv4 == this_interface then
 #             if this_zone clause has no file statement then
-#               MUST_FORWARDERS=yes
-#               FORWARDERS_TYPE=only
+#               view_must_have_forwarders=yes
+#               forwarders_type=only
 #             fi
 #           fi
 #         fi
@@ -149,37 +231,36 @@ FORWARDERS_A=()
 # Prevention of forwarders
 #
 # # regardless of public-facing, IPv4 forwarding or zone settings
-# # if 'hidden-master'/'hidden-primary' then VIEW_MUST_NOT_HAVE_FORWARDER='yes'
+# # if 'hidden-master'/'hidden-primary' then view_must_not_have_forwarder='yes'
 
 #
-if [ "$MUST_HAVE_FORWARDERS" == 'yes' ]; then
-  FORWARDERS=1
+if [ "$view_must_have_forwarders" == 'yes' ]; then
+  forwarders=1
 fi
 
 # Determine DNS Security ('dnssec-enable yes;')
-NEED_DNSSEC=yes
+need_dnssec=yes
 
 
-VIEW_CONF_FILEPART="view.${VIEW_NAME}"
-VIEW_CONF_FILESUFFIX="named.conf"
-VIEW_CONF_FILENAME="${VIEW_CONF_FILEPART}-$VIEW_CONF_FILESUFFIX"
+view_conf_filepart="view.${VIEW_NAME}"
+view_conf_filesuffix="named.conf"
+view_conf_filename="${view_conf_filepart}-$view_conf_filesuffix"
 
 # Vim syntax https://github.com/egberts/vim-syntax-bind-named now supports 'pz.*'
-VIEW_CONF_EXTN_FILENAME="${VIEW_CONF_FILEPART}-extension-$VIEW_CONF_FILESUFFIX"
+view_conf_extn_filename="${view_conf_filepart}-extension-$view_conf_filesuffix"
 
-VIEW_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
-VIEW_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${VIEW_CONF_FILENAME}"
-INSTANCE_VIEW_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
-INSTANCE_VIEW_CONF_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_FILENAME}"
-INSTANCE_VIEW_CONF_EXTN_FILESPEC="${INSTANCE_VIEW_CONF_DIRSPEC}/${VIEW_CONF_EXTN_FILENAME}"
+###view_conf_dirspec="${ETC_NAMED_DIRSPEC}"
+###view_conf_filespec="${ETC_NAMED_DIRSPEC}/${view_conf_filename}"
+instance_view_conf_filespec="${instance_view_conf_dirspec}/${view_conf_filename}"
+instance_view_conf_extn_filespec="${instance_view_conf_dirspec}/${view_conf_extn_filename}"
 
-INSTANCE_VIEW_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
+instance_view_keys_dirspec="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
 
-#    key-directory "${INSTANCE_VIEW_KEYS_DIRSPEC}";
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_KEYS_DIRSPEC ..."
-flex_mkdir "${INSTANCE_VIEW_KEYS_DIRSPEC}"
-flex_chown "root:$GROUP_NAME" "$INSTANCE_VIEW_KEYS_DIRSPEC"
-flex_chmod 0750               "$INSTANCE_VIEW_KEYS_DIRSPEC"
+#    key-directory "${instance_view_keys_dirspec}";
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_view_keys_dirspec ..."
+flex_mkdir "${instance_view_keys_dirspec}"
+flex_chown "root:$GROUP_NAME" "$instance_view_keys_dirspec"
+flex_chmod 0750               "$instance_view_keys_dirspec"
 
 
 
@@ -187,12 +268,12 @@ flex_chmod 0750               "$INSTANCE_VIEW_KEYS_DIRSPEC"
 # EXTENSION TO THE VIEW CLAUSE
 # EXTENSION TO THE VIEW CLAUSE
 
-# include "${INSTANCE_VIEW_CONF_EXTN_FILESPEC}";
-filespec="$INSTANCE_VIEW_CONF_EXTN_FILESPEC"
-filename="$VIEW_CONF_EXTN_FILENAME"
-filepath="$INSTANCE_VIEW_CONF_DIRSPEC"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_EXTN_FILESPEC ..."
-cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_EXTN_FILESPEC" > /dev/null
+# include "${instance_view_conf_extn_filespec}";
+filespec="$instance_view_conf_extn_filespec"
+filename="$view_conf_extn_filename"
+filepath="$instance_view_conf_dirspec"
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_view_conf_extn_filespec ..."
+cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$instance_view_conf_extn_filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -204,7 +285,7 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 #
 #     named-checkconf $INSTANCE_NAMED_CONF_FILESPEC
 #
-#   This file gets included by $INSTANCE_VIEW_CONF_FILESPEC configuration file.
+#   This file gets included by $instance_view_conf_filespec configuration file.
 #
 # Settings that goes into the extension part of its view configuration file
 #  RNDC-related
@@ -228,10 +309,8 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 #    notify-source-v6 (ip6_addr | *) [port ip_port] ; [ Opt, View, Zone ]
 #    notify-to-soa ( yes | no ); [ View ]
 #  Query-related
-#    allow-query { address_match_list }; [ Opt, View, Zone ]
 #    allow-query-cache { address_match_list }; [ Opt, View, Zone ]
 #    allow-query-cache-on { address_match_list }; [ Opt, View, Zone ]
-#    allow-query-on { address_match_list }; [ Opt, View, Zone ]
 #    deny-answer-addresses { address_match_element; ... } [
 #        except-from { string; ... } ];
 #    deny-answer-aliases { string; ... } [ except-from { string; ...  } ];
@@ -316,7 +395,6 @@ cat << VIEW_EXTN_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_CONF_E
 #    zone-statistics ( full | terse | none | boolean )  [ View ]  # new since 9.6
 #
 #  DNS protocol-related
-#    auth-nxdomain boolean;
 #    dns64 netprefix { }
 #    dns64-contact string { }
 #    dns64-server string { }
@@ -374,9 +452,15 @@ VIEW_EXTN_CONF_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640               "$filespec"
 
-# THE VIEW CLAUSE
-# THE VIEW CLAUSE
-# THE VIEW CLAUSE
+# THE VIEW CLAUSE, THE BEGINNING
+
+# Ask user to select netdev(s)/IPv4(s) associated with this view
+# List available netdevs and IPv4s
+
+# Make a list of available netdevs
+
+# THE VIEW CLAUSE, THE BEGINNING
+# THE VIEW CLAUSE, THE BEGINNING
 # Lastly, create THE view configuration file
 
 # Settings that goes into this main part of view configuration file
@@ -389,8 +473,8 @@ flex_chmod 0640               "$filespec"
 #    zone-statistics ( yes | no ) ; [ Opt, View, Zone ]
 
 
-filename="$VIEW_CONF_FILENAME"
-filepath="$INSTANCE_VIEW_CONF_DIRSPEC"
+filename="$view_conf_filename"
+filepath="$instance_view_conf_dirspec"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
 cat << VIEW_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
@@ -407,7 +491,7 @@ cat << VIEW_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #     named-checkconf $INSTANCE_NAMED_CONF_FILESPEC
 #
 #   This file gets included by named.conf.
-#   This file includes the '${INSTANCE_VIEW_CONF_EXTN_FILESPEC}' extension
+#   This file includes the '${instance_view_conf_extn_filespec}' extension
 #   configuration file.
 
 //// The view statement is a powerful feature of BIND 9 that
@@ -483,6 +567,10 @@ view "$VIEW_NAME" IN
     // disables the SHA-256 digest for .net TLD only.
     disable-ds-digests "net" { "SHA-256"; };
 
+    allow-query { ${view_query}; };
+
+    recursion no;   # zones decide whether recursion is supported or not
+
     # following tcp-* is available at 9.15+
     ## tcp-idle-timeout 50;  # 5 seconds
     ## tcp-initial-timeout 25;  # 2.5 seconds minimal permitted
@@ -491,19 +579,7 @@ view "$VIEW_NAME" IN
 
 #    new-zones-directory quoted_string;  [ View ]  # new since 9.6
 
-
-VIEW_CONF_EOF
-
-# THE VIEW CLAUSE, THE ENDING
-# THE VIEW CLAUSE, THE ENDING
-# THE VIEW CLAUSE, THE ENDING
-
-# Finish 'view' clause configuration here
-filename="$VIEW_CONF_FILENAME"
-filepath="$INSTANCE_VIEW_CONF_DIRSPEC"
-filespec="${filepath}/$filename"
-echo "Finishing ${BUILDROOT}${CHROOT_DIR}$filespec ..."
-cat << VIEW_CONF_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
+#    allow-query-on { address_match_list }; [ Opt, View, Zone ]
 
     check-dup-records fail;
     check-integrity no;
@@ -527,7 +603,7 @@ cat << VIEW_CONF_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #    zone-statistics ( yes | no ) ; [ Opt, View, Zone ]
 
 # Add some flexible settings for this view via an extension file
-include "${INSTANCE_VIEW_CONF_EXTN_FILESPEC}";
+include "${instance_view_conf_extn_filespec}";
 
 };
 
@@ -544,9 +620,9 @@ echo
 # its extensible `views-named.conf` file.
 
 # filespec="$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
-# filename="$(basename $INSTANCE_VIEW_NAMED_CONF_FILESPEC)"
-# filepath="$(dirname $INSTANCE_VIEW_NAMED_CONF_FILESPEC)"
-echo "Appending 'include "${BUILDROOT}${CHROOT_DIR}/$filespec"; to ${BUILDROOT}${CHROOT_DIR}$INSTANCE_VIEW_NAMED_CONF_FILESPEC ..."
+# filename="$VIEW_NAMED_CONF_FILENAME"
+# filepath="$instance_view_conf_dirspec"
+echo "Appending 'include \"${BUILDROOT}${CHROOT_DIR}/$filespec\"; to ${BUILDROOT}${CHROOT_DIR}$INSTANCE_VIEW_NAMED_CONF_FILESPEC ..."
 echo "include \"$filespec\";" >> "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
 echo
 
@@ -558,7 +634,7 @@ if [ $UID -ne 0 ]; then
   echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"
   echo "      ISC Bind9 Issue #3119"
   echo "You can execute:"
-  echo "  $named_checkconf_filespec -i -p -c -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
+  echo "  $named_checkconf_filespec -c -i -p -t $BUILDROOT -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
   read -rp "Do you want to sudo the previous command? (Y/n): " -eiY
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 fi
