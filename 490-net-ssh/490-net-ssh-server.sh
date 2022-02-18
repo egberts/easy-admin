@@ -18,7 +18,7 @@
 #   Modified: none
 
 echo "Setting up OpenSSH daemon configuration file(s)"
-echo 
+echo
 
 source ./maintainer-ssh-openssh.sh
 
@@ -49,7 +49,7 @@ if [ "$USER" == "root" ]; then
 else
   echo "Non-root: Unable to check if direct root login is possible."
 fi
-echo 
+echo
 
 # Check if anyone has 'sudo' group access on this host
 SUDO_USERS_BY_GROUP="$(grep "^$WHEEL_GROUP:" /etc/group | awk -F: '{ print $4; }')"
@@ -60,14 +60,14 @@ if [ -z "$SUDO_USERS_BY_GROUP" ]; then
   # Well, no direct root and no sudo-able user account, this is rather bad.
   if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
     echo "no root access possible from non-root"
-    echo 
+    echo
     echo "You probably need to run:"
     echo "  usermod -a -G $WHEEL_GROUP <your-user-name>"
-    echo 
+    echo
     echo "And add a line to '/etc/sudoers':"
     echo
     echo "  %$WHEEL_GROUP   ALL=(ALL:ALL) ALL"
-    echo 
+    echo
     exit 1
   fi
 fi
@@ -79,7 +79,7 @@ if [ "$SSHD_GROUP_FOUND" -eq 0 ]; then
   echo "Other process may view memory of SSH daemon process"
   echo "To add daemon access by UNIX group, run:"
   echo "  groupadd --system $SSHD_GROUP_NAME"
-  echo 
+  echo
   echo "Aborted."
   exit 1
 fi
@@ -91,7 +91,7 @@ if [ "$SSH_GROUP_FOUND" -eq 0 ]; then
   echo "no remote access possible by this UNIX group name."
   echo "To add remote access by UNIX group, run:"
   echo "  groupadd --system $SSH_GROUP_NAME"
-  echo 
+  echo
   echo "Aborted."
   exit 1
 fi
@@ -107,7 +107,7 @@ if [ -z "$SSH_USERS_BY_GROUP" ]; then
   echo "  usermod --append --groups $SSH_GROUP_NAME <your-user-name>"
   echo "or"
   echo "  usermod -a -G $SSH_GROUP_NAME <your-user-name>"
-  echo 
+  echo
   echo "Aborted."
   exit 1
 fi
@@ -209,28 +209,38 @@ else
 fi
 
 # Fake generate throwaway host key for syntax-checking effort
-TEMP_THROWAWAY_KEY="/tmp/fake-ssh-keys-$USER.key"
-ssh-keygen -t ed25519 -f "${TEMP_THROWAWAY_KEY}" -q -N ""
+TEMP_THROWAWAY_KEY="fake-ssh-keys-$USER.key"
+ssh-keygen \
+    -t ed25519 \
+    -f "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}" \
+    -q \
+    -N ""
 
 # Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
 echo "Checking sshd_config syntax ..."
 sudo /usr/sbin/sshd -T -t \
     -f "${BUILDROOT}${sshd_config_filespec}" \
-    -h "${TEMP_THROWAWAY_KEY}" \
+    -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
+    -h "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}" \
     >/dev/null 2>&1
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Error during ssh config syntax checking."
   echo "Showing sshd_config output"
-  sudo /usr/sbin/sshd -T -t -f "${BUILDROOT}${sshd_config_filespec}" -h "${TEMP_THROWAWAY_KEY}"
-  rm "$TEMP_THROWAWAY_KEY"
-  rm "${TEMP_THROWAWAY_KEY}.pub"
+  sudo /usr/sbin/sshd \
+      -T \
+      -t \
+      -f "${BUILDROOT}${sshd_config_filespec}" \
+      -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
+      -h "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}"
+  rm "${BUILDROOT}${CHROOT_DIR}/$TEMP_THROWAWAY_KEY"
+  rm "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}.pub"
   exit "$retsts"
 fi
 echo "${BUILDROOT}$sshd_config_filespec passes syntax-checker."
-echo 
-rm "$TEMP_THROWAWAY_KEY"
-rm "${TEMP_THROWAWAY_KEY}.pub"
+echo
+rm "${BUILDROOT}${CHROOT_DIR}/$TEMP_THROWAWAY_KEY"
+rm "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}.pub"
 
 # Check if non-root user has 'ssh' supplementary group membership
 

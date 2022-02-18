@@ -5,7 +5,7 @@
 # Description:
 # Usage:
 #   499-cis-net-ssh-openssh.sh
-#          [ -t <chroot-dir> ] 
+#          [ -t <chroot-dir> ]
 #          <sshd_conf-filespec> <ssh_conf-filespec>
 #
 #      -t : optional top-level directory path to chroot directory
@@ -22,11 +22,10 @@ echo
 function cmd_show_syntax_usage {
     cat << USAGE_EOF
 Usage:  $0
-	[-t|--chroot-dir <chroot-dir>] \
+    [-t|--chroot-dir <chroot-dir>] \
         [ --help|-h ] [ --verbosity|-v ]
         < named.conf-filespec >
 USAGE_EOF
-  exit 1
 }
 
 # Call getopt to validate the provided input.
@@ -53,7 +52,7 @@ while true; do
         ;;
     -v|--verbose)
         ((VERBOSITY=VERBOSITY+1))
-	readonly VERBOSITY
+    readonly VERBOSITY
         ;;
     -V|--version)
         echo "$0: version TBA"
@@ -122,7 +121,7 @@ NAMED_HOME_DIRSPEC="$sshd_home_dirspec"
 # Furthermore, Zone DB directory is now being split into many subdirectories
 #  by their zone type (i.e., primary/secondary/hint/mirror/redirect/stub)
 #
-# Redhat/Fedora already uses 'slaves' zone type for a subdirectory 
+# Redhat/Fedora already uses 'slaves' zone type for a subdirectory
 # (but that could change to 'secondaries')
 DEFAULT_ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
 DEFAULT_ZONE_DB_DIRNAME_A=("primaries", "secondaries", "hints", "mirrors", "redirects", "stubs", "masters", "slaves")
@@ -298,7 +297,7 @@ find_include_clauses
 config_files_list="$config_files_list $CONFIG_VALUE"
 
 
-# Reconstruct a entire configuration file by including all configuration 
+# Reconstruct a entire configuration file by including all configuration
 # files mentioned by its 'include' clause using 'named-checkconf -p -x'
 echo
 echo "Reading in $NAMED_CONF_FILESPEC..."
@@ -439,7 +438,7 @@ else
   HOME_DIR="$DEFAULT_USER_HOME_DIRNAME"
   echo "Keeping 'directory' value at $HOME_DIR"
 fi
-echo 
+echo
 
 echo "final configure/autogen/autoreconf settings:"
 echo "  prefix:        $prefix"
@@ -773,45 +772,45 @@ TMPDIR="/tmp"  # system-default, man tmpfile(3)
 
 echo "Based on $NAMED_CONF_FILESPEC settings..."
 echo
-echo "TMPDIR:			$TMPDIR"
-echo "Bind username:		$SSH_USER_NAME"
-echo "Bind groupname:		$GROUP_NAME"
-echo "Bind shell:		$NAMED_SHELL_FILESPEC"
-echo "random filespec:	$random_filespec"
-echo "KRB5 keytab filespec:	$keytab_filespec"
+echo "TMPDIR:           $TMPDIR"
+echo "Bind username:        $SSH_USER_NAME"
+echo "Bind groupname:       $GROUP_NAME"
+echo "Bind shell:       $NAMED_SHELL_FILESPEC"
+echo "random filespec:  $random_filespec"
+echo "KRB5 keytab filespec: $keytab_filespec"
 echo
 echo "SELinux name_zone_t group:"
-echo "Bind \$HOME:		$NAMED_HOME_DIRSPEC"
-echo "Zone files list:	$zone_files_list"
-echo "Zone clauses_A:	${zone_clauses_A[@]}"
-echo "Zone file statements_A:	${zone_file_statements_A[*]}"
+echo "Bind \$HOME:      $NAMED_HOME_DIRSPEC"
+echo "Zone files list:  $zone_files_list"
+echo "Zone clauses_A:   ${zone_clauses_A[@]}"
+echo "Zone file statements_A:   ${zone_file_statements_A[*]}"
 echo
 echo "SELinux name_cache_t group:"
-echo "DNSSEC Dynamic Dir:	$DYNAMIC_DIRSPEC"
-echo "Zone Slave Dir:		$slave_dir"
-echo "key_dir_list		$key_dir_list"
-echo "ManagedKeys Dir:	$MANAGEDKEYS_DIR"
-echo "ManagedKeys filespec:	$MANAGEDKEYS_FILESPEC"
-echo "Bind data dir:		$DATA_DIRSPEC"
-echo "dump filespec:		$dump_filespec"
-echo "secroots filespec:	$secroots_filespec"
-echo "statistics filespec:	$statistics_filespec"
-echo "memstatistics filespec:	$memstatistics_filespec"
-echo "Journal dir:		$JOURNAL_DIR"
+echo "DNSSEC Dynamic Dir:   $DYNAMIC_DIRSPEC"
+echo "Zone Slave Dir:       $slave_dir"
+echo "key_dir_list      $key_dir_list"
+echo "ManagedKeys Dir:  $MANAGEDKEYS_DIR"
+echo "ManagedKeys filespec: $MANAGEDKEYS_FILESPEC"
+echo "Bind data dir:        $DATA_DIRSPEC"
+echo "dump filespec:        $dump_filespec"
+echo "secroots filespec:    $secroots_filespec"
+echo "statistics filespec:  $statistics_filespec"
+echo "memstatistics filespec:   $memstatistics_filespec"
+echo "Journal dir:      $JOURNAL_DIR"
 echo
 echo "SELinux name_conf_t group:"
-echo "Config files list:	$config_files_list"
-echo "BINDKEY:		$BINDKEY"
-echo 
+echo "Config files list:    $config_files_list"
+echo "BINDKEY:      $BINDKEY"
+echo
 echo "SELinux name_log_t group:"
-echo "Log directory:		$log_dir"
+echo "Log directory:        $log_dir"
 echo
 echo "SELinux name_var_run_t group:"
-echo "CIS_RUNDIR:		$CIS_RUNDIR"
-echo "PID file:		$pid_filespec"
-echo "Session Key:		$SESSION_KEY_FILESPEC"
-echo "Lock filespec:		$lock_filespec"
-echo 
+echo "CIS_RUNDIR:       $CIS_RUNDIR"
+echo "PID file:     $pid_filespec"
+echo "Session Key:      $SESSION_KEY_FILESPEC"
+echo "Lock filespec:        $lock_filespec"
+echo
 
 # Testing all directories for its file permission and file ownership settings
 
