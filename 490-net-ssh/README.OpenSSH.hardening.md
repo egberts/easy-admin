@@ -70,6 +70,21 @@ In summary, outbound SSH authorization consisting of:
 2.  Single 'ssh' group
 3.  Both 'ssh' and 'ssh\_keys' groups
 
+Keep in mind, `ssh_config` and its configuration file for ssh(1) (SSH client) 
+is an extremely weak form of security; these SSH-client config file is not 
+intended for restricting movement of users attempting to perform outbound
+SSH; more of a guide toward easier connection.
+To circumvent ssh client restriction(s), all the user has to do is 
+create their own SSH client binary/script and off they go. 
+
+Weak security of outbound SSH initiation is mostly attained 
+by:
+
+* lack of any compiler and script language support
+* restriction of inbound file download (with exec bit set)
+* file permission restricting the use of ssh(1)
+* firewall of all outbound network ports to unknown executables
+
 
 Inbound SSH Session - Authorization
 ===================
