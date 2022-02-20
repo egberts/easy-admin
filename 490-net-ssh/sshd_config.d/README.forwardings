@@ -1,0 +1,23 @@
+
+
+The session.c outlines how SSH forwardings are configured and behaved 
+before any form of authentication happens:
+
+ForwardingDisable=yes  (options.disable_forwarding)
+ - Impacts all directions of both local and remote for a specific session
+
+Certificate's PermitPortForwarding=none (auth_opts->permit_port_forwarding_flag)
+ - Impacts all directions of both local and remote for a specific session
+
+tcpip-forward rtype of server_input_global_request only looks at FORWARD_REMOTE
+
+direct-tcpip rtype of server_request_direct_tcpip only looks at FORWARD_LOCAL
+
+AllowTcpForwarding (options.allow_tcp_forwarding & FORWARD_LOCAL)
+ - Impacts only the local forwarding 
+
+AllowTcpForwarding (options.allow_tcp_forwarding & FORWARD_REMOTE)
+ - Impacts only the remote forwarding 
+
+AllowTcpForwarding (options.allow_tcp_forwarding & FORWARD_ALLOW) # DEFAULT
+ - Allows all forms of forwarding both local and remote
