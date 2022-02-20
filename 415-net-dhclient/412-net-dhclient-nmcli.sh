@@ -2,6 +2,8 @@
 # File: 412-net-dhclient-nmcli.sh
 # Title: Configures systemd to use DHCLIENT
 #
+echo "Configuring NetworkManager for use with dhclient(8)"
+echo
 
 SYSTEMD_UNIT_NAME="dhclient"
 SYSTEMD_SERVICE_NAME="$SYSTEMD_UNIT_NAME@.service"
@@ -19,7 +21,6 @@ if [ "$NM_UP" != 'enabled' ] ; then
   exit 11
 fi
 
-echo "Tweaking NetworkManager for use with ISC DHCP (dhclient) client"
 
 # Update the NetworkManager.conf, 'main.dhcp=' to 'dhclient'
 
@@ -49,15 +50,17 @@ for this_netdev in $NETDEV_LIST; do
   fi
   NETDEV_DHCLIENT_CANDIDATE+="$this_netdev "
 done
-echo "Netdev(s) discovered: $NETDEV_LIST"
-echo "Netdev(s) usable for DHCP client: $NETDEV_DHCLIENT_CANDIDATE"
-
 NETDEV_COUNT="$(echo "$NETDEV_DHCLIENT_CANDIDATE" | wc -w)"
-echo "Count of netdev(s): $NETDEV_COUNT"
+echo "Count of discovered netdev(s): $NETDEV_COUNT"
+echo "Netdev(s) discovered: $NETDEV_LIST"
+echo "  Netdev(s) usable for DHCP client: $NETDEV_DHCLIENT_CANDIDATE"
+
 if [ "$NETDEV_COUNT" -eq 0 ]; then
-  echo "This is odd.  There aren't any viable netdev for networking."
+  echo "This is odd.  There aren't any viable netdev left for use with networking."
   exit 5
 fi
+echo
+
 if [ "$NETDEV_COUNT" -eq 1 ]; then
   echo "No need to prompt for each netdev: rush-job..."
   # DHCLIENT_MODE="single-netdev"
@@ -79,6 +82,7 @@ fi
 NETDEV_NAME="${NETDEV_NAME// //}"
 echo "Selected DHCLIENT network interface device: $NETDEV_NAME"
 SYSTEMD_SERVICE_NAME_BY_INTF="${SYSTEMD_UNIT_NAME}@${NETDEV_NAME}.service"
+echo
 
 
 DATE="$(date)"
@@ -248,6 +252,7 @@ DHCLIENT_EOF
 else
   echo "Reusing the $SYSTEMD_UNIT_NAME"
 fi
+echo
 
 # Clean off old ones
 echo "Checking on $SYSTEMD_SERVICE_NAME_BY_INTF..."
@@ -262,7 +267,15 @@ if [ "$UNIT_ACTIVE" != "active" ]; then
   sudo systemctl stop "$SYSTEMD_SERVICE_NAME_BY_INTF"
   sudo systemctl start "$SYSTEMD_SERVICE_NAME_BY_INTF"
 fi
-echo ""
+UNIT_ACTIVE="$(systemctl is-active NetworkManager.service)"
+echo "NetworkManager.service: active?: $UNIT_ACTIVE"
+if [ "$UNIT_ACTIVE" != "active" ]; then
+  sudo systemctl start "NetworkManager.service"
+else
+  sudo systemctl stop "NetworkManager.service"
+  sudo systemctl start "NetworkManager.service"
+fi
+echo
 
 echo "Done."
 
