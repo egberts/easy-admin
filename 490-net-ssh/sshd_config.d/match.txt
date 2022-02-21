@@ -1,0 +1,4 @@
+#   'PermitUserRC' option may be used after
+#   the 'Match' statement and within its
+#   'Match' block portion of sshd_config(5)
+#   configuration file.

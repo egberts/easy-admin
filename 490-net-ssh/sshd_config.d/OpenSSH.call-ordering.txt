@@ -1,0 +1,399 @@
+
+function call ordering of the sshd daemon
+(used to assist with numbering of these config files)
+
+     main()
+       accumulate_host_timing_secret
+         options.timing_secret
+       getpwnam()
+200    setenv(SSH_AUTHSOCKET_ENV_NAME, options.host_key_agent)  260
+       ssh_get_authentication_socket()
+       sshkey_load_public
+       sshkey_from_private
+       accumulate_host_timing_secret
+       sshkey_fingerprint
+       daemonized()
+       log_init(options.log_level,options.log_facility)
+       platform_pre_listen
+       server_listen
+         options.max_startups
+         options.per_source_max_startups
+         options.per_source_masklen_ipv4
+         options.per_source_masklen_ipv6
+         options.num_listen_addrs
+         options.listen_addrs
+       server_accept_loop
+         options.max_startups
+         options.max_startups_begin
+         drop_connection
+           options.max_startups_begin
+           should_drop_connection
+             options.max_startups
+             options.max_startups_begin
+             options.max_startups_rate
+         options.pid_file
+         options.log_level
+         options.log_facility
+       setproctitle
+       execv(rexec_flag)
+       ssh_packet_set_connection()
+       ssh_packet_setup_server()
+       check_ip_options()
+       channel_set_af(options.address_family)
+       process_perimitopen()
+       setsockopt(options.tcp_keep_alive)
+       ssh_remote_port()
+       set_process_rdomains(options.routing_domain)
+       ssh_remote_ipaddr()
+       audit_connection_from()
+       get_local_ipaddr()
+       alarm(login_grace_handler)
+       kex_exchange_identification(options.version_addendum)
+300    do_ssh2_kex
+         compat_kex_proposal(options.kex_algorithms)
+         compat_cipher_proposal(options.ciphers)
+         options.macs
+         options.compression
+         options.rekey_limit
+         options.rekey_interval
+         kex_setup()
+         ssh_dispatch_run_fatal()
+
+       do_authentication2()
+       notify_hostkeys
+         options.num_host_key_files
+         options.fingerprint_hash
+
+       do_authenticated <--- (long session)
+         set_fwdpermit_from_authopts
+           options.allow_tcp_forwarding
+         options.disable_forwarding
+         options.allow_tcp_forwarding
+         prepare_auth_info_file
+           options.expose_userauth_info
+         do_authenticated2()
+           server_loop2
+             options.rekey_interval
+             wait_until_can_do_something
+               options.client_alive_interval
+               client_alive_check
+                 options.client_alive_count_max
+         do_cleanup
+           options.use_pam
+           options.kerberos_ticket_cleanup
+           options.gss_cleanup_creds
+
+-----------
+UNKNOWN (CLIENT OR SERVER)
+-----------
+
+input_userauth_failure
+  userauth()
+    ssh_dispatch_range()
+    method->userauth()
+
+maybe_add_key_to_agent
+  options.add_keys_to_agent
+  options.sk_provider
+
+input_userauth_banner (SSH2_MSG_USERAUTH_BANNER)
+  options.log_level
+
+input_gssapi_errtok
+  options.gss_deleg_creds
+ 
+process_gssapi_response
+  options.gss_deleg_creds
+  userauth()
+    ssh_dispatch_range()
+    method->userauth()
+
+process_gssapi_token
+  options.gss_deleg_creds
+  userauth()
+    ssh_dispatch_range()
+    method->userauth()
+
+
+Authmethod->method()
+  userauth_passwd
+    options.host_key_alias
+    options.number_of_password_prompts
+    auth_password()
+      options.permit_root_login
+      options.permit_empty_passwd
+      options.kerberos_authentication
+      options.use_pam
+
+input_userauth_passwd_changereq
+  options.host_key_alias
+
+identity_sign 
+  options.fingerprint_hash
+  options.batch_mode
+  options.sk_provider
+
+sign_and_send_pubkey
+  options.pubkey_authentication
+  options.fingerprint_hash
+
+load_identity_file
+  options.number_of_password_prompts
+  options.batch_mode
+  options.sk_provider
+
+key_type_allowed_by_config
+  options.pubkey_accepted_algos
+
+pubkey_prepare
+  options.num_identity_files
+  options.identity_keys
+  options.identity_files
+  options.sk_provider
+  options.identity_files_userprovided
+  options.num_certificate_files
+  options.certificate_files
+  options.certificate_files_userprovided
+  options.identity_only
+
+userauth_kbdint
+  options.number_of_password_prompts
+  options.kbd_interactive_devices
+
+input_userauth_info_req
+  options.host_key_alias
+
+Authmethod->method()
+  userauth_hostbased
+    options.hostbased_accepted_algos
+    options.fingerprint_hash
+
+
+
+server_input_channel_open(SSH2_MSG_CHANNEL_OPEN)
+  server_request_session
+    session_open
+      session_new
+        options.max_sessions
+        session_unused
+          options.max_sessions
+  server_request_direct_tcpip
+    options.allow_tcp_forwarding
+    options.disable_forwarding
+    options.allow_streamlocal_forwarding
+  server_request_streamlocal
+  server_request_tun
+    options.permit_tun
+
+
+server_input_global_request(SSH2_MSG_GLOBAL_REQUEST)
+  options.allow_tcp_forwarding
+  options.disable_forwarding
+  options.fwd_opts
+  options.allow_streamlocal_forwarding
+ 
+do_exec
+  do_exec_no_pty
+    options.ip_qos_bulk
+    options.ip_qos_interactive
+    session_set_fds()
+  do_exec_pty
+    options.ip_qos_bulk
+    options.ip_qos_interactive
+      do_login
+        options.use_dns
+        options.use_pam
+        display_loginmsg
+        do_pam_chauthtok
+        check_quietlogin
+        display_loginmsg
+        do_motd
+          options.print_motd
+    do_child()
+      options.use_pam
+      do_nologin()
+      do_setusercontext
+        options.chroot_directory
+      check_quiet_login()
+        display_loginmsg()
+      do_setup_env
+        options.use_pam
+        options.permit_user_env
+        options.permit_userenv_allowlist
+        options.num_setenv
+        options.setenv
+        read_etc_default_login
+          options.permit_userenv_allowlist
+      options.kerberos_get_afs_token
+      do_rc_files
+        options.adm_force_command
+        options.permit_user_rc
+        options.xauth_location
+      execve()
+
+ 
+server_input_channel_req  (SSH2_MSG_CHANNEL_REQUEST)
+  channel_lookup
+  session_input_channel_req
+    session_shell_req
+      do_exec()
+    session_exec_req
+    session_pty_req
+      options.permit_tty
+    session_x11_req
+      session_setup_x11fwd
+        options.x11_forwarding
+        options.xauth_location
+        options.x11_use_localhost
+    session_auth_agent_req
+      options.allow_agent_forwarding
+    session_subsystem_req
+      options.num_subsystems
+      options.subsystem_name
+      options.subsystem_command
+      options.subsystem_args
+      do_exec()
+    session_env_req
+      options.num_accept_env
+      options.accept_env
+
+
+
+
+
+-----------
+CLIENT-SIDE
+-----------
+
+ssh_login
+  options.user
+  kex_exchange_identification()
+  ssh_kex2
+    options.hostkeyalgorithms
+    options.kexalgorithms
+    options.ciphers
+    options.compression
+    options.macs
+    order_hostkeysalgs
+      options.num_user_hostfiles
+      options.user_hostfiles
+      options.num_system_hostfiles
+      options.system_hostfiles
+      options.known_hosts_command
+      options.hostkeyalgorithms
+      get_hostfile_hostname_ipaddr
+        options.proxy_command
+        options.host_key_alias
+    options.rekey_limit
+    options.rekey_interval
+  ssh_userauth2
+    options.preferred_authentications
+
+   
+verify_host_key
+  options.fingerprint_hash
+  options.revoked_host_keys
+  options.verify_host_key_dns
+  options.port
+  options.user_hostfiles
+  options.num_user_hostfiles
+  options.system_hostfiles
+  options.num_system_hostfiles
+  options.known_hosts_command
+  check_host_key
+    options.no_host_authentication_for_localhost
+    options.host_key_alias
+    options.update_hostkeys
+    options.check_host_ip
+    options.proxy_command
+    options.num_user_hostfiles
+    options.user_hostfiles
+    options.num_system_hostfiles
+    options.system_hostfiles
+    load_hostkeys_command
+      options.fingerprint_hash
+    options.ca_sign_algorithms
+    options.hash_known_hosts
+    options.visual_host_key
+    confirm
+      options.batch_mode
+    options.strict_host_key_checking
+    warn_changed_key
+      options.fingerprint_hash
+    show_other_keys
+      options.fingerprint_hash
+      options.visual_host_key
+    options.verify_host_key_dns
+    options.password_authentication
+    options.kbd_interactive_authentication
+    options.forward_agent
+    options.forward_x11
+    options.num_local_forwards
+    options.num_remote_forwards
+    options.tun_open
+    options.exit_on_forward_failure
+
+
+destroy_sensitive_data
+  options.num_host_key_files
+
+demote_sensitive_data
+  options.num_host_key_files
+
+append_hostkey_type
+  options.hostkeyalgorithms
+
+list_hostkey_types
+  options.num_host_key_files
+
+get_hostkey_by_type
+  options.num_host_key_files
+
+get_hostkey_by_index
+  options.num_host_key_files
+
+get_hostkey_public_by_index
+  options.num_host_key_files
+
+get_hostkey_index
+  options.num_host_key_files
+
+ssh_connect
+  options.proxy_command
+  ssh_connect_direct
+    ssh_create_socket
+      options.ip_qos_interactive
+      options.bind_address
+      options.bind_interface
+      check_ifaddrs
+        options.bind_interface
+  options.proxy_use_fdpass
+  ssh_proxy_fdpass_connect
+    options.user
+    options.control_pass
+    options.control_persist
+    expand_proxy_command
+      options.host_key_alias
+  ssh_proxy_connect
+    options.user
+    options.control_pass
+    options.control_persist
+
+
+ssh_local_cmd
+  options.permit_local_command
+  
+authmethod_get
+  options.preferred_authentications
+
+input_userauth_pk_ok
+  options.fingerprint_hash
+  userauth()
+    ssh_dispatch_range()
+    method->userauth()
+  format_identity
+    options.fingerprint_hash
+
+key_sig_algorithms
+  pubkey_accepted_algos
+
