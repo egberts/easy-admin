@@ -58,12 +58,10 @@ function call ordering of the sshd daemon
          options.rekey_interval
          kex_setup()
          ssh_dispatch_run_fatal()
-
        do_authentication2()
        notify_hostkeys
          options.num_host_key_files
          options.fingerprint_hash
-
        do_authenticated <--- (long session)
          set_fwdpermit_from_authopts
            options.allow_tcp_forwarding
@@ -86,6 +84,19 @@ function call ordering of the sshd daemon
 -----------
 UNKNOWN (CLIENT OR SERVER)
 -----------
+
+input_service_request (SSH2_MSG_SERVICE_REQUEST)
+  sshpkt_send(SSH2_MSG_SERVICE_ACCEPT)
+
+input_userauth_request (SSH2_MSG_USERAUTH_REQUEST)
+  userauth_banner
+    auth2_read_banner
+  auth2_setup_methods_lists
+  auth2_challenge_stop
+  auth2_authctxt_reset_info
+  authmethod_lookup
+  user_specific_delay
+  userauth_finish
 
 input_userauth_failure
   userauth()
