@@ -82,8 +82,11 @@ function call ordering of the sshd daemon
            options.gss_cleanup_creds
 
 -----------
-UNKNOWN (CLIENT OR SERVER)
+NOT YET IDENTIFIED (CLIENT OR SERVER)
 -----------
+
+input_userauth_banner (SSH2_MSG_USERAUTH_BANNER)
+  options.log_level
 
 input_service_request (SSH2_MSG_SERVICE_REQUEST)
   sshpkt_send(SSH2_MSG_SERVICE_ACCEPT)
@@ -106,9 +109,6 @@ input_userauth_failure
 maybe_add_key_to_agent
   options.add_keys_to_agent
   options.sk_provider
-
-input_userauth_banner (SSH2_MSG_USERAUTH_BANNER)
-  options.log_level
 
 input_gssapi_errtok
   options.gss_deleg_creds
@@ -195,7 +195,6 @@ server_input_channel_open(SSH2_MSG_CHANNEL_OPEN)
   server_request_streamlocal
   server_request_tun
     options.permit_tun
-
 
 server_input_global_request(SSH2_MSG_GLOBAL_REQUEST)
   options.allow_tcp_forwarding
