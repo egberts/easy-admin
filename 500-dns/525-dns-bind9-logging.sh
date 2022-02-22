@@ -34,6 +34,8 @@ else
   FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   flex_mkdir "${ETC_NAMED_DIRSPEC}"
+  mkdir -p build/var
+  mkdir -p build/var/log
   flex_mkdir "${log_dir}"
   if [ -n "$INSTANCE" ]; then
     flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
@@ -428,6 +430,13 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // resulting in a SERVFAIL response.
 //
 	category query-errors {query-errors_log; };
+
+// Other categories (commented out) will fall to 'default'
+//    nsid
+//    serve-stale
+//    unmatched
+//    rrl
+//    rpz-passthru
 
 NAMED_CHANNEL_CONF
 flex_chmod 0640 "$filespec"
