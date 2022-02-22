@@ -62,7 +62,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-bind-smtp-autoconfig.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-smtp-autoconfig${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   mkdir -p build/var
   mkdir -p build/var/lib

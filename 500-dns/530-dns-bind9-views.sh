@@ -82,7 +82,7 @@ instance_view_conf_dirspec="${INSTANCE_ETC_NAMED_DIRSPEC}"
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-settings-named-views.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named-views${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
@@ -90,6 +90,8 @@ else
   flex_mkdir "$ETC_NAMED_DIRSPEC"
   flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
   flex_mkdir "$VAR_CACHE_DIRSPEC"
+  flex_mkdir "$VAR_CACHE_NAMED_DIRSPEC"
+  flex_mkdir "$INSTANCE_VAR_CACHE_NAMED_DIRSPEC"
   echo "Creating ${BUILDROOT}${CHROOT_DIR}/$instance_view_conf_dirspec ..."
   flex_mkdir "$instance_view_conf_dirspec"
   echo "Creating ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_VAR_LIB_NAMED_DIRSPEC ..."

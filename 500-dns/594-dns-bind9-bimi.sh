@@ -51,7 +51,7 @@ echo
 
 source ./maintainer-dns-isc.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-dns-bimi.sh"
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dns-bimi${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 if [ "${BUILDROOT:0:1}" != '/' ]; then
   mkdir -p build
   flex_mkdir "$VAR_DIRSPEC"

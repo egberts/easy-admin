@@ -1,102 +1,104 @@
-#!/bin/bash
-# File: 560-dns-bind-primary-hidden.sh
-# Title: Convert this primary into a hidden primary
-# Description:
 #
-#   Formerly called 'hidden master'.
+# File: 510-dns-bind-basic-info.sh
+# Title: Ask what kind of DNS system we are setting up for
+#
 
-echo "Set up a hidden-primary nameserver"
-echo "  (formerly known as 'hidden-master')"
-echo "This script requires a properly working primary/secondary nameservers"
+TEST_DEFAULT_DOMAIN_NAME="egbert.net"
+
+OUTSIDE_RELIABLE_CONTACT="8.8.8.8"  # used to determine Internet access
+
+echo "Basic info for a new nameserver"
 echo
 
+CHROOT_DIR="${CHROOT_DIR:-}"
+BUILDROOT="${BUILDROOT:-build}"
+
+# if multiple IP netdevs
+#   Have an interior network to provide needed DNS recursive resolving?
+#     NEED_RECURSIVE_FOR_INTERIOR_NETWORK = 'y'
+#   if NEED_NAMED_RECURSIVE_FOR_INTERIOR_NETWORK then
+#   else
+#   fi
+# else
+#   Need to replace dnsmasq with Bind9 recursive resolver?
+#   NEED_NAMED_RECURSIVE_FOR_STANDALONE_WORKSTATION='y'
+# fi
+#
+# if 
 HIDDEN_KEYNAME="offsite-key"
 HIDDEN_PRIMARY_PORT=353
 PRIMARY_NAME="primary_list_downstream_public_nameserver"
 
 source ./maintainer-dns-isc.sh
 
+# Are we making a build subdir or directly installing?
 if [ "${BUILDROOT:0:1}" == '/' ]; then
-  echo "Absolute build"
-else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-primaries-hidden-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-basic-info${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  echo "Building $FILE_SETTINGS_FILESPEC script ..."
+  mkdir -p "$BUILDROOT"
+  rm -rf "$FILE_SETTINGS_FILESPEC"
+  flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
 fi
 echo
+if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" == '/' ]]; then
+  SUDO_BIN=sudo
+  echo "Writing files as 'root'..."
+else
+  echo "Writing ALL files into $BUILDROOT as user '$USER')..."
+fi
+
+# Do this host have IPv4 or IPv6 up and running?
+HAVE_IPV4=${HAVE_IPV4:-1}
+# Verify IPv6 presence
+if [ -d /proc/sys/net/ipv6 ]; then
+  echo "Auto-detected IPv6 support; enabling IPv6"
+  HAVE_IPV6=${HAVE_IPV6:-1}
+else
+  HAVE_IPV6=0
+fi
+
+
 
 #
 #  User Interface Querying
 #
-#  What is the domain name (zone) that will need this hidden-primary?
-read -rp "TLD domain name that needs a hidden primary/master: "
+
+# Have a domain name to manage? (HAVE_DOMAIN_TO_MANAGE='Y/n')
+# if HAVE_DOMAIN_TO_MANAGE == 'y'
+#   echo Setting up an exterior authoritative nameserver
+#   find public IP address of this host (no multi-home support ... yet)
+#   find internal IP address(es) of this host
+# endif
+read -rp "Do you have domain name(s) that you own and need to primary? (Y/n): " -eiY
 REPLY="$(echo "$REPLY" | awk '{print tolower($1)}')"
-DOMAIN_NAME="$REPLY"
+HAVE_DOMAIN_TO_MANAGE="$REPLY"
 echo
-
-# Make sure that this host is NOT the public primary/master for 
-# this domain-name's NS
-LOCALHOST_MNAME="$(hostname -f)"
-MNAME_LEN="${#LOCALHOST_MNAME}"
-((--MNAME_LEN))
-if [ "${LOCALHOST_MNAME:${MNAME_LEN}}" != '.' ]; then
-  LOCALHOST_MNAME+='.'
-fi
-
-#    - Find domain's nameserver hostname via 'NS' resource record.
-NS_LIST=()
-# shellcheck disable=SC2207
-NS_LIST=($(dig +short "$DOMAIN_NAME" NS ))
-
-# run through each primary-secondary nameservers to get its SOA MNAME
-# make sure they are all the same
-MNAME_LIST=()
-for this_ns in "${NS_LIST[@]}"; do
-  # shellcheck disable=SC2086
-  MNAME_LIST+=("$(dig +short @${this_ns} "$DOMAIN_NAME" SOA | awk '{print $1}')")
-done
-MNAME_REDUCED_LIST="$(echo "${MNAME_LIST[*]}" | xargs -n1 | sort -u | xargs)"
-if [ "$(echo "$MNAME_REDUCED_LIST" | wc -w)" -ge 2 ]; then
-  echo "Your public nameservers (both primary and secondaries) "
-  echo "do not have consistent SOA MNAME"
-  echo "Encountered MNAMEs: ${MNAME_REDUCED_LIST}"
-  echo "Aborted."
-  exit 13
-fi
-
-for this_ns in "${NS_LIST[@]}"; do
-  if [ "$LOCALHOST_MNAME" == "$this_ns" ]; then
-    echo "this host ($LOCALHOST_MNAME) IS one of the public server."
-    echo "You need to move off to another host for a new hidden-primary/master."
-    echo "Aborted."
-    exit 13
+MY_DOMAINS=()
+while true; do
+  if [ -n "$TEST_DEFAULT_DOMAIN_NAME" ]; then
+    read_opt="-i $TEST_DEFAULT_DOMAIN_NAME"
+  else
+    read_opt=
   fi
+  read -rp "Enter in your domain name: " -e $read_opt
+  [ -z "$REPLY" ] && break
+  TEST_DEFAULT_DOMAIN_NAME=
+  echo "Press ENTER to quit"
+  MY_DOMAINS+=("$REPLY")
 done
-echo "Made absolutely sure that this $LOCALHOST_MNAME host is NOT one of the "
-echo "public nameserver for $DOMAIN_NAME TLD."
-echo
-
-SELECTED_NS="$MNAME_REDUCED_LIST"
-# shellcheck disable=SC2086
-PUBLIC_PRIMARY_IP4_ADDR="$(dig +short $SELECTED_NS A)"
-
-#  That this host will be updating (as a hidden-primary/master),
-#  is the remote hostname of the publicly-advertised nameserver correct?
-#    - Ensure that zone database SOA MNAME has this remote hostname
-# On the remote primary, SOA MNAME and its remote NS RR must be identical
-# shellcheck disable=SC2086
-DOMAIN_SOA="$(dig @${SELECTED_NS} +short $DOMAIN_NAME SOA)"
-DOMAIN_SOA_MNAME="$(echo "$DOMAIN_SOA" | awk '{print tolower($1)}')"
-
-if [ "$SELECTED_NS" == "$DOMAIN_SOA_MNAME" ]; then
-  echo "On remote $SELECTED_NS nameserver,"
-  echo "SOA MNAME $DOMAIN_SOA_MNAME is good."
-else
-  echo "ERROR: On remote $SELECTED_NS nameserver, update the SOA MNAME "
-  echo "       in $DOMAIN_NAME zone file to $SELECTED_NS"
+if [ ${#MY_DOMAINS[@]} -eq 0 ]; then
+  echo "No domain entered; aborted."
   exit 13
 fi
+echo "MY_DOMAINS: ${MY_DOMAINS[*]}"
 
-HIDDEN_PRIMARY_NS_IP4_ADDR="$(ip route get "$PUBLIC_PRIMARY_IP4_ADDR" | awk '{print $7}' | xargs)"
-# shellcheck disable=SC2086
+PRIMARY_IPV4_CANDIDATE="$(ip route get "$OUTSIDE_RELIABLE_CONTACT" | awk '{print $7}' | xargs)"
+PRIMARY_NETDEV_CANDIDATE="$(ip route get "$OUTSIDE_RELIABLE_CONTACT" | awk '{print $5}' | xargs)"
+
+echo "External-facing public netdev is:       $PRIMARY_NETDEV_CANDIDATE"
+echo "External-facing public IPv4 address is: $PRIMARY_IPV4_CANDIDATE"
+exit
+
 DOMAIN_SOA="$(dig @${HIDDEN_PRIMARY_NS_IP4_ADDR} +short $DOMAIN_NAME SOA)"
 DOMAIN_SOA_MNAME="$(echo "$DOMAIN_SOA" | awk '{print tolower($1)}')"
 
@@ -125,7 +127,7 @@ cat << NAMED_PRIMARY_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # File: $filename
 # Path: $filepath
 # Title: Declare the Hidden Primary (Master) 
-# Generator: $(basename "$0")
+# Generator: $(basename $0)
 # Created on: $(date)
 #
 # Description:
@@ -191,10 +193,8 @@ flex_chmod 0640 "$filespec"
 # 'also-notify' statement of 'zone' clause for each appropriate zones
 # that are to be hidden from this 'hidden primary' nameserver.
 # Also requires 'notify explicit;' when using 'also-notify;'
-# shellcheck disable=SC2034
 ZONE_FILENAME="mz.$DOMAIN_NAME"
-# shellcheck disable=SC2034
-ADDRLIST_NOTIFY_ZONE_FILESPEC="${INSTANCE_ETC_NAMED_CONF}/$ADDRLIST_NOTIFY_ZONE_FILENAME"
+ADDRLIST_NOTIFY_ZONE_FILESPEC="$INSTANCE_ETC_NAMED_CONF/$ADDRLIST_NOTIFY_ZONE_FILENAME"
 NOTIFY_OPTIONS_NAMED_CONF_FILENAME="options-notify-named.conf"
 NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILENAME="options-internal-bastion-named.conf"
 NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILENAME"
@@ -211,7 +211,7 @@ cat << NOTIFY_OPTIONS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # File: $filename
 # Path: $filepath
 # Title: Notify sub-options within 'options' clause
-# Generator: $(basename "$0")
+# Generator: $(basename $0)
 # Created on: $(date)
 #
 
@@ -263,32 +263,12 @@ include "$NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILESPEC"; // BASTION_INTERN
 		localhost;
 		${PUBLIC_PRIMARY_IP4_ADDR};
 		};
-
-	// notify-to-soa
-	//
-	// If yes, do not check the name servers defined in the NS RRset
-	// against this zone's SOA MNAME.
-	// Normally a NOTIFY message is not sent to the SOA MNAME 
-	// (SOA ORIGIN), as it is supposed to contain the name of 
-	// the ultimate primary server. Sometimes, however, a 
-	// secondary server is listed as the SOA MNAME in hidden 
-	// primary configurations; in that case, the ultimate 
-	// primary should be set to still send NOTIFY messages 
-	// to all the name servers listed in the NS RRset.
-	//
-	// 'notify-to-soa' can be used in 'options clause if
-	// all Zones/Views needs this.
-	//
-	// The 'notify-to-soa' default is 'no'.
-
-	notify-to-soa yes;
-
 NOTIFY_OPTIONS_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 
 touch "${BUILDROOT}${CHROOT_DIR}$NOTIFY_INTERNALBASTION_OPTIONS_NAMED_CONF_FILESPEC"
-filename="$(basename "$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC")"
+filename="$(basename $INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC)"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
@@ -297,7 +277,7 @@ cat << OPTIONS_LISTENON_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/nu
 # File: $filename
 # Path: $filepath
 # Title: 'listen-on' part of 'options' clause for named.conf
-# Generator: $(basename "$0")
+# Generator: $(basename $0)
 # Created on: $(date)
 #
 # To be included within $INSTANCE_OPTIONS_NAMED_CONF_FILESPEC
