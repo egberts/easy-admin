@@ -195,7 +195,7 @@ options {
 	max-rsa-exponent-size 4096;
 	pid-file "${INSTANCE_RUN_DIRSPEC}/named.pid";
 	server-id none;
-	session-keyalg "hmac-sha256";
+	session-keyalg "hmac-sha256"; // could use hmac-sha512
 	session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
 	session-keyname "${DHCP_TO_BIND_KEYNAME}";
         statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
