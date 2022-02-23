@@ -102,7 +102,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-rndc-security.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-security${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   flex_mkdir "${ETC_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then

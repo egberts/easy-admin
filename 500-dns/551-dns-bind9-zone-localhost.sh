@@ -13,7 +13,7 @@ source ./maintainer-dns-isc.sh
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"

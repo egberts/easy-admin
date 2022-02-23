@@ -62,7 +62,7 @@ T4="86400"
 NS1_NAME="ns1.a.myroot-servers.${PRIVATE_TLD}."
 CONTACT="hostmaster.${PRIVATE_TLD}."
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone.sh"
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 if [ "${BUILDROOT:0:1}" != '/' ]; then

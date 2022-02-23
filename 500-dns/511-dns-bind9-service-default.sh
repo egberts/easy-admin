@@ -91,7 +91,7 @@ RESOLVCONF=no
 OPTIONS="-u $USER_NAME"
 
 # the "rndc.conf" should have all its server, key, port, and IP address defined
-RNDC_OPTIONS="-c $RNDC_CONF"
+RNDC_OPTIONS="-c $INSTANCE_RNDC_CONF_FILESPEC"
 
 # There may be other settings in a unit-instance-specific default
 # file such as /etc/default/${sysvinit_unitname}-public.conf or

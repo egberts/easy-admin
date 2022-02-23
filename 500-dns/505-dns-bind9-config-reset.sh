@@ -40,9 +40,9 @@
 
 BUILDROOT="${BUILDROOT:-build/}"
 
-FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-named.conf"
 source maintainer-dns-isc.sh
 
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.conf"
 
 echo "Clearing out prior settings in $BUILDROOT"
 
@@ -73,6 +73,10 @@ flex_mkdir "$extended_sysconfdir"
 flex_chown root:bind "$extended_sysconfdir"
 flex_chmod 0750      "$extended_sysconfdir"
 
+flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_chown root:bind "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_chmod 0750      "$INSTANCE_ETC_NAMED_DIRSPEC"
+
 flex_mkdir "$ETC_SYSTEMD_DIRSPEC"
 flex_chown root:bind "$ETC_SYSTEMD_DIRSPEC"
 flex_chmod 0750      "$ETC_SYSTEMD_DIRSPEC"
@@ -89,6 +93,11 @@ flex_chmod 0750      "$DEFAULT_LIB_DIRSPEC"
 flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
 flex_chown root:bind "$VAR_LIB_NAMED_DIRSPEC"
 flex_chmod 0750      "$VAR_LIB_NAMED_DIRSPEC"
+
+# /var/lib/bind/instance
+flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_chown root:bind "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_chmod 0750      "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
 
 # formerly masters/ subdirectory
 # /var/lib/bind[/instance]/primaries
@@ -186,7 +195,7 @@ options {
 	max-rsa-exponent-size 4096;
 	pid-file "${INSTANCE_RUN_DIRSPEC}/named.pid";
 	server-id none;
-	session-keyalg "hmac-sha256";
+	session-keyalg "hmac-sha256"; // could use hmac-sha512
 	session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
 	session-keyname "${DHCP_TO_BIND_KEYNAME}";
         statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";

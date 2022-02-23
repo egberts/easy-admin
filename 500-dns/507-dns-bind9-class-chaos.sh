@@ -36,7 +36,7 @@ INSTANCE_VIEW_CHAOS_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$VIEW_CHAOS_FILENAME
 
 # Are we making a build subdir or directly installing?
 if [ "${BUILDROOT:0:1}" != '/' ]; then
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-class-chaos.sh"
+  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-class-chaos${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "${BUILDROOT}${CHROOT_DIR}"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"

@@ -9,7 +9,7 @@
 #   - BUILDROOT - '/' for direct installation, otherwise create 'build' subdir
 #   - RNDC_PORT - Port number for Remote Name Daemon Control (rndc)
 #   - RNDC_CONF - rndc configuration file
-#   - INSTANCE_NAME - Bind9 instance name, if any
+#   - INSTANCE - Bind9 instance name, if any
 #
 
 echo "Creating a new bind9@.service systemd unit file..."
@@ -17,7 +17,7 @@ echo ""
 
 source ./maintainer-dns-isc.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/file-bind9-systemd-unitfile.sh"
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-systemd-unitfile${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.
@@ -115,7 +115,7 @@ BIND_EOF
 fi
 
 # Stick in 'default Debian settings' with our new bind@.service
-FILENAME="my-modifications.conf"
+FILENAME="bind9-instance.conf"
 FILESPEC=$TEMPLATE_SYSD_DROPIN_DIRSPEC/${FILENAME}
 
 # Tread carefully, don't be overwriting symbolic links within systemd
@@ -174,26 +174,26 @@ AssertPathIsDirectory=${INSTANCE_SYSCONFDIR}/%I
 AssertFileIsExecutable=${named_sbin_filespec}
 AssertFileIsExecutable=/usr/sbin/rndc
 
-## AssertPathExists=/run/bind/%I
-## AssertPathIsDirectory=/run/bind/%I
-## AssertPathIsReadWrite=/run/bind/%I
+## AssertPathExists=${rundir}/bind/%I
+## AssertPathIsDirectory=${rundir}/bind/%I
+## AssertPathIsReadWrite=${rundir}/bind/%I
 
-AssertPathExists=/var/cache/bind/%I
-AssertPathIsDirectory=/var/cache/bind/%I
-AssertPathIsReadWrite=/var/cache/bind/%I
-AssertPathExists=${INSTANCE_VAR_LIB_NAMED_DIRSPEC}
-AssertPathIsDirectory=${INSTANCE_VAR_LIB_NAMED_DIRSPEC}
-AssertPathIsReadWrite=${INSTANCE_VAR_LIB_NAMED_DIRSPEC}
+AssertPathExists=${VAR_CACHE_NAMED_DIRSPEC}/%I
+AssertPathIsDirectory=${VAR_CACHE_NAMED_DIRSPEC}/%I
+AssertPathIsReadWrite=${VAR_CACHE_NAMED_DIRSPEC}/%I
+AssertPathExists=${VAR_LIB_NAMED_DIRSPEC}/%I
+AssertPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}/%I
+AssertPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}/%I
 
 
 [Service]
-WorkingDirectory=/var/cache/bind/%I
+WorkingDirectory=${VAR_CACHE_NAMED_DIRSPEC}/%I
 RootDirectory=/
-RuntimeDirectory=+/run/bind
-StateDirectory=+/var/lib/bind
-CacheDirectory=+/var/cache/bind
-LogsDirectory=named/%I
-ConfigurationDirectory=+/etc/bind/%I
+RuntimeDirectory=+${rundir}/bind
+StateDirectory=+${VAR_LIB_NAMED_DIRSPEC}
+CacheDirectory=+${VAR_CACHE_NAMED_DIRSPEC}
+LogsDirectory=${INSTANCE_LOG_DIRSPEC}/%I
+ConfigurationDirectory=+${INSTANCE_ETC_NAMED_DIRSPEC}/%I
 
 User=$USER_NAME
 Group=$GROUP_NAME
@@ -248,25 +248,25 @@ PrivateTmp=no
 
 # /etc/bind
 ConfigurationDirectoryMode=2022
-ReadOnlyPaths=+/etc/bind
-ReadOnlyPaths=+/etc/bind/*
-ReadOnlyPaths=+/etc/bind/*/*
+ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/
+ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/*
+ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/*/*
 
 
 # root:bind
-# RuntimeDirectory=+/run/bind/%I
+# RuntimeDirectory=+${rundir}/bind/%I
 RuntimeDirectory=bind/%I
 RuntimeDirectoryMode=0007
 # Save the /run/bind/%I directory after 'systemctl bind9 stop/restart'
 RuntimeDirectoryPreserve=yes
-ReadWritePaths=+/run/bind/%I
+ReadWritePaths=+${rundir}/bind/%I
 
 
 # Home directory
 # bind:bind
-CacheDirectory=+/var/cache/bind/%I
+CacheDirectory=+${VAR_CACHE_NAMED_DIRSPEC}/%I
 CacheDirectoryMode=0022
-ReadWritePaths=+/var/cache/bind/%I
+ReadWritePaths=+${VAR_CACHE_NAMED_DIRSPEC}/%I
 
 # State directory (Bind9 database files, static/dynamic)
 # bind:bind
@@ -275,15 +275,15 @@ StateDirectory=+/var/lib/bind/%I
 ReadWritePaths=+/var/lib/bind/%I
 
 Type=forking
-PIDFile=/run/named/%I/named.pid
+PIDFile=${rundir}/named/%I/named.pid
 # Delete old ExecXXXX settings
 ExecStart=
 ExecReload=
 ExecStop=
 # Redefine ExecXXXX settings
-ExecStart=/usr/sbin/named -f -c /etc/bind/%I/named.conf \$OPTIONS
-ExecReload=/usr/sbin/rndc -c /etc/bind/rndc-%I.conf \$RNDC_OPTIONS reload
-ExecStop=/usr/sbin/rndc -c /etc/bind/rndc-%I.conf \$RNDC_OPTIONS stop
+ExecStart=/usr/sbin/named -f -c ${INSTANCE_ETC_NAMED_DIRSPEC}/%I/named.conf \$OPTIONS
+ExecReload=/usr/sbin/rndc -c ${INSTANCE_ETC_NAMED_DIRSPEC}/rndc-%I.conf \$RNDC_OPTIONS reload
+ExecStop=/usr/sbin/rndc -c ${INSTANCE_ETC_NAMED_DIRSPEC}/rndc-%I.conf \$RNDC_OPTIONS stop
 
 KillMode=process
 RestartSec=5s
