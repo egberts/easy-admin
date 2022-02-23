@@ -195,4 +195,24 @@ function flex_chcon() {
   unset destdir_dirspec
 }
 
+# Wanted:
+#   find_first_line
+#   find_same_lines
+#   append_line    - append line to a file
+#   replace_line   - replace a specific line with a line into a file
 
+# function find_first_line()
+# {
+# }
+
+# function find_same_lines()
+# {
+# }
+
+# function append_line()
+# {
+# }
+
+# function replace_line()
+# {
+# }
