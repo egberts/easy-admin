@@ -19,7 +19,7 @@
 # Globals:
 #   BUILDROOT - if undefined or '/', then there is no build but a direct install
 #   CHROOT_DIR - a full directory specification for chroot use.
-#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with
 #                            file permission settings
 # Arguments:
 #   $1 - absolute directory specification
@@ -30,6 +30,13 @@ function flex_mkdir() {
 
   if [ "${1:0:1}" != "/" ]; then
     echo "flex_mkdir: argument '$1' must be an absolute directory path"
+    exit 9
+  fi
+  # precheck if parent directory exist ... firstly otherwise error-out
+  parent_dir="$(dirname "${BUILDROOT}${CHROOT_DIR}${1}")"
+  if [ ! -d "$parent_dir" ]; then
+    echo "ERROR: Parent directory $parent_dir does not exist."
+    echo "ERROR: Unable to create ${BUILDROOT}${CHROOT_DIR}${1} subdirectory."
     exit 9
   fi
   destdir_dirspec="${CHROOT_DIR}${1}"
@@ -53,13 +60,64 @@ function flex_mkdir() {
 }
 
 ###############################################################
+# Flexible ckdir()
+# Description:
+#   Checks if a directory already exist, other create them if in BUILDROOT mode
+#   Errors out if directory does NOT exist while in BUILDROOT mode
+#
+#   No-Op if not in BUILDROOT (root-direct-install) mode as
+#   we do not want to tamper with existing OS filesystem directory.
+#
+# Globals:
+#   BUILDROOT - if undefined or '/', then there is no build but a direct install
+#   CHROOT_DIR - a full directory specification for chroot use.
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with
+#                            file permission settings
+#
+# Arguments:
+#   $1 - absolute directory specification
+# Outputs:
+#   none
+################################################################
+function flex_ckdir()
+{
+  echo "Checking for $1 directory ..."
+  if [ -z "$1" ]; then
+    echo "Must supply argument; aborted."
+    exit 13
+  fi
+  # If not in BUILDROOT (but are in direct root update) mode
+  if [ -z "$BUILDROOT" -o "${BUILDROOT:0:1}" == '/' ]; then
+    # Return as No-Op
+    return
+  fi
+
+  if [ "${1:0:1}" != "/" ]; then
+    echo "flex_ckdir: argument '$1' must always be an absolute directory path"
+    exit 9
+  fi
+  # precheck if parent directory exist ... firstly otherwise error-out
+  parent_dir="$(dirname "${BUILDROOT}${CHROOT_DIR}${1}")"
+  if [ ! -d "$parent_dir" ]; then
+    echo "ERROR: Parent directory $parent_dir does not exist."
+    echo "ERROR: Unable to create ${BUILDROOT}${CHROOT_DIR}${1} subdirectory."
+  fi
+
+  # Check if directory does not exist
+  if [ ! -d "${BUILDROOT}${CHROOT_DIR}${1}" ]; then
+    # create the subdirectory
+    mkdir "${BUILDROOT}${CHROOT_DIR}${1}"
+  fi
+}
+
+###############################################################
 # Flexible chown()
 # Description:
 #   if BUILDROOT is undefined, then mkdir is from the '/' or '$CHROOT_DIR'
 # Globals:
 #   BUILDROOT - if undefined or '/', then there is no build but a direct install
 #   CHROOT_DIR - a full directory specification for chroot use.
-#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with
 #                            file permission settings
 # Arguments:
 #   $1 - chown file ownership options
@@ -92,7 +150,7 @@ function flex_chown() {
 # Globals:
 #   BUILDROOT - if undefined or '/', then there is no build but a direct install
 #   CHROOT_DIR - a full directory specification for chroot use.
-#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with
 #                            file permission settings
 # Arguments:
 #   $1 - chmod file permission options
@@ -127,7 +185,7 @@ function flex_chmod() {
 # Globals:
 #   BUILDROOT - if undefined or '/', then there is no build but a direct install
 #   CHROOT_DIR - a full directory specification for chroot use.
-#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with
 #                            file permission settings
 # Arguments:
 #   $1 - absolute directory specification
@@ -161,7 +219,7 @@ function flex_touch() {
 # Globals:
 #   BUILDROOT - if undefined or '/', then there is no build but a direct install
 #   CHROOT_DIR - a full directory specification for chroot use.
-#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with 
+#   FILE_SETTINGS_FILESPEC - if BUILDROOT then create script file with
 #                            file permission settings
 # Arguments:
 #   $1 - absolute directory specification
