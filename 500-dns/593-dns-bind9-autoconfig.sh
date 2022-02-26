@@ -9,25 +9,25 @@
 #
 # MOZILLA THUNDERBIRD:
 # MICROSOFT OUTLOOK:
-#   The Outlook mail client performs the following AutoDiscover phases 
+#   The Outlook mail client performs the following AutoDiscover phases
 #   to detect the server endpoint URLs:
 #
-#    Phase 1 – The client performs a Secure Copy Protocol 
-#    (SCP) lookup against the local Active Directory. 
+#    Phase 1 – The client performs a Secure Copy Protocol
+#    (SCP) lookup against the local Active Directory.
 #    If your client isn’t domain-joined, AutoDiscover skips this step.
 #    NOTE: This Phase 1 is totally ignored here in this script.
 #
-#    Phase 2 – The client sends a request to the following 
-#    URLs and validates the results. These endpoints are only 
+#    Phase 2 – The client sends a request to the following
+#    URLs and validates the results. These endpoints are only
 #    available using HTTPS.
 #
 #     * https://company.tld/autodiscover/autodiscover.xml
 #     * https://autodiscover.company.tld/autodiscover/autodiscover.xml
 #
-#    Phase 3 – The client performs a DNS lookup to 
-#    autodiscover.company.tld and sends an unauthenticated GET 
-#    request to the derived endpoint from the user’s email 
-#    address. If the server returns a 302 redirect, the client 
+#    Phase 3 – The client performs a DNS lookup to
+#    autodiscover.company.tld and sends an unauthenticated GET
+#    request to the derived endpoint from the user’s email
+#    address. If the server returns a 302 redirect, the client
 #    resends the AutoDiscover request against the returned HTTPS endpoint.
 #
 #   Can use 'autoconfig.DOMAIN_NAME IN A 127.0.0.1' to disable
@@ -62,7 +62,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-smtp-autoconfig${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-smtp-autoconfig${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   mkdir -p build/var
   mkdir -p build/var/lib
@@ -323,7 +323,7 @@ echo
 
 
 
-# APPEND the $INCLUDE 'autodiscover' subdomain zone database to 
+# APPEND the $INCLUDE 'autodiscover' subdomain zone database to
 # your domain zone database
 
 filespec="$DOMAIN_DB_FILESPEC"
@@ -349,28 +349,28 @@ filepath="$(dirname $filespec)"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
 cat << ZONE_DB_MAIN_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
 \$ORIGIN ${ZONE_FQDN}
-; 
+;
 ; File: $filename
 ; Path: $filepath
 ; Title:  Auto set-up of various remote mail clients
 ;
-; 
-${ZONE_FQDN}		IN	TXT	"mailconf=${url_autoconfig_xml_filename}"
+;
+${ZONE_FQDN}        IN  TXT "mailconf=${url_autoconfig_xml_filename}"
 ;
 ; Must use HTTPS (443) by remote mail client during SMTP autodiscovery
-_autodiscover._tcp	IN	SRV	0 0 443 ${ZONE_FQDN}
+_autodiscover._tcp  IN  SRV 0 0 443 ${ZONE_FQDN}
 
 ;
 ;  Mozilla Thunderbird mail client
-autoconfig		IN	CNAME	${ZONE_FQDN}
+autoconfig      IN  CNAME   ${ZONE_FQDN}
 
 ;
 ;  Microsoft Outlook mail client
-autodiscover		IN	CNAME	${ZONE_FQDN}
+autodiscover        IN  CNAME   ${ZONE_FQDN}
 
 ;  Apple Mail client uses 'mail.DOMAIN.COM'
 ;  Microsoft Outlook mail client uses 'mail.DOMAIN.COM' as fall-back
-mail			IN	CNAME	${ZONE_FQDN}
+mail            IN  CNAME   ${ZONE_FQDN}
 
 
 ZONE_DB_MAIN_EOF
@@ -408,7 +408,7 @@ cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/n
 ;
 ;  Autodiscover email support
 \$ORIGIN $DOMAIN_NAME
-autodiscover	IN	CNAME	$DOMAIN_NAME
+autodiscover    IN  CNAME   $DOMAIN_NAME
 AUTODISCOVER_DB_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # File: 592-dns-bind-autodiscover.sh
-# Title:  Set up autodiscovering by remote Microsoft-only email client 
+# Title:  Set up autodiscovering by remote Microsoft-only email client
 #
 # Description:
 #
@@ -18,7 +18,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-autodiscovery-smtp-imap${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-autodiscovery-smtp-imap${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   mkdir -p build/var
   mkdir -p build/var/lib
@@ -67,29 +67,29 @@ echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
 cat << ZONE_DB_MAIN_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
 \$ORIGIN ${ZONE_FQDN}
 ;
-; 
-${ZONE_FQDN}		IN    TXT     "mailconf=https://egbert.net/.well-known/autoconfig/mail/config-v1.1.xml"
+;
+${ZONE_FQDN}        IN    TXT     "mailconf=https://egbert.net/.well-known/autoconfig/mail/config-v1.1.xml"
 
-www			IN	CNAME	${ZONE_FQDN}
-autodiscover		IN	CNAME	${ZONE_FQDN}
-autoconfig		IN	CNAME	${ZONE_FQDN}
-smtp       		IN	CNAME	${ZONE_FQDN}
-imap			IN	CNAME	${ZONE_FQDN}
-portal			IN	CNAME	${ZONE_FQDN}
+www         IN  CNAME   ${ZONE_FQDN}
+autodiscover        IN  CNAME   ${ZONE_FQDN}
+autoconfig      IN  CNAME   ${ZONE_FQDN}
+smtp            IN  CNAME   ${ZONE_FQDN}
+imap            IN  CNAME   ${ZONE_FQDN}
+portal          IN  CNAME   ${ZONE_FQDN}
 
 ; _tcp.egbert.net.
 \$ORIGIN _tcp.${ZONE_FQDN}
-_autodiscover	SRV	1 1 443 mx1.egbert.net
+_autodiscover   SRV 1 1 443 mx1.egbert.net
 
 ; _tcp.mx1.egbert.net.
 \$ORIGIN _tcp.${MX_ZONE_FQDN}
 ; RFC 6186 SRV records for e-mail services
-_imap		SRV	0 0 0 .
-_imaps		SRV	1 1 993 ${MX_ZONE_FQDN}
-_pop3		SRV	0 0 0 .
-_pop3s		SRV	0 0 0 .
-_submission	SRV	1 1 587 ${MX_ZONE_FQDN}
-_submissions	SRV	1 1 465 ${MX_ZONE_FQDN}
+_imap       SRV 0 0 0 .
+_imaps      SRV 1 1 993 ${MX_ZONE_FQDN}
+_pop3       SRV 0 0 0 .
+_pop3s      SRV 0 0 0 .
+_submission SRV 1 1 587 ${MX_ZONE_FQDN}
+_submissions    SRV 1 1 465 ${MX_ZONE_FQDN}
 
 ZONE_DB_MAIN_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
@@ -193,7 +193,7 @@ cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/n
 ;
 ;  Autodiscover email support
 \$ORIGIN $DOMAIN_NAME
-autodiscover	IN	CNAME	$DOMAIN_NAME
+autodiscover    IN  CNAME   $DOMAIN_NAME
 AUTODISCOVER_DB_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"
@@ -209,7 +209,7 @@ cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/n
 ;
 ;  Add the Autodiscover email support
 \$INCLUDE \"${AUTODISCOVER_DB_FILESPEC}\"
-autodiscover	IN	CNAME	$DOMAIN_NAME
+autodiscover    IN  CNAME   $DOMAIN_NAME
 AUTODISCOVER_DB_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"

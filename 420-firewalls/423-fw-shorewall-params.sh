@@ -9,7 +9,7 @@ CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
 if [ "${BUILDROOT:0:1}" != "/" ]; then
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-perms-fw-shorewall-params.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-perms-fw-shorewall-params.sh"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "$BUILDROOT"
   rm -f "$FILE_SETTINGS_FILESPEC"
@@ -214,8 +214,8 @@ default_gw_ip4_A+=("$(ip -4 -o route show|grep "^default"|awk '{print $3}')")
 # Bug: it is possible to have a double  entry of gateway for same interface
 # workable, valid, but not kosher.  Sort unique them out of these arrays
 #    ip -4 -o route show
-#    default via 192.168.1.1 dev enp4s0 
-#    default via 192.168.1.1 dev enp4s0 proto dhcp metric 100 
+#    default via 192.168.1.1 dev enp4s0
+#    default via 192.168.1.1 dev enp4s0 proto dhcp metric 100
 default_gw_netdevs_A=($(echo ${default_gw_netdevs_A[*]} | xargs -n1 | sort -u | xargs ))
 default_gw_ip4_A=($(echo ${default_gw_ip4_A[*]} | xargs -n1 | sort -u | xargs ))
 
@@ -545,7 +545,7 @@ cat << SHOREWALL_CONF_EOF | tee "${interfaces_output}" >/dev/null
 #
 #   nosmurfs
 #     IPv4 only. Filter packets for smurfs (packets with
-#     a broadcast address as the source).  
+#     a broadcast address as the source).
 #
 #     'nosmurfs' is typically used on bridge-only interface.
 #
@@ -981,7 +981,7 @@ for this_private_netdev in $selected_private_netdevs_list; do
     fi
     ((idx++))
   done
-  echo "$zone_netdev	\$$intfname_netdev	$INTF_OPTS" >> "$interfaces_output"
+  echo "$zone_netdev    \$$intfname_netdev  $INTF_OPTS" >> "$interfaces_output"
   echo ""
 done
 

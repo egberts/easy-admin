@@ -13,7 +13,7 @@ source ./maintainer-dns-isc.sh
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
@@ -129,7 +129,7 @@ ssh-keygen -r "$SSHFP_DOMAIN_NS" > "${BUILDROOT}${CHROOT_DIR}$MASTER_DB_SSHFP"
 
 flex_chown "root:$GROUP_NAME" "$MASTER_DB_SSHFP"
 flex_chmod "0640"      "$MASTER_DB_SSHFP"
-echo 
+echo
 
 echo "\$ORIGIN ${REQUESTED_DOMAIN_NAME}" >> ${BUILDROOT}${CHROOT_DIR}$INSTANCE_ZONE_DB_FILESPEC
 echo "\$INCLUDE \"${MASTER_DB_SSHFP}\"" >> ${BUILDROOT}${CHROOT_DIR}$INSTANCE_ZONE_DB_FILESPEC

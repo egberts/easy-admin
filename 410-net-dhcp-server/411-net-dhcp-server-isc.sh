@@ -40,7 +40,7 @@ CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
 if [ "${BUILDROOT:0:1}" != "/" ]; then
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/net-dhcp-dhclient.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/net-dhcp-dhclient.sh"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "$BUILDROOT"
   rm -f "$FILE_SETTINGS_FILESPEC"

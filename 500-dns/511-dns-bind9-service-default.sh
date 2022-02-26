@@ -17,7 +17,7 @@ echo
 
 source ./maintainer-dns-isc.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-service-defaults${INSTANCE_FILEPART}.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-service-defaults${INSTANCE_FILEPART}.sh"
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.

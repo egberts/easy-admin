@@ -14,5 +14,8 @@ source "$find_my_call_stack_filespec"
 
 echo "MY_PATH: $MY_PATH"
 
-echomsg "An exercise in bash call stack dump; re-run with 'DEBUG=1' prepended"
-fatalerr "An exercise in bash call stack dump; re-run with 'ANSI_COLOR=1 DEBUG=1' prepended"
+echodbg "An echodbg exercise in bash call stack dump; re-run with 'DEBUG=1' prepended"
+echomsg "An echomsg exercise in bash call stack dump; re-run with 'DEBUG=1' prepended"
+echowarn "An echowarn exercise in bash call stack dump; re-run with 'DEBUG=1' prepended"
+echoinfo "An echoinfo exercise in bash call stack dump; re-run with 'DEBUG=1' prepended"
+fatalerr "An fataerr exercise in bash call stack dump; re-run with 'ANSI_COLOR=1 DEBUG=1' prepended"

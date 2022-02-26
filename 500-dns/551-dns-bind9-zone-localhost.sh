@@ -13,7 +13,7 @@ source ./maintainer-dns-isc.sh
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
@@ -104,18 +104,18 @@ cat << ZONE_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 ;
 ; BIND data file for local loopback interface
 ;
-$TTL	604800
+$TTL    604800
 $ORIGIN localhost.
-@	IN	SOA	localhost. root.localhost. (
-			9
-			604800
-			86400
-			2419200
-			604800 )
+@   IN  SOA localhost. root.localhost. (
+            9
+            604800
+            86400
+            2419200
+            604800 )
 ;
-@	IN	NS	localhost.
-@	IN	A	127.0.0.1
-@	IN	AAAA	::1
+@   IN  NS  localhost.
+@   IN  A   127.0.0.1
+@   IN  AAAA    ::1
 
 ZONE_DB_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
@@ -143,42 +143,42 @@ zone "$ZONE_NAME" IN
     type ${ZONE_TYPE_NAME};
 
 
-    //// file statement defines the file used by the zone in 
-    //// quoted string format, for instance, "secondary/example.com" - 
-    //// or whatever convention you use. The file entry is 
-    //// mandatory for 'primary' and 'hint' zone types and 
-    //// optional - but highly recommended - for 'secondary' and 
-    //// not required for forward zones. 
+    //// file statement defines the file used by the zone in
+    //// quoted string format, for instance, "secondary/example.com" -
+    //// or whatever convention you use. The file entry is
+    //// mandatory for 'primary' and 'hint' zone types and
+    //// optional - but highly recommended - for 'secondary' and
+    //// not required for forward zones.
     ////
     //// The file may be an absolute path or relative to directory.
     //// But ISC Bind9 team highly recommend absolute path notation
     //// due to 'directory' statement being able to shift the
     //// current working directory under the daemon during reading
     //// of the named.conf file.  Some file-related statements
-    //// may work before this 'directory' statement and the later 
+    //// may work before this 'directory' statement and the later
     //// file-related will NOT work: and vice-versa.
     ////
-    //// Note: If a type 'secondary' has a file statement then any zone 
-    //// transfer will cause it to update this zone database file. 
-    //// If the 'secondary' is reloaded then it will read this file 
-    //// and immediately start answering queries for the domain. 
-    //// If no file is specified it will immediately try to contact 
-    //// the 'primary' and initiate a zone transfer. 
-    //// For obvious reasons the 'secondary' cannot do zone queries 
-    //// until this zone transfer gets completed. 
-    //// If the 'primary' is not available or the 'secondary' 
-    //// fails to contact the 'primary', for whatever reason, the 
+    //// Note: If a type 'secondary' has a file statement then any zone
+    //// transfer will cause it to update this zone database file.
+    //// If the 'secondary' is reloaded then it will read this file
+    //// and immediately start answering queries for the domain.
+    //// If no file is specified it will immediately try to contact
+    //// the 'primary' and initiate a zone transfer.
+    //// For obvious reasons the 'secondary' cannot do zone queries
+    //// until this zone transfer gets completed.
+    //// If the 'primary' is not available or the 'secondary'
+    //// fails to contact the 'primary', for whatever reason, the
     //// zone may be left with no effective Authoritative Name Servers.
 
     file "${INSTANCE_ZONE_DB_FILESPEC}";
 
-    //// 'key-directory' is the directory where the public and 
-    //// private DNSSEC key files should be found when 
-    //// performing a dynamic update of secure zones, if 
-    //// different than the current working directory. 
+    //// 'key-directory' is the directory where the public and
+    //// private DNSSEC key files should be found when
+    //// performing a dynamic update of secure zones, if
+    //// different than the current working directory.
     ////
-    //// Note that this option has no effect on the paths for 
-    //// files containing non-DNSSEC keys such as bind.keys, 
+    //// Note that this option has no effect on the paths for
+    //// files containing non-DNSSEC keys such as bind.keys,
     //// rndc.key, or session.key.
 
     key-directory "${INSTANCE_ZONE_KEYS_DIRSPEC}";

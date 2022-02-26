@@ -24,7 +24,7 @@ echo "systemd-resolved=false"
 
 source ./maintainer-NetworkManager.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-sysd-resolvered-disable.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-sysd-resolvered-disable.sh"
 
 flex_mkdir "$NETWORKMANAGER_CONFD_DIRSPEC"
 
@@ -47,18 +47,18 @@ cat << NM_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
 # 'systemd-resolved'
 #
 #
-# Send the connection DNS configuration to 
-# systemd-resolved. 
+# Send the connection DNS configuration to
+# systemd-resolved.
 #
 # Defaults to "true".
 #
-# Note that this setting is complementary to the 'dns' setting. 
-# You can keep this enabled while using 'dns set to 
-# another DNS plugin alongside systemd-resolved, or 
-# 'dns' set to 'systemd-resolved' to configure the system 
+# Note that this setting is complementary to the 'dns' setting.
+# You can keep this enabled while using 'dns set to
+# another DNS plugin alongside systemd-resolved, or
+# 'dns' set to 'systemd-resolved' to configure the system
 # resolver to use systemd-resolved.
 #
-# If systemd-resolved is enabled, the connectivity 
+# If systemd-resolved is enabled, the connectivity
 # check resolves the hostname per-device.
 
 systemd-resolved=false

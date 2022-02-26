@@ -13,7 +13,7 @@
 #   Then tacks on an 'include' clause of this 'view' into the
 #   `views-named.conf` for final reading by `named.conf`
 #
-#   First round of settings of view statements entails the 
+#   First round of settings of view statements entails the
 #   netdev-related IPv4 interfaces used toward '*-on', 'query-*'
 #   and '???-*' statements.
 #
@@ -82,7 +82,7 @@ instance_view_conf_dirspec="${INSTANCE_ETC_NAMED_DIRSPEC}"
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named-views${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named-views${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
@@ -168,7 +168,7 @@ echo
 ## fi
 
 ## Work on the 'allow-query' statement, when do we need this?
-## 
+##
 ## Prompt user to assign IP/netdev to this view
 
 selected_ips_a=()
@@ -181,9 +181,9 @@ while [ 0 -ne 0 ]; do
   avail_idx=0
   let display_idx=$avail_idx+1
   while [ $avail_idx -lt $avail_ip4_count ]; do
-    echo -n "${display_idx})	${avail_ip4_netdevs_a[$avail_idx]}	${avail_ip4_addrs_a[$avail_idx]}"
+    echo -n "${display_idx})    ${avail_ip4_netdevs_a[$avail_idx]}  ${avail_ip4_addrs_a[$avail_idx]}"
     if [ "${avail_ip4_gws_a[$avail_idx]}" == 'yes' ]; then
-      echo "	(public-facing)"
+      echo "    (public-facing)"
     else
       echo
     fi

@@ -4,7 +4,7 @@
 #
 # Description:
 #
-#   Pay $1,000 USD per year to display your verified trademark icon 
+#   Pay $1,000 USD per year to display your verified trademark icon
 #   on GMail and Fastmail that these remote mail clients will see
 #   next to each of your sent email.  Yes, $1,000/year.  O_o
 #
@@ -22,9 +22,9 @@
 #     check for reverse DNS (PTR) records to each MX IP address
 #     check for valid SPF records
 #     Use https://bimigroup.org/bimi-generator/ to check for SVG flaws
-# 
 #
-# Needs a pretty simple SVG file (no radialGradient, no 
+#
+# Needs a pretty simple SVG file (no radialGradient, no
 #    style, no IRI, and version="1.2").
 #
 # Environment variables, overridable
@@ -41,7 +41,7 @@
 #  * https://bimigroup.org/bimi-generator/
 #  * https://mxtoolbox.com/SuperTool.aspx?action=a%3aegbert.net&run=toolpage
 #  * https://bimigroup.org/vmcs-arent-a-golden-ticket-for-bimi-logo-display/
-#  * 
+#  *
 
 DEFAULT_DOMAIN_NAME="$(hostname -d)"
 
@@ -51,7 +51,7 @@ echo
 
 source ./maintainer-dns-isc.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dns-bimi${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dns-bimi${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 if [ "${BUILDROOT:0:1}" != '/' ]; then
   mkdir -p build
   flex_mkdir "$VAR_DIRSPEC"
@@ -104,7 +104,7 @@ if [ "$CREATE_BIMI_RR" -eq 1 ]; then
   wget --no-cache \
           --no-cookie \
           --no-check-certificate \
-          $BIMI_IMAGE_URL 
+          $BIMI_IMAGE_URL
   retsts=$?
   popd
   if [ $retsts -ne 0 ]; then
@@ -144,13 +144,13 @@ if [ "$CREATE_BIMI_RR" -eq 1 ]; then
 ; Title: BIMI resource records for $FQ_DOMAIN_NAME
 ;
 
-default._bimi		IN	TXT "v=BIMI1;l=${BIMI_IMAGE_URL};a="
+default._bimi       IN  TXT "v=BIMI1;l=${BIMI_IMAGE_URL};a="
 
 BIMI_EOF
   flex_chmod 0640 "${INSTANCE_ZONE_DB_BIMI_FILESPEC}"
   flex_chown "root:$GROUP_NAME" "${INSTANCE_ZONE_DB_BIMI_FILESPEC}"
 
-  # Append '$INCLUDE bimi-zone-addon' to domain zone file 
+  # Append '$INCLUDE bimi-zone-addon' to domain zone file
   echo "\$ORIGIN ${FQ_DOMAIN_NAME}" >> ${BUILDROOT}${CHROOT_DIR}$INSTANCE_ZONE_DB_FILESPEC
   echo "\$INCLUDE \"${INSTANCE_ZONE_DB_BIMI_FILESPEC}\"" >> ${BUILDROOT}${CHROOT_DIR}$INSTANCE_ZONE_DB_FILESPEC
 
@@ -214,7 +214,7 @@ else
   wget --no-cache \
           --no-cookie \
           --no-check-certificate \
-          $BIMI_IMAGE_URL 
+          $BIMI_IMAGE_URL
   popd
 fi
 exit
@@ -232,5 +232,5 @@ exit
 #
 
 echo "Use https://bimigroup.org/bimi-generator/ to check for flaws in SVG image "
-# 
+#
 exit 0

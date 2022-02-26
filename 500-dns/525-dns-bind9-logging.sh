@@ -31,7 +31,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   flex_mkdir "${ETC_NAMED_DIRSPEC}"
   mkdir -p build/var
@@ -133,10 +133,10 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 # Title: Provides logging channels configuration for ISC Bind9 named daemon
 # Description:
 #
-#   Configures the location, level and type of logging that 
-#   BIND performs. 
+#   Configures the location, level and type of logging that
+#   BIND performs.
 #
-#   Unless you are using syslog you need a logging 
+#   Unless you are using syslog you need a logging
 #   statement for BIND.
 #
 #   To be included by $INSTANCE_LOGGING_NAMED_CONF_FILESPEC file
@@ -144,122 +144,122 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 # Generator: $(basename "$0")
 # Created on: $(date)
 #
-	channel default_log {
-		file "${log_default_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE
-			suffix timestamp;
-		severity info;
-		// severity debug 7;
-		// severity dynamic;
-		print-time iso8601;
-		print-severity true;
-		print-category true;
-		};
-	channel authoritative_servers_log {
-		file "${log_authoritative_servers_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity info;
-		// severity debug 9;
-		// severity dynamic;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel dnssec_log {
-		file "${log_dnssec_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity info;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel zone_transfers_log {
-		file "${log_zone_transfers_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity info;
-		// severity dynamic;
-		// severity debug 9;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel ddns_log {
-		file "${log_ddns_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity info;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel client_security_log {
-		file "${log_client_security_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity dynamic;
-		// severity debug 9;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel rate_limiting_log {
-		file "${log_rate_limiting_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity dynamic;
-		// severity debug 3;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel rpz_log {
-		file "${log_rpz_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity dynamic;
-		// severity debug 6;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel dnstap_log {
-		file "${log_dnstap_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		//severity dynamic;
-		severity debug 3;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
-	channel audit_channel {
-		file "${log_audit_filespec}" 
-			versions $LOG_BACKUP_CNT 
-			size $LOG_FILE_SIZE;
-		severity dynamic;
-		// severity debug 3;
-		print-time yes;
-		print-severity true;
-		print-category true;
-		};
+    channel default_log {
+        file "${log_default_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE
+            suffix timestamp;
+        severity info;
+        // severity debug 7;
+        // severity dynamic;
+        print-time iso8601;
+        print-severity true;
+        print-category true;
+        };
+    channel authoritative_servers_log {
+        file "${log_authoritative_servers_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity info;
+        // severity debug 9;
+        // severity dynamic;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel dnssec_log {
+        file "${log_dnssec_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity info;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel zone_transfers_log {
+        file "${log_zone_transfers_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity info;
+        // severity dynamic;
+        // severity debug 9;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel ddns_log {
+        file "${log_ddns_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity info;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel client_security_log {
+        file "${log_client_security_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity dynamic;
+        // severity debug 9;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel rate_limiting_log {
+        file "${log_rate_limiting_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity dynamic;
+        // severity debug 3;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel rpz_log {
+        file "${log_rpz_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity dynamic;
+        // severity debug 6;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel dnstap_log {
+        file "${log_dnstap_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        //severity dynamic;
+        severity debug 3;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
+    channel audit_channel {
+        file "${log_audit_filespec}"
+            versions $LOG_BACKUP_CNT
+            size $LOG_FILE_SIZE;
+        severity dynamic;
+        // severity debug 3;
+        print-time yes;
+        print-severity true;
+        print-category true;
+        };
 //
 // If you have the category ‘queries’ defined, and you don’t want query logging
 // by default, make sure you add option ‘querylog no;’ - then you can toggle
 // query logging on (and off again) using command ‘rndc querylog’
 //
-	channel queries_log {
-		file "${log_queries_filespec}" 
-			versions 600 
-			size 20m;
-		severity info;
-		print-time yes;
-		print-severity yes;
-		print-category yes;
-		};
+    channel queries_log {
+        file "${log_queries_filespec}"
+            versions 600
+            size 20m;
+        severity info;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+        };
 //
 // This channel is dynamic so that when the debug level is increased using
 // rndc while the server is running, extra information will be logged about
@@ -267,15 +267,15 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // sent to the channel default_debug (which is also dynamic), but without
 // affecting the regular logging.
 //
-	channel query-errors_log {
-		file "${log_query_errors_filespec}" 
-			versions 5 
-			size 20m;
-		severity dynamic;
-		print-time yes;
-		print-severity yes;
-		print-category yes;
-		};
+    channel query-errors_log {
+        file "${log_query_errors_filespec}"
+            versions 5
+            size 20m;
+        severity dynamic;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+        };
 //
 // This is the default syslog channel, defined here for clarity.  You don’t
 // have to use it if you prefer to log to your own channels.
@@ -283,27 +283,27 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // of priority info and higher.
 // (The options to print time, category and severity are non-default.)
 //
-	channel default_syslog {
-		syslog daemon;
-		severity info;
-		print-time yes;
-		print-severity yes;
-		print-category yes;
-		};
+    channel default_syslog {
+        syslog daemon;
+        severity info;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+        };
 //
 // This is the default debug output channel, defined here for clarity.  You
 // might want to redefine the output destination if it doesn’t fit with your
 // local system administration plans for logging.  It is also a special
 // channel that only produces output if the debug level is non-zero.
 //
-	channel default_debug {
-		// Gets written into bind/named \$HOME
-		file "named.run";
-		severity dynamic;
-		print-time yes;
-		print-severity yes;
-		print-category yes;
-		};
+    channel default_debug {
+        // Gets written into bind/named \$HOME
+        file "named.run";
+        severity dynamic;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+        };
 
 
 NAMED_CHANNEL_CONF
@@ -337,18 +337,18 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 //
 // Log routine stuff to syslog and default log:
 //
-	category default { default_syslog; default_debug; default_log; };
-	category config { default_syslog; default_debug; default_log; };
-	category dispatch { default_syslog; default_debug; default_log; };
-	category network { default_syslog; default_debug; default_log; };
-	category general { default_syslog; default_debug; default_log; };
+    category default { default_syslog; default_debug; default_log; };
+    category config { default_syslog; default_debug; default_log; };
+    category dispatch { default_syslog; default_debug; default_log; };
+    category network { default_syslog; default_debug; default_log; };
+    category general { default_syslog; default_debug; default_log; };
 //
 // From BIND 9.12 and newer, you can direct zone load logging to another
 // channel with the new zoneload logging category.  If this would be useful
 // then firstly, configure the new channel, and then edit the line below
 // to direct the category there instead of to syslog and default log:
 //
-	category zoneload { default_syslog; default_debug; default_log; };
+    category zoneload { default_syslog; default_debug; default_log; };
 //
 // Log messages relating to what we got back from authoritative servers during
 // recursion (if lame-servers and edns-disabled are obscuring other messages
@@ -356,34 +356,34 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // messages will be useful to research why some domains don’t resolve or
 // don’t resolve reliably
 //
-	category resolver { authoritative_servers_log; default_debug; };
-	category cname { authoritative_servers_log; default_debug; };
-	category delegation-only { authoritative_servers_log; default_debug; };
-	category lame-servers { authoritative_servers_log; default_debug; };
-	category edns-disabled { authoritative_servers_log; default_debug; };
+    category resolver { authoritative_servers_log; default_debug; };
+    category cname { authoritative_servers_log; default_debug; };
+    category delegation-only { authoritative_servers_log; default_debug; };
+    category lame-servers { authoritative_servers_log; default_debug; };
+    category edns-disabled { authoritative_servers_log; default_debug; };
 //
 // Log problems with DNSSEC:
 //
-	category dnssec { dnssec_log; default_debug; };
+    category dnssec { dnssec_log; default_debug; };
 //
 // Log together all messages relating to authoritative zone propagation
 //
-	category notify { zone_transfers_log; default_debug; };
-	category xfer-in { zone_transfers_log; default_debug; };
-	category xfer-out { zone_transfers_log; default_debug; };
+    category notify { zone_transfers_log; default_debug; };
+    category xfer-in { zone_transfers_log; default_debug; };
+    category xfer-out { zone_transfers_log; default_debug; };
 //
 // Log together all messages relating to dynamic updates to DNS zone data:
 //
-	category update{ ddns_log; default_debug; };
-	category update-security { ddns_log; default_debug; };
+    category update{ ddns_log; default_debug; };
+    category update-security { ddns_log; default_debug; };
 //
 // Log together all messages relating to client access and security.
 // (There is an additional category ‘unmatched’ that is by default sent to
 // null but which can be added here if you want more than the one-line
 // summary that is logged for failures to match a view).
 //
-	category client{ client_security_log; default_debug; };
-	category security { client_security_log; default_debug; };
+    category client{ client_security_log; default_debug; };
+    category security { client_security_log; default_debug; };
 //
 // Log together all messages that are likely to be related to rate-limiting.
 // This includes RRL (Response Rate Limiting) - usually deployed on authoritative
@@ -393,20 +393,20 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // emitted by the database category that don’t relate to rate-limiting
 // behaviour by named.
 //
-	category rate-limit { rate_limiting_log; default_debug; };
-	category spill { rate_limiting_log; default_debug; };
-	category database { rate_limiting_log; default_debug; };
+    category rate-limit { rate_limiting_log; default_debug; };
+    category spill { rate_limiting_log; default_debug; };
+    category database { rate_limiting_log; default_debug; };
 //
 // Log DNS-RPZ (Response Policy Zone) messages (if you are not using DNS-RPZ
 // then you may want to comment out this category and associated channel)
 //
-	category rpz { rpz_log; default_debug; };
+    category rpz { rpz_log; default_debug; };
 //
 // Log messages relating to the "dnstap" DNS traffic capture system  (if you
 // are not using dnstap, then you may want to comment out this category and
 // associated channel).
 //
-	category dnstap { dnstap_log; default_debug; };
+    category dnstap { dnstap_log; default_debug; };
 //
 // If you are running a server (for example one of the Internet root
 // nameservers) that is providing RFC 5011 trust anchor updates, then you
@@ -417,19 +417,19 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // syslog and default log:
 //
 //
-	category trust-anchor-telemetry { default_syslog; default_debug; default_log; };
+    category trust-anchor-telemetry { default_syslog; default_debug; default_log; };
 //
 // If you have the category ‘queries’ defined, and you don’t want query logging
 // by default, make sure you add option ‘querylog no;’ - then you can toggle
 // query logging on (and off again) using command ‘rndc querylog’
 //
-	category queries { queries_log; };
+    category queries { queries_log; };
 //
 // This logging category will only emit messages at debug levels of 1 or
 // higher - it can be useful to troubleshoot problems where queries are
 // resulting in a SERVFAIL response.
 //
-	category query-errors {query-errors_log; };
+    category query-errors {query-errors_log; };
 
 // Other categories (commented out) will fall to 'default'
 //    nsid
@@ -498,6 +498,6 @@ else
   echo "  rndc -c $INSTANCE_RNDC_CONF_FILESPEC status"
 fi
 echo
-  
+
 echo "Done."
 

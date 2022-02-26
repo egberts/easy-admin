@@ -1,16 +1,84 @@
-
+#
+# No hashbang here; I know many distros that do not have /usr/bin/env.
+# besides, this is a sourceable-script, not meant to be an direct executable one.
+#shellcheck disable=SC2148
+#
 # File: easy-admin-installer.sh
 # Title: Create an installer script that handles file permissions
 # Description:
 #
-# Envvars:
+# Environment Variables:
 #
-#    BUILDROOT - scratch build area; if empty, it is an actual install
-#    CHROOT_DIR - directory specification to a chroot area
-#    FILE_SETTINGS_FILESPEC - output file containing bash file settings script
+#     BUILDROOT - scratch build area; if empty, it is an actual install
+#     CHROOT_DIR - directory specification to a chroot area
 #
-# shellcheck disable=SC2148
+#     ANSI_COLOR - enables colorized log messages
+#     DEBUG - turns tracing on and additional outputs
+#     FILE_SETTINGS_FILESPEC - output file containing bash file settings script
+#     LS_COLORS - contains customized ANSI color sets
+#
+#   No environment variables created nor exported.
+#
+#
 
+# Enable tracing as well, especially after a failed run by prefixing "DEBUG=1 ..."
+[ "${DEBUG:-0}" = "1" ] && set -x
+
+#
+# For ANSI_COLOR, determine if not a UNIX pipe, user-requested, or
+# terminal-supported, in that order.
+#
+if [ ! -t 1 ]; then
+  # then turn off color (even if user overrides, turn them off)
+  ANSI_COLOR=
+else
+  # check if end-user provided ultimate override
+  if [ -n "$ANSI_COLOR" ]; then
+    ANSI_COLOR="${ANSI_COLOR:-}"
+  else
+    # check if tty supports color (via LS_COLORS env var)
+    if [ -n "$LS_COLORS" ]; then
+      ANSI_COLOR=1
+    else
+      ANSI_COLOR=
+    fi
+  fi
+fi
+
+
+# POSIX-proof 'echo'
+# Avoids accidential passing of '\' or '-n' to POSIX echo statement
+# Use myecho function to avoid stomping on variables
+myecho () ( z=''; for x; do printf "$z%s\n" "$x"; z=' '; done; )
+
+# Corresponding POSIX-proof 'echo -n'
+myecho_no_n () ( z=''; for x; do printf "$z%s" "$x"; z=' '; done; )
+
+# Syntax: critical_section <function_name> [ <arg1> [ <arg2> ... ] ]
+# Launch single-thread as a critical section
+# A better lock against multiple scripts running at same time
+# than to use the 'ps aux | grep -c <script-name>'
+# Supports 8 arguments
+critical_section()
+{
+  # Leverage file descriptior 9 as 'high-enough'
+  b=$(basename "$0")
+  (
+    # expand 'flock -n 9 || exit 1' with error message
+    flock -n 9
+    retsts=$?
+    if [ $retsts -ne 0 ]; then
+      echo "Shell $b already running; Aborted."
+      exit 1
+    fi
+    # call the function argument containing its custom critical section function
+    $1
+  ) 9> "/var/lock/.empty_lock_file_for_$b"
+  # Do not create a full file spec variable to replace this static string+$var
+  # because any of a var content may contain just a "/".
+  rm "/var/lock/.empty_lock_file_for_$b"
+  unset b
+}
 
 ###############################################################
 # Flexible mkdir()
@@ -87,7 +155,7 @@ function flex_ckdir()
     exit 13
   fi
   # If not in BUILDROOT (but are in direct root update) mode
-  if [ -z "$BUILDROOT" -o "${BUILDROOT:0:1}" == '/' ]; then
+  if [ -z "$BUILDROOT" ] || [ "${BUILDROOT:0:1}" == '/' ]; then
     # Return as No-Op
     return
   fi
@@ -237,7 +305,7 @@ function flex_chcon() {
 
     selinuxenabled
     retsts=$?
-    if [ "$retsts" -eq 0 ]; then
+    if [ "$retsts" -ne 0 ]; then
 
       echo "chmcon system_u:object_r:$1:s0 to ${BUILDROOT}${CHROOT_DIR}$destdir_filespec ..."
       chmod "$1" "${BUILDROOT}${CHROOT_DIR}$destdir_filespec"
@@ -274,3 +342,6 @@ function flex_chcon() {
 # function replace_line()
 # {
 # }
+
+critical_section my_critical_section_function
+

@@ -1,0 +1,5 @@
+In /etc/rc.local, insert
+```bash
+   # https://blog.frehi.be/2019/01/30/linux-security-hardening-recommendations/
+   chmod 400 /proc/kallsyms
+```

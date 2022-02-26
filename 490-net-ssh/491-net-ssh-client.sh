@@ -51,7 +51,7 @@ esac
 
 DEFAULT_ETC_CONF_DIRNAME="ssh"
 
-FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
+readonly FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 REPO_DIR="$PWD/$ssh_configd_dirname"
@@ -192,7 +192,7 @@ $OPENSSH_SSH_BIN_FILESPEC -G \
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
   echo "Error during ssh config syntax checking. Showing error output"
-  echo "Cmd: ssh -G -v -F ${TEST_SSH_CONFIG_FILESPEC} localhost" 
+  echo "Cmd: ssh -G -v -F ${TEST_SSH_CONFIG_FILESPEC} localhost"
   echo "Showing ssh_config output"
   $OPENSSH_SSH_BIN_FILESPEC -G -v \
       -F "${TEST_SSH_CONFIG_FILESPEC}" \

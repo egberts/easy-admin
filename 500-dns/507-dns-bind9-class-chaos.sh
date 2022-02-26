@@ -36,7 +36,7 @@ INSTANCE_VIEW_CHAOS_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$VIEW_CHAOS_FILENAME
 
 # Are we making a build subdir or directly installing?
 if [ "${BUILDROOT:0:1}" != '/' ]; then
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-class-chaos${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-class-chaos${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "${BUILDROOT}${CHROOT_DIR}"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
@@ -84,17 +84,17 @@ cat << DB_CH_BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 ; Created on: $(date)
 ;
 $TTL 3600
-@	86400	CH	SOA	localhost. root.localhost. (
-				2013050803 ; serial
-				3600       ; refresh
-				3600       ; retry
-				1209600    ; expire (2 week, RFC1912)
-				86400 )    ; minimum
+@   86400   CH  SOA localhost. root.localhost. (
+                2013050803 ; serial
+                3600       ; refresh
+                3600       ; retry
+                1209600    ; expire (2 week, RFC1912)
+                86400 )    ; minimum
 ;
-@		CH	NS	localhost.
+@       CH  NS  localhost.
 
-version		CH	TXT	"${BIND_VERSION}"
-authors		CH	TXT	"${BIND_AUTHOR}"
+version     CH  TXT "${BIND_VERSION}"
+authors     CH  TXT "${BIND_AUTHOR}"
 DB_CH_BIND_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
@@ -122,18 +122,18 @@ cat << PZ_BIND_CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # or to be include as a zone clause such as:
 #  ${INSTANCE_ZONE_NAMED_CONF_FILESPEC}
 #
-	zone "bind" CH {
-		type master;
+    zone "bind" CH {
+        type master;
 
                 // Where the zone database file is locate at
-		file "${INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC}";
+        file "${INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC}";
 
                 // this is a static resource record
-		allow-update { none; };
+        allow-update { none; };
 
                 // this is a static resource record
-		allow-transfer { none; };
-	};
+        allow-transfer { none; };
+    };
 
 PZ_BIND_CH_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
@@ -156,13 +156,13 @@ cat << NOTIFY_OPTIONS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # To be included from within the ${VIEW_NAMED_CONF_FILENAME} config file
 #
-	view "chaos" CH {
+    view "chaos" CH {
 
-		match-clients { any; };
+        match-clients { any; };
 
 include "$INSTANCE_ZONE_BIND_CHAOS_FILESPEC";
 
-	};
+    };
 NOTIFY_OPTIONS_EOF
 flex_chown "root:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"

@@ -7,7 +7,7 @@
 #  Try it:
 #    ./call-stack-trace.sh
 #    DEBUG=1 ./call-stack-trace.sh   # see nicely colorized output
-#    ANSI_COLOR=1 DEBUG=1 ./call-stack-trace.sh   # see nicely colorized output
+#    ANSI_COLOR= DEBUG=1 ./call-stack-trace.sh   # see nicely colorized output
 
 ANSI_COLOR="${ANSI_COLOR:-}"
 
@@ -72,7 +72,7 @@ function colordbg {
 }
 
 function echomsg
-{ 
+{
    if [ -n "$ANSI_COLOR" ]; then
      echo $'\e[1;37m'"$@"$'\e[0m';
    else

@@ -10,12 +10,12 @@
 #   Creates /etc/bind/rndc-readonly.conf but with 'read-only' attribute options
 #   Creates /etc/bind/keys/rndc-readonly.key (RNDC_KEY_FILESPEC)
 #
-#   Restrict RNDC access of related files and netdev access 
+#   Restrict RNDC access of related files and netdev access
 #   based on its intended usage.
 #
 #   This rndc only allows one role of a user; to read-only anything in named
 #   over a designated named control channel (defaults to 127.0.0.1 port 953)
-# 
+#
 
 # Setting up instance-specific RNDC configuration and key files
 HMAC_ALGORITHM="hmac-sha512"
@@ -43,7 +43,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-read-only${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-read-only${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   flex_mkdir "${ETC_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
@@ -57,7 +57,7 @@ fi
 echo "Generating RNDC key ..."
 rndc-confgen -a \
         -c "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC" \
-	-k "$RNDC_KEYNAME" \
+    -k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
 retsts=$?
 if [ $retsts -ne 0 ]; then
@@ -67,7 +67,7 @@ fi
 echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
 flex_chmod 0640 "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
 flex_chown "root:$GROUP_NAME" "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
-# Newly created 'rndc-readonly.key' can now be used by 
+# Newly created 'rndc-readonly.key' can now be used by
 # 'rndc-readonly.conf' and included into 'keys-named.conf'
 
 
@@ -92,10 +92,10 @@ cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 #    rndc -c ${filename} status
 #
 options {
-	default-key "${RNDC_KEYNAME}";
-	default-server 127.0.0.2;
-	default-port ${RNDC_PORT};
-	};
+    default-key "${RNDC_KEYNAME}";
+    default-server 127.0.0.2;
+    default-port ${RNDC_PORT};
+    };
 
 # Always hide keys from main config file
 include "${INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC}";
@@ -113,7 +113,7 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
-# Title: Provides a read-only control access to named daemon 
+# Title: Provides a read-only control access to named daemon
 # Read-only: TRUE
 # IP interface: inet 127.0.0.2
 # IP Port: 953
@@ -126,12 +126,12 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 #
 
 controls {
-	inet 127.0.0.2 port ${RNDC_PORT} allow { 
-		127.0.0.2/32;
-       		} keys { 
-			"${RNDC_KEYNAME}";
-	       	} read-only true;
-	};
+    inet 127.0.0.2 port ${RNDC_PORT} allow {
+        127.0.0.2/32;
+            } keys {
+            "${RNDC_KEYNAME}";
+            } read-only true;
+    };
 
 NAMED_KEY_CONF
 
@@ -167,7 +167,7 @@ filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
 echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
 cat << NAMED_CONTROLS_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
-# read-only RNDC control 
+# read-only RNDC control
 include "$INSTANCE_CONTROLS_READ_ONLY_NAMED_CONF_FILESPEC";
 
 NAMED_CONTROLS_CLAUSE_CONF
@@ -238,6 +238,6 @@ else
   echo "  rndc -c $INSTANCE_RNDC_CONF_FILESPEC status"
 fi
 echo
-  
+
 echo "Done."
 

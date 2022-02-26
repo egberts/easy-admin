@@ -9,7 +9,7 @@
 #   - generate root zone file by cloning f.root-server.net via AXFR
 #   - place the files into their named subdirectories
 #   - create partial named.conf configuration files for your own inclusion
-#   - Set correct file ownership/permissions 
+#   - Set correct file ownership/permissions
 #   - If SELinux-enabled, set the correct SELinux context for all files.
 #
 # Env vars:
@@ -53,7 +53,7 @@ if [ "${BUILDROOT:0:1}" == "/" ]; then
 fi
 
 PRIVATE_TLD="my-root"  # could be 'home', 'private', 'lan', 'internal'
-NS1_IP="10.10.0.1"  # could be whatever netdev IP that is private or NOT NAT'd 
+NS1_IP="10.10.0.1"  # could be whatever netdev IP that is private or NOT NAT'd
 SN="$(date +%Y%m%d%H)"
 T1="1800"
 T2="900"
@@ -62,7 +62,7 @@ T4="86400"
 NS1_NAME="ns1.a.myroot-servers.${PRIVATE_TLD}."
 CONTACT="hostmaster.${PRIVATE_TLD}."
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-dns-root-server-standalone${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 if [ "${BUILDROOT:0:1}" != '/' ]; then
@@ -190,8 +190,8 @@ fi
 ZSK_KEY_FILESPEC="${DEFAULT_KEYS_DB_DIRSPEC}/${ZSK_ID}.key"
 ZSK_PRIVATE_FILESPEC="${DEFAULT_KEYS_DB_DIRSPEC}/${ZSK_ID}.private"
 flex_chmod 0644 "$ZSK_KEY_FILESPEC"
-flex_chown "${USER_NAME}:${GROUP_NAME}" "$ZSK_KEY_FILESPEC" 
-flex_chcon named_cache_t "$ZSK_PRIVATE_FILESPEC" 
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$ZSK_KEY_FILESPEC"
+flex_chcon named_cache_t "$ZSK_PRIVATE_FILESPEC"
 
 echo "Creating Key-Signing-Key (KSK) files ..."
 KSK_ID="$(dnssec-keygen -T DNSKEY \
@@ -217,9 +217,9 @@ flex_chmod 0644 "$KSK_KEY_FILESPEC"
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$KSK_KEY_FILESPEC"
 flex_chcon named_cache_t "$KSK_KEY_FILESPEC"
 
-flex_chmod 0600 "$KSK_PRIVATE_FILESPEC" 
+flex_chmod 0600 "$KSK_PRIVATE_FILESPEC"
 flex_chown "${USER_NAME}:${GROUP_NAME}" "$KSK_PRIVATE_FILESPEC"
-flex_chcon named_cache_t "$KSK_PRIVATE_FILESPEC" 
+flex_chcon named_cache_t "$KSK_PRIVATE_FILESPEC"
 echo ""
 
 # Make sure that all other NS records for the root zone "." have been removed
@@ -229,23 +229,23 @@ echo ""
 # Create SOA, NS, and A glue records
 echo "Creating SOA, NS, annd A glue record in ${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC} ..."
 cat << ROOT_ZONE_EOF > "${BUILDROOT}${CHROOT_DIR}${ROOT_ZONE_FILESPEC}"
-.		${DOMAIN_TTL}	IN	SOA	mname.invalid. nm.invalid. (
-						$SN	; Serial Number
-						$T1	; Refresh
-						$T2	; Retry
-						$T3	; Expire
-						$T4	; Negative Cache TTL
-						)
-.				NS	ns.root.
-ns.root.			A	10.10.0.1
+.       ${DOMAIN_TTL}   IN  SOA mname.invalid. nm.invalid. (
+                        $SN ; Serial Number
+                        $T1 ; Refresh
+                        $T2 ; Retry
+                        $T3 ; Expire
+                        $T4 ; Negative Cache TTL
+                        )
+.               NS  ns.root.
+ns.root.            A   10.10.0.1
 
-invalid.			NS	ns.invalid.
-ns.invalid.			A	10.10.0.1
+invalid.            NS  ns.invalid.
+ns.invalid.         A   10.10.0.1
 
-example.			NS	ns.example.
-ns.example.			A	10.10.0.1
+example.            NS  ns.example.
+ns.example.         A   10.10.0.1
 
-.				TXT	"This is the example root zone."
+.               TXT "This is the example root zone."
 
 ROOT_ZONE_EOF
 
@@ -258,9 +258,9 @@ cat "${BUILDROOT}${CHROOT_DIR}$ZSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$R
 cat "${BUILDROOT}${CHROOT_DIR}$KSK_KEY_FILESPEC" >> "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC"
 
 echo "${BUILDROOT}${CHROOT_DIR}$ROOT_ZONE_FILESPEC created."
-flex_chmod 0644 "$ROOT_ZONE_FILESPEC" 
-flex_chown "${USER_NAME}:${GROUP_NAME}" "$ROOT_ZONE_FILESPEC" 
-flex_chcon named_zone_t "$ROOT_ZONE_FILESPEC" 
+flex_chmod 0644 "$ROOT_ZONE_FILESPEC"
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$ROOT_ZONE_FILESPEC"
+flex_chcon named_zone_t "$ROOT_ZONE_FILESPEC"
 rm -f "${BUILDROOT}${CHROOT_DIR}$TMP_ROOT_ZONE_FILESPEC"
 echo ""
 
@@ -300,15 +300,15 @@ fi
 # mv "$WEIRD_DSSET_FILESPEC" "${BUILDROOT}${CHROOT_DIR}${DSSET_FILESPEC}"
 
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$DSSET_FILESPEC ..."
-flex_chmod 0644 "$DSSET_FILESPEC" 
-flex_chown "${USER_NAME}:${GROUP_NAME}" "$DSSET_FILESPEC" 
-flex_chcon named_zone_t "$DSSET_FILESPEC" 
+flex_chmod 0644 "$DSSET_FILESPEC"
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$DSSET_FILESPEC"
+flex_chcon named_zone_t "$DSSET_FILESPEC"
 
 SIGNED_ZONE_FILESPEC="${ROOT_ZONE_FILESPEC}.signed"
 echo "Creating $SIGNED_ZONE_FILESPEC ..."
-flex_chmod 0644 "$SIGNED_ZONE_FILESPEC" 
-flex_chown "${USER_NAME}:${GROUP_NAME}" "$SIGNED_ZONE_FILESPEC" 
-flex_chcon named_zone_t "$SIGNED_ZONE_FILESPEC" 
+flex_chmod 0644 "$SIGNED_ZONE_FILESPEC"
+flex_chown "${USER_NAME}:${GROUP_NAME}" "$SIGNED_ZONE_FILESPEC"
+flex_chcon named_zone_t "$SIGNED_ZONE_FILESPEC"
 
 # Create the view and its zone file
 VIEW_NAMED_CONF_FILESPEC="${INSTANCE_SYSCONFDIR}/standalone-view-recursive-zone-root-named.conf"
@@ -345,9 +345,9 @@ view "recursive" IN {
     };
 };
 PARTIAL_NAMED_CONF_EOF
-flex_chmod 0640 "$VIEW_NAMED_CONF_FILESPEC" 
-flex_chown "root:${GROUP_NAME}" "$VIEW_NAMED_CONF_FILESPEC" 
-flex_chcon named_conf_t "$VIEW_NAMED_CONF_FILESPEC" 
+flex_chmod 0640 "$VIEW_NAMED_CONF_FILESPEC"
+flex_chown "root:${GROUP_NAME}" "$VIEW_NAMED_CONF_FILESPEC"
+flex_chcon named_conf_t "$VIEW_NAMED_CONF_FILESPEC"
 
 OPTIONS_NAMED_CONF_FILESPEC="${INSTANCE_SYSCONFDIR}/standalone-options-named.conf"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$OPTIONS_NAMED_CONF_FILESPEC ..."
@@ -481,8 +481,8 @@ if [ ! -z "${BUILDROOT}${CHROOT_DIR}" ] && [ "${BUILDROOT:0:1}" != "/" ]; then
   cat << RNDC_KEY_EOF | tee "${BUILDROOT}${CHROOT_DIR}/etc/rndc.key"
 # Faux RNDC key for testing with $0
 key "rndc-key" {
-	algorithm hmac-sha256;
-	secret "x+cr8Uxj4pUPf9UwrZRGcoU6b9jQxBc0d+Zl5oJAgUQ=";
+    algorithm hmac-sha256;
+    secret "x+cr8Uxj4pUPf9UwrZRGcoU6b9jQxBc0d+Zl5oJAgUQ=";
 };
 RNDC_KEY_EOF
 fi
@@ -493,10 +493,10 @@ if [ $retsts -ne 0 ]; then
   echo "Mmmmm, syntax error in ${BUILDROOT}$NAMED_CONF_FILESPEC"
   echo "Error output:"
   # shellcheck disable=SC2086
-  ${named_checkconf_bin} $NAMED_VIRT_DIROPT -l -z "$NAMED_CONF_FILESPEC" 
+  ${named_checkconf_bin} $NAMED_VIRT_DIROPT -l -z "$NAMED_CONF_FILESPEC"
   exit $retsts
 fi
-echo 
+echo
 
 echo "Use this file: "
 echo "     ${BUILDROOT}${CHROOT_DIR}$NAMED_CONF_FILESPEC"
