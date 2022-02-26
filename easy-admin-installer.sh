@@ -80,6 +80,60 @@ critical_section()
   unset b
 }
 
+
+###############################################################
+# dirname, a safer replacement
+# Description:
+#   Extract a directory name from a given filespec
+#   without referencing whether such a directory
+#   exist or not
+#
+#   The '..' subdirectory part gets collapased and
+#   resolved.
+#
+#   Those root '/' directory gets capped at 'root'
+#   and not escape any 'chroot' jails even trying
+#   things like:
+#
+#     dirname '/etc/../../../chroot/../../var/../../etc/shadow'
+#
+#   POSIX basename/dirname do not have --zero/-0 CLI
+#   argument option, yet we must eat the leading '\n'
+#   somehow, so we do this chomping of this suffix
+#   here by adding 'x', then chomping those two
+#   characters: '\n' and 'x'.
+#
+#   Those whitespace(s) (tab or space) in any part of
+#   a given directory path must be preserved. (mostly good
+#   for Windows folks)
+#
+#   works in all corner cases of filespec
+#   having a whitespace suffix or prefix,
+#   or having '.', '..', or '/'.
+#
+# Syntax: real_dirname_noline <filespec>
+#
+real_dirname_noline()
+{
+  # get full filespec from a simple file
+  filespec=${1:A}
+
+  # collapse all '..' and weirdo pathways
+  filespec="$(realpath -m -- "$filespec")"
+
+  # POSIX dirname ALWAYS adds '\n', so we must strip that off
+  # strip off the basename from the full filespec, then append 'x'
+  dirspec="$(dirname -- "${filespec}" ; echo x)"
+
+  # strip off both the '\n' and 'x' from result
+  dirspec=${dirspec%??}
+
+  # shorter variant
+  # dirspec=$(dirname "$filespec" ; echo x); dirspec=${dirspec%??}
+  echo "$dirspec"
+}
+
+
 ###############################################################
 # Flexible mkdir()
 # Description:
@@ -101,7 +155,7 @@ function flex_mkdir() {
     exit 9
   fi
   # precheck if parent directory exist ... firstly otherwise error-out
-  parent_dir="$(dirname "${BUILDROOT}${CHROOT_DIR}${1}")"
+  parent_dir="$(real_dirname_noline "${BUILDROOT}${CHROOT_DIR}${1}")"
   if [ ! -d "$parent_dir" ]; then
     echo "ERROR: Parent directory $parent_dir does not exist."
     echo "ERROR: Unable to create ${BUILDROOT}${CHROOT_DIR}${1} subdirectory."
@@ -165,7 +219,7 @@ function flex_ckdir()
     exit 9
   fi
   # precheck if parent directory exist ... firstly otherwise error-out
-  parent_dir="$(dirname "${BUILDROOT}${CHROOT_DIR}${1}")"
+  parent_dir="$(real_dirname_noline "${BUILDROOT}${CHROOT_DIR}${1}")"
   if [ ! -d "$parent_dir" ]; then
     echo "ERROR: Parent directory $parent_dir does not exist."
     echo "ERROR: Unable to create ${BUILDROOT}${CHROOT_DIR}${1} subdirectory."
