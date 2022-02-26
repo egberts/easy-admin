@@ -38,7 +38,7 @@ real_dirname_noline()
   filespec="${1/#\~/$HOME}"
   if [ -n "$filespec" ]; then
     b="$(bash -c 'echo ${0:A}' "$filespec")"
-    b="$(realpath -m "$b")"
+    b="$(realpath -m -- "$b")"
     b="$(dirname -- "$b")"
     echo -n "$b"
   else
@@ -53,11 +53,11 @@ if [ -n "$UNITTEST" ]; then
 
   function dirname_match()
   {
-    # this_dir=$(realpath -m ${1}; echo x) ; this_dir=${this_dir%??}
+    # this_dir=$(realpath -m -- ${1}; echo x) ; this_dir=${this_dir%??}
     this_dir="$1"
 
-    # that_dir=$(realpath -m ${2}; echo x ) ; that_dir=${that_dir%??}
-    that_dir="$(realpath -m "$2")"
+    # that_dir=$(realpath -m -- ${2}; echo x ) ; that_dir=${that_dir%??}
+    that_dir="$(realpath -m -- "$2")"
 
     result=$(real_dirname_noline "$this_dir")
     if [ "$result" == "$that_dir" ]; then
@@ -69,7 +69,7 @@ if [ -n "$UNITTEST" ]; then
   }
 
   echo "hereafter, it must have \$PWD: $PWD/.."
-  dirname_match "${PWD}/.." "$(realpath "${PWD}/../..")"
+  dirname_match "${PWD}/.." "$(realpath -- "${PWD}/../..")"
 
   echo "hereafter, it must have ."
   dirname_match '.'  "${PWD}/.."

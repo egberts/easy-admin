@@ -44,7 +44,7 @@ var_is_unset_or_empty(){
    test -z ${var:+x}
 }
 
-[[ ${BASH_SOURCE:-} != "" ]] && SRCDIR="$(realpath $(dirname "${BASH_SOURCE[-1]}"))"
+[[ ${BASH_SOURCE:-} != "" ]] && SRCDIR="$(realpath -m -- $(dirname -- "${BASH_SOURCE[-1]}"))"
 
 is_sourced(){
    [[ "${BASH_SOURCE[0]}" != "${0}" ]]

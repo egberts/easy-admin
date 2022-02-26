@@ -1,5 +1,5 @@
 #!/bin/bash
-# A test of extracting the location of the evoked script 
+# A test of extracting the location of the evoked script
 # in order to find the accompanied yet associated other scripts
 # for later reading or 'shell sourcing'.
 
@@ -11,7 +11,7 @@ MY_PATH=". \$HOME/bin /usr/bin /usr/local/bin"
 function get_script_dirpath()
 {
   # Get realpath to this script name
-  real_path_script="$(realpath -e "$0")"
+  real_path_script="$(realpath -e -- "$0")"
   retsts=$?
   # if an error occurred in realpath (ENOEXIST)
   if [ $retsts -ne 0 ]; then
@@ -19,7 +19,7 @@ function get_script_dirpath()
     exit 9
   fi
   echo "Realpath: $real_path_script"
-  SCRIPT_DIRPATH="$(dirname "$real_path_script")"
+  SCRIPT_DIRPATH="$(dirname -- "$real_path_script")"
   echo "SCRIPT_DIRPATH: $SCRIPT_DIRPATH"
 }
 

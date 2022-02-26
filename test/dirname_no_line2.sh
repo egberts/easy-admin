@@ -19,7 +19,7 @@ real_dirname_noline2()
   filespec=${1:A}
 
   # collapse all '..' and weirdo pathways
-  filespec="$(realpath -m "$filespec")"
+  filespec="$(realpath -m -- "$filespec")"
 
   # POSIX dirname ALWAYS adds '\n', so we must strip that off
   # strip off the basename from the full filespec, then append 'x'

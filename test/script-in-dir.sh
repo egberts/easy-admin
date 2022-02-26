@@ -3,42 +3,11 @@
 
 SCRIPT_NAME="${0:A}"
 
-my_dirname()
-{
-  #echo "my_dirname: started"
-# Modifiers
-# After the optional word designator, you can add a
-# sequence of one or more of the following modifiers,
-# each preceded by a ‘:’. These modifiers also work
-# on the result of --> filename generation <-- and
-# --> parameter expansion <--, except where noted.
-#
-# A
-#
-#   Turn a file name into an absolute path as the ‘a’
-#   modifier does, and then pass the result through
-#   the realpath(3) library function to resolve
-#   symbolic links.
-#
-# Note: on systems that do not have a realpath(3)
-#       library function, symbolic links are not
-#       resolved, so on those systems ‘a’ and ‘A’ are
-#       equivalent.
-#
-# Note: foo:A and realpath(foo) are different on some
-#       inputs. For realpath(foo) semantics, see
-#       the ‘P‘ modifier.
-  if [ -n "$1" ]; then
-    b="$(bash -c 'echo ${0:A}' "$1")"
-    b="$(dirname -- "$b")"
-    echo "$SCRIPT_NAME: my_dirname: $b"
-  fi
-  #echo "my_dirname: ended"
-}
+source dirname_noline.sh
 
-my_basename()
+basename_no_line()
 {
-  #echo "my_basename: started"
+  #echo "basename_no_line: started"
 # Modifiers
 # After the optional word designator, you can add a
 # sequence of one or more of the following modifiers,
@@ -64,22 +33,23 @@ my_basename()
   if [ -n "$1" ]; then
     b="$(basename -- "$1")"
   else
-    echo "my_basename: empty arg"
+    echo "basename: missing operand."
+    exit 1
   fi
-  #echo "my_basename: ended"
+  #echo "basename_no_line: ended"
 }
 
 function show_dirname()
 {
   #echo "show_dirname: started"
   b="$(bash -c 'echo ${0:A}' "$SCRIPT_NAME")"
-  echo -n "\${0:A}: "; my_dirname "$b"
+  echo -n "\${0:A}: "; real_dirname_noline "$b"
   b="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)"
-  echo -n "pwd-approach: "; my_dirname "$b"
+  echo -n "pwd-approach: "; real_dirname_noline "$b"
 
-  echo -n "BASH_SOURCE[0]: "; my_dirname "${BASH_SOURCE[0]}"
-  echo -n "BASH_SOURCE[1]: "; my_dirname "${BASH_SOURCE[1]}"
-  echo -n "BASH_SOURCE[2]: "; my_dirname "${BASH_SOURCE[2]}"
+  echo -n "BASH_SOURCE[0]: "; real_dirname_noline "${BASH_SOURCE[0]}"
+  echo -n "BASH_SOURCE[1]: "; real_dirname_noline "${BASH_SOURCE[1]}"
+  echo -n "BASH_SOURCE[2]: "; real_dirname_noline "${BASH_SOURCE[2]}"
   #echo "show_dirname: ended"
 }
 
@@ -87,7 +57,7 @@ function show_basename()
 {
   #echo "show_basename: started"
   b="$(bash -c 'echo ${0:A}' "$SCRIPT_NAME")"
-  echo -n "\${0:A}: "; my_basename "$b"
+  echo -n "\${0:A}: "; basename_no_line "$b"
 
   if [ -n "${BASH_SOURCE[0]}" ]; then
     b="${BASH_SOURCE[0]}"
@@ -97,10 +67,10 @@ function show_basename()
     echo "exit 3"
     exit 3
   fi
-  echo -n "pwd-approach: "; my_basename "$b"
-  echo -n "BASH_SOURCE[0]: "; my_basename "${BASH_SOURCE[0]}"
-  echo -n "BASH_SOURCE[1]: "; my_basename "${BASH_SOURCE[1]}"
-  echo -n "BASH_SOURCE[2]: "; my_basename "${BASH_SOURCE[2]}"
+  echo -n "pwd-approach: "; basename_no_line "$b"
+  echo -n "BASH_SOURCE[0]: "; basename_no_line "${BASH_SOURCE[0]}"
+  echo -n "BASH_SOURCE[1]: "; basename_no_line "${BASH_SOURCE[1]}"
+  echo -n "BASH_SOURCE[2]: "; basename_no_line "${BASH_SOURCE[2]}"
   #echo "show_basename: ended"
 }
 

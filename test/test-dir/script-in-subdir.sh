@@ -18,12 +18,12 @@ fi
 
 echo "This script name: $my_script_name"
 echo "Divided into Relative notation:"
-echo "  file name:   $(basename "$my_script_name")"
-echo "  location:    $(dirname "$my_script_name")"
+echo "  file name:   $(basename -- "$my_script_name")"
+echo "  location:    $(dirname -- "$my_script_name")"
 echo "Expanded to Absolute notation:"
 echo "  script name: $my_absolute_script_name"
-echo "  file name:   $(basename "$my_absolute_script_name")"
-echo "  location:    $(dirname "$my_absolute_script_name")"
+echo "  file name:   $(basename -- "$my_absolute_script_name")"
+echo "  location:    $(dirname -- "$my_absolute_script_name")"
 
 EXPECTED_SCRIPT_NAME="script-in-subdir.sh"
 ACTUAL_SCRIPT_NAME="$(basename -- "${0:A}")"

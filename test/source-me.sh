@@ -3,11 +3,11 @@
 # File: source-me.sh
 # Title: An example file to be sourced by other shell scripts
 
-echo "This file $(basename "${BASH_SOURCE[0]}") got sourced by ${BASH_SOURCE[1]}"
+echo "This file $(basename -- "${BASH_SOURCE[0]}") got sourced by ${BASH_SOURCE[1]}"
 set
 
 this_script_fullfilespec="$(realpath -e $0)"
-this_script_dirpath="$(dirname "$this_script_fullfilespec")"
+this_script_dirpath="$(dirname -- "$this_script_fullfilespec")"
 
 find_my_call_stack_filespec="${this_script_dirpath}/call-stack-trace.sh"
 source "$find_my_call_stack_filespec"
