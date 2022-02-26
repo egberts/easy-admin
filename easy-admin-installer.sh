@@ -343,5 +343,4 @@ function flex_chcon() {
 # {
 # }
 
-critical_section my_critical_section_function
 
