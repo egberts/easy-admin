@@ -9,7 +9,7 @@ echo "Add debug hooks to the DHCLIENT enter/exit hooks"
 echo
 
 source ./maintainer-dhcp-client-isc.sh
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dhclient-hooks-debug.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dhclient-hooks-debug.sh"
 
 
 # Do not create any directory in existing filesystem

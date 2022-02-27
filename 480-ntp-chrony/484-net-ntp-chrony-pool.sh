@@ -42,7 +42,7 @@ DEFAULT_NTP_SERVER="pool.ntp.org"
 
 
 source ./maintainer-chrony.sh
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
 
 ######################################
 

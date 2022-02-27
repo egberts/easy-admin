@@ -17,7 +17,7 @@ echo ""
 
 source ./maintainer-dns-isc.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-systemd-unitfile${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-systemd-unitfile${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.

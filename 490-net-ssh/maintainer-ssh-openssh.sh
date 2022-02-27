@@ -62,7 +62,7 @@ sshd_config_filespec="${openssh_config_dirspec}/$sshd_config_filename"
 ssh_confd_dirspec="$extended_sysconfdir/ssh_config.d"
 sshd_confd_dirspec="$extended_sysconfdir/sshd_config.d"
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-ssh-common.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-ssh-common.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 echo "Detected $ID distro."
@@ -200,7 +200,7 @@ fi
 
 ssh_bin_filespec="$( whereis ssh | awk '{print $2}')"
 sshd_bin_filespec="$( whereis sshd | awk '{print $2}')"
-  
+
 
 sshd_home_dirspec="$( egrep "^${SSHD_USER_NAME}:" /etc/passwd | awk -F: '{print $6 }')"
 echo "sshd_home_dirspec: $sshd_home_dirspec"

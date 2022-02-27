@@ -83,7 +83,7 @@ else
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
 
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemod-sftp-users.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/filemod-sftp-users.sh"
 
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"

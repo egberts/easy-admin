@@ -58,7 +58,7 @@ else
   echo "Writing ALL files into $BUILDROOT as user '$USER')..."
 fi
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony-mitm.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony-mitm.sh"
 
 # Syntax: create_file file-permission owner:group
 function create_file
@@ -72,8 +72,8 @@ function create_file
     fi
   fi
   [[ -n "$SUDO_BIN" ]] && $SUDO_BIN touch "$FILESPEC"
-  flex_chmod "$FILESPEC" "$1" 
-  flex_chown "$FILESPEC" "$2" 
+  flex_chmod "$FILESPEC" "$1"
+  flex_chown "$FILESPEC" "$2"
   cat << CREATE_FILE_EOF | $SUDO_BIN tee "$FILESPEC" >/dev/null
 #
 # File: $(basename "$FILESPEC")

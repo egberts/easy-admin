@@ -13,16 +13,16 @@
 #     SELinux check
 #     file permission check
 #
-#   Restrict RNDC access of related files and netdev access 
+#   Restrict RNDC access of related files and netdev access
 #   based on its intended usage.
 #
 #   Three roles of full-admin-privileged usage of 'rndc' tool:
-# 
+#
 #     * system administrator
 #     * power end-users using their own copy of an RNDC key
 #     * auto-evoked by other daemons/scripts
-# 
-# NOTE: named.conf provides ways for end-user/sysadmin to 
+#
+# NOTE: named.conf provides ways for end-user/sysadmin to
 #       separately update the:
 #   * individual zone's data
 #   * forwarder assignments
@@ -30,11 +30,11 @@
 # CAVEATS:
 #   * Cannot use the same /etc/bind/rndc.conf file for a different
 #     (or instantiated) named process.
-#     * Because multiple chroots would result in making support for 
-#       multiple-key (via 'rndc -s server') approach in the 
-#       rndc.conf option into an non-reality 
+#     * Because multiple chroots would result in making support for
+#       multiple-key (via 'rndc -s server') approach in the
+#       rndc.conf option into an non-reality
 #       (non-useable/non-sharable).
-#     * locking down a key file's file permission to a different 
+#     * locking down a key file's file permission to a different
 #       user/group ID would render said key file to be unaccessible
 #       by another daemon having a different user/group ID.
 #     * Cannot use 'include' clause in `rndc.conf` because of aboves.
@@ -51,7 +51,7 @@
 #  For 'rndc.key', drop file ownership to 'root:bind'
 #  For 'rndc.key', drop world file permissions '---' (no read/execute/write)
 #  For 'rndc.key', ensure group file permissions is 'r--' (read)
-#  introduce 'bind' group enforcement to each applicable system administrator 
+#  introduce 'bind' group enforcement to each applicable system administrator
 #    by executing 'usermod -a -G bind <username>'
 #
 # if got power users to cater (QA auditor/Common-Criteria-enforcer)
@@ -75,7 +75,7 @@
 #    instruct that daemons/scripts to use 'rndc -k /etc/daemon/rndc.key' instead
 #  drop /etc/daemon/rndc.key to 'root:daemon' 0640 permission
 #
-# SECURITY-RISK: Allow ANYONE/ANYTHING within ONLY this host to run 'rndc' 
+# SECURITY-RISK: Allow ANYONE/ANYTHING within ONLY this host to run 'rndc'
 #                binary (distro default)
 #  For 'rndc' binary, ensure world file permissions to 'r-x' (read/execute)
 #  For 'rndc.key', ensure file ownership to 'root:root'
@@ -102,7 +102,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-security${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-security${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   flex_mkdir "${ETC_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
@@ -135,7 +135,7 @@ HMAC_ALGORITHM="hmac-sha512"
 echo "Generating RNDC key ..."
 rndc-confgen -a \
         -c "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC" \
-	-k "$RNDC_KEYNAME" \
+    -k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
 flex_chmod 0640 "$INSTANCE_RNDC_KEY_FILESPEC"
 flex_chown "root:$GROUP_NAME" "$INSTANCE_RNDC_KEY_FILESPEC"
@@ -163,10 +163,10 @@ cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}/${filespec}" > /dev/nul
 #   rndc -c ${filespec} status
 #
 options {
-	default-key "${RNDC_KEYNAME}";
-	default-server ${RNDC_IP4_ADDR};
-	default-port ${RNDC_PORT};
-	};
+    default-key "${RNDC_KEYNAME}";
+    default-server ${RNDC_IP4_ADDR};
+    default-port ${RNDC_PORT};
+    };
 
 # Always hide keys from main config file
 include "${INSTANCE_RNDC_KEY_FILESPEC}";
@@ -198,17 +198,17 @@ cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
 #
 
 controls {
-	inet ${RNDC_IP4_ADDR} port ${RNDC_PORT} allow {
-		${RNDC_IP4_ADDR}/32;
-       		} keys {
-			"${RNDC_KEYNAME}";
-	       	};
-	inet ${RNDC_IP6_ADDR} port ${RNDC_PORT} allow {
-		::1;
-       		} keys {
-			"${RNDC_KEYNAME}";
-	       	};
-	};
+    inet ${RNDC_IP4_ADDR} port ${RNDC_PORT} allow {
+        ${RNDC_IP4_ADDR}/32;
+            } keys {
+            "${RNDC_KEYNAME}";
+            };
+    inet ${RNDC_IP6_ADDR} port ${RNDC_PORT} allow {
+        ::1;
+            } keys {
+            "${RNDC_KEYNAME}";
+            };
+    };
 
 NAMED_KEY_CONF
 flex_chmod 0640 "$filespec"
@@ -256,7 +256,7 @@ cat << NAMED_KEY_CLAUSE_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/
 #
 # File: $filename
 # Path: $filepath
-# Title: This file holds all the 'key' clauses for named.conf 
+# Title: This file holds all the 'key' clauses for named.conf
 # Generator: $(basename "$0")
 # Created on: $(date)
 #
@@ -343,5 +343,5 @@ else
   echo "  rndc -c $INSTANCE_RNDC_CONF_FILESPEC status"
 fi
 echo
-  
+
 

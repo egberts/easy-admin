@@ -2,7 +2,7 @@
 #  We split this up into other bash files
 #    - chrony.conf (main)
 #    - pool/server/peer (pool)
-#    - admin 
+#    - admin
 #    - MitM protection (mitm)
 #    - RTC/PTP (ptp)
 #
@@ -25,7 +25,7 @@ BUILDROOT=""
 
 source ./maintainer-chrony.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 # Create the directories for Chrony daemon to use
@@ -63,7 +63,7 @@ confdir ${CHRONY_CONFD_DIRSPEC}
 # Use NTP sources found in the /etc/chrony/sources.d subdirectory.
 sourcedir ${CHRONY_SOURCESD_DIRSPEC}
 
-# This driftfile directive specify the location of the file that 
+# This driftfile directive specify the location of the file that
 # contains ID/key-pair used for NTP authentication.
 keyfile /etc/chrony/chrony.keys
 
@@ -85,7 +85,7 @@ maxupdateskew 100.0
 # with the 'rtcfile' directive: choose one.
 rtcsync
 
-# Steps the system clock instead of slewing it if the adjustment is 
+# Steps the system clock instead of slewing it if the adjustment is
 # larger than one second, but only in the first three clock updates
 makestep 1 3
 # Get TAI-UTC offset and leap second from the system TZ database

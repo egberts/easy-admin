@@ -11,11 +11,11 @@
 #       + acl-public-outward-dynamic-interface-named.conf (if dynamic public IP)
 #       + acl-public-bastion-interior-interface-named.conf  (bastion-only)
 #       + acl-internal-bastion-interior-interface-named.conf  (bastion-only)
-#       + acl-internal-outward-interface-named.conf 
+#       + acl-internal-outward-interface-named.conf
 #     + controls-named.conf
 #     + options-named.conf
 #       + options-public-facing-dynamic-interfaces-named.conf (if dynamic IP)
-#       + options-bastion-named.conf 
+#       + options-bastion-named.conf
 #     + key-clauses-named.conf
 #       + key-primary-to-secondaries-transfer.conf
 #       + key-primary-dynamic-ip-ddns-ddclient.conf
@@ -35,14 +35,14 @@
 #       + zone-example.invalid-named.conf (if no view clause)
 #       + zone-example.org-named.conf (if no view clause)
 #       + zone-example.net-named.conf (if no view clause)
-#     
+#
 
 
 BUILDROOT="${BUILDROOT:-build/}"
 
 source maintainer-dns-isc.sh
 
-FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.conf"
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.conf"
 
 echo "Clearing out prior settings in $BUILDROOT"
 
@@ -115,7 +115,7 @@ flex_mkdir "$INSTANCE_DYNAMIC_DIRSPEC"
 flex_chown root:bind "$INSTANCE_DYNAMIC_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_DYNAMIC_DIRSPEC"
 
-# logrotate 
+# logrotate
 # apparmor
 # firewall?
 
@@ -189,72 +189,72 @@ touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC"
 create_header "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC"
 cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
 options {
-	directory "${INSTANCE_ETC_NAMED_DIRSPEC}";
-	dump-file "${DUMP_CACHE_FILESPEC}";
-	managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
-	max-rsa-exponent-size 4096;
-	pid-file "${INSTANCE_RUN_DIRSPEC}/named.pid";
-	server-id none;
-	session-keyalg "hmac-sha256"; // could use hmac-sha512
-	session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
-	session-keyname "${DHCP_TO_BIND_KEYNAME}";
+    directory "${INSTANCE_ETC_NAMED_DIRSPEC}";
+    dump-file "${DUMP_CACHE_FILESPEC}";
+    managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
+    max-rsa-exponent-size 4096;
+    pid-file "${INSTANCE_RUN_DIRSPEC}/named.pid";
+    server-id none;
+    session-keyalg "hmac-sha256"; // could use hmac-sha512
+    session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
+    session-keyname "${DHCP_TO_BIND_KEYNAME}";
         statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
-	version "Funky DNS, eh?";
+    version "Funky DNS, eh?";
 
-	// RNDC ACL
-	allow-new-zones no;
+    // RNDC ACL
+    allow-new-zones no;
 
-	// conform to RFC1035
-	auth-nxdomain no;
+    // conform to RFC1035
+    auth-nxdomain no;
 
-	disable-algorithms "egbert.net." { 
-		RSAMD5;		// 1
-		DH;		// 2 - current standard
-		DSA;		// DSA/SHA1
-		4; 		// reserved
-		RSASHA1;	// RSA/SHA-1
-		6;		// DSA-NSEC3-SHA1
-		7;		// RSASHA1-NSEC3-SHA1
-		//		// RSASHA256;  // 8 - current standard
-		9;		// reserved
-		//		// RSASHA512;  // 10 - ideal standard
-		11;		// reserved
-		12;		// ECC-GOST; // GOST-R-34.10-2001
-		//		// ECDSAP256SHA256; // 13 - best standard
-		//		// ECDSAP384SHA384; // 14 - bestest standard
-		//		// ED25519; // 15
-		//		// ED448; // 16
-		INDIRECT; 
-		PRIVATEDNS; 
-		PRIVATEOID; 
-		255;
-        	};
-	//  Delegation Signer Digest Algorithms [DNSKEY-IANA] [RFC7344]
-	//  https://tools.ietf.org/id/draft-ietf-dnsop-algorithm-update-01.html
-	disable-ds-digests "egbert.net" {
-		0;		// 0
-		SHA-1;		// 1 - Must deprecate 
-		//		// SHA-256; // Widespread use
-		GOST;		// 3 - has been deprecated by RFC6986
-		//		// SHA-384;  // 4 - Recommended
-		};
-	// disables the SHA-256 digest for .net TLD only.
-	disable-ds-digests "net" { "SHA-256"; };  // TBS: temporary
+    disable-algorithms "egbert.net." {
+        RSAMD5;     // 1
+        DH;     // 2 - current standard
+        DSA;        // DSA/SHA1
+        4;      // reserved
+        RSASHA1;    // RSA/SHA-1
+        6;      // DSA-NSEC3-SHA1
+        7;      // RSASHA1-NSEC3-SHA1
+        //      // RSASHA256;  // 8 - current standard
+        9;      // reserved
+        //      // RSASHA512;  // 10 - ideal standard
+        11;     // reserved
+        12;     // ECC-GOST; // GOST-R-34.10-2001
+        //      // ECDSAP256SHA256; // 13 - best standard
+        //      // ECDSAP384SHA384; // 14 - bestest standard
+        //      // ED25519; // 15
+        //      // ED448; // 16
+        INDIRECT;
+        PRIVATEDNS;
+        PRIVATEOID;
+        255;
+            };
+    //  Delegation Signer Digest Algorithms [DNSKEY-IANA] [RFC7344]
+    //  https://tools.ietf.org/id/draft-ietf-dnsop-algorithm-update-01.html
+    disable-ds-digests "egbert.net" {
+        0;      // 0
+        SHA-1;      // 1 - Must deprecate
+        //      // SHA-256; // Widespread use
+        GOST;       // 3 - has been deprecated by RFC6986
+        //      // SHA-384;  // 4 - Recommended
+        };
+    // disables the SHA-256 digest for .net TLD only.
+    disable-ds-digests "net" { "SHA-256"; };  // TBS: temporary
 
-	dnssec-accept-expired no;
-	dnssec-validation yes;
-	recursion no;
-	transfer-format many-answers;
-	allow-query { any; };
-	allow-transfer { none; };
-	allow-update {   # we edit zone file by using an editor, not 'rndc'
-		none;
-	};
+    dnssec-accept-expired no;
+    dnssec-validation yes;
+    recursion no;
+    transfer-format many-answers;
+    allow-query { any; };
+    allow-transfer { none; };
+    allow-update {   # we edit zone file by using an editor, not 'rndc'
+        none;
+    };
         forwarders { };
 
-	key-directory "${INSTANCE_KEYS_DB_DIRSPEC}";
-	max-transfer-time-in 60;
-	notify no;
+    key-directory "${INSTANCE_KEYS_DB_DIRSPEC}";
+    max-transfer-time-in 60;
+    notify no;
         zone-statistics yes;
 
 OPTIONS_EOF
@@ -270,7 +270,7 @@ append_include_clause \
   "$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC"
 
 cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
-	};
+    };
 OPTIONS_EOF
 
 
