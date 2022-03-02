@@ -58,7 +58,9 @@ if [ -n "$UNITTEST" ]; then
   }
   match_expected_string 'Resolve' 'Resolve' "plain string"
   match_expected_string 'Re_solve' 'Re_solve' "underscore"
+  #shellcheck disable=SC2016
   match_expected_string 'Re$solve' 'Re$solve' "dollar sign"
+  #shellcheck disable=SC2016
   match_expected_string "Re\$solve" 'Re$solve' "dollar sign, double-quoted"
   match_expected_string 'Re*solve' 'Re*solve' "asterisk"
   match_expected_string ' Resolve' 'Resolve' "space-prefixed"
