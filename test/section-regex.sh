@@ -188,7 +188,8 @@ ini_kw_get()
   # (((\x27[ \!\"\#\$\%\&\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\x27\s*)|(\"[ \!\#\$\%\&\x27\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\"\s*)|(\/([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]+[ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*)|([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*))*)*)([;#]+)*.*$
   #
   # Above works in https://www.debuggex.com/
-  # TEsted in https://extendsclass.com/regex-tester.html#pcre
+  # Tested in https://extendsclass.com/regex-tester.html#pcre
+  # Tested in https://www.freeformatter.com/regex-tester.html
   # 
   # 
   #
