@@ -9,6 +9,20 @@ ini_file_read()
   local ini_buffer raw_buffer hidden_default
   raw_buffer="$1"
   # somebody has to remove the 'inline' comment
+  # Currently does not do nested-quotes within a pair of same single/double
+  # quote ... YET:
+  #
+  # But there is a way, the Regex way that works.
+  #
+  # Need to find a way to translate this Python regex:
+  #
+  # (((\x27[ \!\"\#\$\%\&\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\x27\s*)|(\"[ \!\#\$\%\&\x27\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\"\s*)|(\/([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]+[ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*)|([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*))*)*)([;#]+)*.*$
+  #
+  # Above works in https://www.debuggex.com/
+  # Tested in https://extendsclass.com/regex-tester.html#pcre
+  # Tested in https://www.freeformatter.com/regex-tester.html
+  # 
+  # 
   raw_buffer="$(echo "$raw_buffer" | sed '
   s|[[:blank:]]*//.*||; # remove //comments
   s|[[:blank:]]*#.*||; # remove #comments
@@ -183,15 +197,6 @@ ini_kw_get()
   kv="$(echo "$found_keyline" | awk -F= '{print $2}')"
   # remove inline comments
   #
-  # Need to find a way to translate this Python regex:
-  #
-  # (((\x27[ \!\"\#\$\%\&\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\x27\s*)|(\"[ \!\#\$\%\&\x27\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\"\s*)|(\/([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]+[ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*)|([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*))*)*)([;#]+)*.*$
-  #
-  # Above works in https://www.debuggex.com/
-  # Tested in https://extendsclass.com/regex-tester.html#pcre
-  # Tested in https://www.freeformatter.com/regex-tester.html
-  # 
-  # 
   #
   # into BASH, for now, do simple removal of inline comment
   kv="$(echo "$kv" | sed "/^\s*;/d;s/\s*;[^\"']*$//")"
