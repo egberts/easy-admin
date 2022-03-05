@@ -182,9 +182,15 @@ ini_kw_get()
   # echo "found_kl: $found_keyline "
   kv="$(echo "$found_keyline" | awk -F= '{print $2}')"
   # remove inline comments
-  # echo "kv1: $kv"
-  # Ooops, this pattern does everything from the end
-  # and does not work if a pair of quotes are used within the inline comment
+  #
+  # Need to find a way to translate this Python regex:
+  #
+  # (((\x27[ \!\"\#\$\%\&\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\x27\s*)|(\"[ \!\#\$\%\&\x27\(\)\*\+\-\.\/0-9\:\;\<\=\>\?@A-Z\[\\\]\^\_\`a-z\|\~]*\"\s*)|(\/([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]+[ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*)|([ \!\$\%\&\(\)\*\+\-\.0-9\:\<\=\>\?@A-Z\[\]\^\_\`a-z\|\~]*))*)*)([;#]+)*.*$
+  #
+  # Above works in https://www.debuggex.com/
+  # 
+  #
+  # into BASH, for now, do simple removal of inline comment
   kv="$(echo "$kv" | sed "/^\s*;/d;s/\s*;[^\"']*$//")"
   # echo "kv2: $kv"
   kv="$(echo "$kv" | sed "/^\s*#/d;s/\s*#[^\"']*$//")"
