@@ -1,6 +1,7 @@
 #!/bin/bash
-
-# Handle the .INI-formatted file
+# File: section-regex.sh
+# Title: Parse and find keyvalue in the .INI-format v1.4 file
+#
 
 # syntax: ini_file_read <raw_buffer>
 # outputs: formatted bracket-nested "[section]keyword=keyvalue"

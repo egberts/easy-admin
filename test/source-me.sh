@@ -2,6 +2,8 @@
 #
 # File: source-me.sh
 # Title: An example file to be sourced by other shell scripts
+# Description:
+#   called by 'relative_dirs.sh'
 
 echo "This file $(basename -- "${BASH_SOURCE[0]}") got sourced by ${BASH_SOURCE[1]}"
 set

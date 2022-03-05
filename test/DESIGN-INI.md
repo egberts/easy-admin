@@ -62,3 +62,6 @@ To do 'last occurrence prevails', we could do :
       ini_keyword_buffer="$( echo "$ini_keyword_extract "$ini_section_buffer" "$section_wanted" | tail -n1 )"
       extract keyvalue from one-liner ini_keyword_buffer
 
+
+The bash module is 'section-regex.sh' after creating so many 'section-*.sh'
+parser.
