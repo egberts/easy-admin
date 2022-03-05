@@ -49,6 +49,8 @@ assert_section_extract() {
     echo "assert_section_extract('$sec'): found: passed: # $note"
   else
     echo "assert_section_extract('$sec'): NOT FOUND # $note"
+    echo "  expected: $expected"
+    echo "  result  : $result"
     echo "Aborted."
     exit 1
   fi
@@ -62,7 +64,25 @@ ini_buffer="$(ini_file_read "$raw_file")"
 assert_section_extract "$ini_buffer" "default" "[default]DNS=
 [default]DNS=4.4.4.4
 [default]void=devoided" "no such 'default' section"
+ini_buffer="""[Machine1]
+
+app=version1
+
+
+[Machine2]
+
+app=version1
+
+app=version2
+
+[Machine3]
+
+app=version1
+app=version3
+"""
+assert_section_extract "$ini_buffer" "Machine1' "" "StackOverflow"
 assert_section_extract "$ini_buffer" "Resolve" "[Resolve]DNS=0.0.0.0
 [Resolve]void=\"asdf;zxcv\"
 [Resolve]DNS=1.1.1.1
 [Resolve]FallbackDNS=" "simple"
+

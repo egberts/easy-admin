@@ -2,27 +2,6 @@
 
 # Handle the .INI-formatted file
 
-# #  List all [sections] of a .INI file
-# sed -n 's/^[ \t]*\[\(.*\)\].*/\1/p'
-# 
-# #  Read KEY from [SECTION]
-# sed -n '/^[ \t]*\[SECTION\]/,/\[/s/^[ \t]*KEY[ \t]*=[ \t]*//p'
-# 
-# #  Read all values from SECTION in a clean KEY=VALUE form
-# sed -n '/^[ \t]*\[SECTION\]/,/\[/s/^[ \t]*\([^#; \t][^ \t=]*\).*=[ \t]*\(.*\)/\1=\2/p'
-# 
-
-# sed -nr '/\[section\]/,/\[.*\]/{/keyword/s/(.*)=(.*)/\2/p}'
-
-# awk -F'=' -v section="[section_name]" -v k="keyword"  '
-# $0==section{ f=1; next }  # Enable a flag when the line is like your section
-# /\[/{ f=0; next }         # For any lines with [ disable the flag
-# f && $1==k{ print $0 }    # If flag is set and first field is the key print key=value
-# ' ini.file
-
-
-
-
 # syntax: ini_file_read <raw_buffer>
 # outputs: formatted bracket-nested "[section]keyword=keyvalue"
 ini_file_read()
@@ -48,13 +27,12 @@ ini_file_read()
 
   # finds all 'no-section' and inserts '[Default]'
   hidden_default="$(echo "$ini_buffer" \
-	          | egrep -- '^[a-zA-Z\-_\$]+=' | sed 's/^/[Default]/')"
+	          | egrep '^[-0-9A-Za-z_\$\.]+=' | sed 's/^/[Default]/')"
   if [ -n "$hidden_default" ]; then
     echo "$hidden_default"
   fi
   # finds sectional and outputs as-is
-  # echo "$(echo "$ini_buffer" | egrep -- '^\[[a-zA-Z\-_\$]+\]')"
-  echo "$(echo "$ini_buffer" | egrep -- '^\[\s*[A-Za-z\-_\$]+\s*\]')"
+  echo "$(echo "$ini_buffer" | egrep '^\[\s*[-0-9A-Za-z_\$\.]+\s*\]')"
 }
 
 
@@ -64,6 +42,59 @@ ini_section_name_normalize()
   local result
   result="${1#"${1%%[![:space:]]*}"}"
   echo "${result%"${result##*[![:space:]]}"}"
+}
+
+
+# Ensure that the keyword is useable in INI file 
+# Syntax: ini_keyword_normalize <unverified_keyword>
+# output: <sanitized_keyword>  
+# error: none
+ini_keyword_normalize()
+{
+  local sanitized_kw expected_kw
+  expected_kw="$1"
+  # knock out any and all whitespaces
+  sanitized_kw="$(echo "$expected_kw" | sed -- 's/[ \t]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" \
+	  | sed -- 's/[\~\`\!\@\%\^\*()+=,]//g')"
+  # remove pesky hashmark (interferes with bash regex)
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[\#]//g')"
+  # remove pesky backslash (interferes with bash regex)
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[\\]//g')"
+  # remove pesky brackets (interferes with bash regex)
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[\[]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[]]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[\{]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[\}]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[>]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[<]//g')"
+  sanitized_kw="$(echo "$sanitized_kw" | sed -- 's/[\/]//g')"
+  # remove pesky tilde (interferes with bash regex)
+  # now only allow alphanum, '-', '_', '$' in keyword
+  #sanitized_kw="${sanitized_kw//[^[-a-z0-9_\$.]]/}"
+  echo "$sanitized_kw"
+}
+
+
+# Assert that the keyword is valid for use in a INI file.
+# Syntax: ini_keyword_valid <unverified_keyword>
+# output: silent or '<error-msg>'
+# return: 0 (invalid) or 1 (valid)
+# error: none
+ini_keyword_valid()
+{
+  local sanitized_kw expected_kw
+  expected_kw="$1"
+  sanitized_kw="$(ini_keyword_normalize "$expected_kw")"
+  # echo "expected_kw: $expected_kw"
+  # echo "sanitized_kw: $sanitized_kw"
+  if [ "$sanitized_kw" != "$expected_kw" ]; then
+    echo "ini_keyword_valid: kw='${expected_kw}' can only be '${sanitized_kw}'"
+    return 0
+  else
+    # silent output necessary for a success
+    return 1
+  fi
 }
 
 # syntax: ini_section_list <ini_buffer>
@@ -76,7 +107,7 @@ ini_section_list()
   # extract all lines having matching section name
   # section_content is now always defined at this point ('default' or otherwise)
   section_names="$(echo "$ini_buffer" \
-                 | grep -- '^\s*\[' \
+                 | grep '^\s*\[' \
 		 | awk '{ sub(/.*\[/, ""); sub(/\].*/, ""); print }')"
   section_names="$( echo "$section_names" | sort -u | xargs )"
   echo "$section_names"
@@ -87,7 +118,8 @@ ini_section_list()
 # outputs: selected lines from ini_buffer
 ini_section_extract()
 {
-  local section_name
+  local section_name ini_buffer section_name pattern 
+  local result normalized_section_name
   # $1 - ini_buffer
   # $2 - section name
   # extract all lines having matching section name
@@ -95,9 +127,8 @@ ini_section_extract()
   section_name="$2"
   normalized_section_name="$(ini_section_name_normalize "$section_name")"
   pattern="${normalized_section_name}"
-  result="$(echo "$ini_buffer" | egrep -- "\[${normalized_section_name}\]")"
+  result="$(echo "$ini_buffer" | egrep -- "^\[${normalized_section_name}\]")"
   echo "${result}"
-  result="$result"
 }
 
 
@@ -120,9 +151,7 @@ ini_section_test()
 ini_section_read()
 {
   local result
-  # two part: undefined section and 'default' section
-  # part one: extract undefined section
-  result="$(echo "$1" | grep '^[a-zA-Z09\-_\$]\=')"
+  result="$(echo "$1" | grep '^[-a-zA-Z09_\$\.]\=')"
   echo "result: $result"
   if [ -n "$result" ]; then
     return 1
@@ -132,4 +161,52 @@ ini_section_read()
 }
 
 
+# Syntax: init_kw_get <ini_buffer> <section_name> <keyword>
+ini_kw_get()
+{
+  local ini_buffer section keyword ini_by_section found_keyline found_keylines kv
+  ini_buffer="$1"
+  # echo "ini_buffer: $ini_buffer"
+  section="$2"
+  # echo "section: $section"
+  keyword="$3"
+  ini_keyword_valid "$keyword"
+  # get all matching section
+  ini_by_section="$(ini_section_extract "$ini_buffer" "$section")"
+  #echo "ini_by_section: $ini_by_section"
+  found_keylines="$(echo "$ini_by_section" \
+	  | egrep "^\[\S+\]\s*${keyword}\s*=" )"
 
+  # echo "found_kls: $found_keylines "
+  found_keyline="$(echo "$found_keylines" | tail -n1 )"
+  # echo "found_kl: $found_keyline "
+  kv="$(echo "$found_keyline" | awk -F= '{print $2}')"
+  # remove inline comments
+  # echo "kv1: $kv"
+  # Ooops, this pattern does everything from the end
+  # and does not work if a pair of quotes are used within the inline comment
+  kv="$(echo "$kv" | sed "/^\s*;/d;s/\s*;[^\"']*$//")"
+  # echo "kv2: $kv"
+  kv="$(echo "$kv" | sed "/^\s*#/d;s/\s*#[^\"']*$//")"
+  # echo "kv4: $kv"
+  kv="$(echo "$kv" | sed "/^\s*\/\//d;s/\s*\/\/[^\"']*$//")"
+  # echo "kv5: $kv"
+
+  # remove surrounding whitespaces
+  kv="$(echo "$kv" | sed -- 's/^\s*//')"
+  kv="$(echo "$kv" | sed -- 's/\s*$//')"
+  echo "$kv"
+}
+
+# Syntax: init_kw_test <ini_buffer> <section_name> <keyword>
+# outputs: 1 or 0
+ini_key_test()
+{
+  local retsts
+  if [ -n "$(ini_kw_get "$1" "$2" "$3")" ]; then
+    retsts=1
+  else
+    retsts=0
+  fi
+  return $retsts
+}
