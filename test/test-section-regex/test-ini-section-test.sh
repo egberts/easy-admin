@@ -74,3 +74,7 @@ assert_section_test "$ini_buffer" "underscore_section" 1 "has an underscore"
 assert_section_test "$ini_buffer" " prefixed_space" 1 "prefixed spaces"
 assert_section_test "$ini_buffer" "space_suffixed " 1 " suffixed spaces"
 assert_section_test "$ini_buffer" "spacey se c t i o n" 0 "properly ignores sections w/ mid-space"
+echo
+
+echo "${BASH_SOURCE[0]}: Done."
+

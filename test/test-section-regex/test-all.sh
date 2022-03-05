@@ -11,5 +11,4 @@ echo "Unit-test section-regex.sh bash module"
 
 echo ""
 
-echo "Done."
-exit
+echo "${BASH_SOURCE[0]}: Done."

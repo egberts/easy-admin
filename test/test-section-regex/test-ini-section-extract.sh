@@ -87,3 +87,7 @@ app=version1
 app=version3
 """
 assert_section_extract "$ini_buffer2" "Machine1" "[Machine1]app=version1" "StackOverflow"
+echo
+
+echo "${BASH_SOURCE[0]}: Done."
+

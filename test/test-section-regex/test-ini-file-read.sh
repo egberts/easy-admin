@@ -60,3 +60,6 @@ app=version3" "[Machine1]app=version1
 [Machine2]app=version2
 [Machine3]app=version1
 [Machine3]app=version3" "Ras of StackOverflow"
+echo
+
+echo "${BASH_SOURCE[0]}: Done."

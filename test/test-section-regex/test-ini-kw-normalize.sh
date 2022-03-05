@@ -83,4 +83,5 @@ assert_keyword_normalize "D\\\nS" "DnS" 0 "triplebackslash"
 assert_keyword_normalize "D\rS" "DS" 0 "backslash"   # wow, bash limitation there
 echo
 
-echo "$(basename $0): Done."
+echo "${BASH_SOURCE[0]}: Done."
+

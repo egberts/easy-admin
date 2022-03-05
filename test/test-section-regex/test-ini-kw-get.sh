@@ -306,27 +306,31 @@ assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master2" "\"68.68.68.68//\"" "//
 
 # comment symbols are inside AND outside of single-quotes 
 ini_file="# comment line
-[Default]FallbackDNS=\"70.70#70.70\"  # comment 1
-[Resolve]DNS_Server1=\"71.71;71.71\"  ; comment 2
+[Default]FallbackDNS=\"70.70#70.70\"  # inline # inside double-quote
+[Resolve]DNS_Server1=\"71.71;71.71\"  ; inline ; inside double-quote
 [DifferentSection]DNS=\"72.72//72.72\"  // \"comment 3\" ; still an inline
-[Resolve]DNS=\"#73.73.73.73\"  # comment 4
-[Resolve]DNS_Server2=\";74.74.74.74\"  ; comment 5
-[DifferentSection2]DNS_2=\"//75.75.75.75\"  // comment 6
-[Resolve]DNS=\"76.76.76.76;\"  ; comment 7
-[Gateway]Hidden_DNS_Master=\"77.77.77.77#\"  ; comment 8
-[Gateway]Hidden_DNS_Master2=\"78.78.78.78//\"  // comment 9
+[Resolve]DNS=\"#73.73.73.73\"  # inline # LHS double-quote
+[Resolve]DNS_Server2=\";74.74.74.74\"  ; inline ; LHS double-quote
+[DifferentSection2]DNS_2=\"//75.75.75.75\"  // inline '/' '/' LHS double-quote
+[Resolve]DNS=\"76.76.76.76;\"  ; inline ; RHS double-quote
+[Gateway]Hidden_DNS_Master=\"77.77.77.77#\"  # inline # RHS double-quote
+[Gateway]Hidden_DNS_Master2=\"78.78.78.78//\"  // inline '/' '/' RHS double-quote
 "
 assert_kw_get "$ini_file" "Default" "FallbackDNS" "\"70.70#70.70\"" "# inside double-quote and outside"
 assert_kw_get "$ini_file" "Resolve" "DNS_Server1" "\"71.71;71.71\"" "; inside quote and outside"
 
 assert_kw_get "$ini_file" "Resolve" "DNS_Server2" "\";74.74.74.74\"" "; inside LHS double-quote and outside"
-assert_kw_get "$ini_file" "DifferentSection2" "DNS_2" "\"//75.75.75.75\"" "// inside LHS double-quote and outside"
 
 assert_kw_get "$ini_file" "Resolve" "DNS" "\"76.76.76.76;\"" "\"76.76.76.76;\"" "; inside RHS double-quote and outside"
 assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master" "\"77.77.77.77#\"" "\"77.77.77.77#\"" "# inside RHS double-quote and ouside"
+
+# FAILED TEST (needs to improve 'ini_file_read' REGEX)
+# Obviously that a multi-state regex for '//' is needed
 assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master2" "\"78.78.78.78//\"" "// inside RHS double-quote and outside"
 
-assert_kw_get "$ini_file" "DifferentSection" "DNS" "\"72.72//72.72\"" "// inside quote and outside"
+assert_kw_get "$ini_file" "DifferentSection" "DNS" "\"72.72//72.72\"" "// inside double-quote and outside"
+assert_kw_get "$ini_file" "DifferentSection2" "DNS_2" "\"//75.75.75.75\"" "// inside LHS double-quote and outside"
 echo
 
-echo "$(basename $0): Done."
+echo "${BASH_SOURCE[0]}: Done."
+

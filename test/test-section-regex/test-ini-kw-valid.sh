@@ -84,4 +84,5 @@ assert_keyword_valid "D\\NS" 0 "double backslash"
 assert_keyword_valid "D\\\NS" 0 "triplebackslash"
 echo
 
-echo "$(basename $0): Done."
+echo "${BASH_SOURCE[0]}: Done."
+

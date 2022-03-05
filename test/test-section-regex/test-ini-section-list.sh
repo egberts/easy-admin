@@ -111,3 +111,7 @@ TEST_EOF
 )"
 
 assert_section_list "$ini_buffer" "Default Network Resolve Unknown" "no-section no-default"
+echo
+
+echo "${BASH_SOURCE[0]}: Done."
+
