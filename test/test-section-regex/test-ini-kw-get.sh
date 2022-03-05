@@ -292,17 +292,17 @@ ini_file="# comment line
 [Gateway]Hidden_DNS_Master=\"67.67.67.67#\"
 [Gateway]Hidden_DNS_Master2=\"68.68.68.68//\"
 "
-assert_kw_get "$ini_file" "" "" "" "unused keyword"
-assert_kw_get "$ini_file" "" "DNS" "" "unused keyword, 'no-section default"
-assert_kw_get "$ini_file" "NoSuchSection" "DNS" "" "unused keyword, noSuchSection"
-assert_kw_get "$ini_file" "Default" "FallbackDNS" "\"60.60#60.60\"" "standard"
-assert_kw_get "$ini_file" "Resolve" "DNS_Server1" "\"61.61;61.61\"" "standard"
-assert_kw_get "$ini_file" "DifferentSection" "DNS" "\"62.62//62.62\"" "standard"
-assert_kw_get "$ini_file" "Resolve" "DNS_Server2" "\";64.64.64.64\"" "standard"
-assert_kw_get "$ini_file" "DifferentSection2" "DNS_2" "\"//65.65.65.65\"" "standard"
-assert_kw_get "$ini_file" "Resolve" "DNS" "\"66.66.66.66;\"" "standard"
-assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master" "\"67.67.67.67#\"" "standard"
-assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master2" "\"68.68.68.68//\"" "standard"
+assert_kw_get "$ini_file" "" "" "" "no section, no keyword"
+assert_kw_get "$ini_file" "" "DNS" "" "no-section, unused keyword"
+assert_kw_get "$ini_file" "NoSuchSection" "DNS" "" "unused section, unused keyword"
+assert_kw_get "$ini_file" "Default" "FallbackDNS" "\"60.60#60.60\"" "# inside double-quote"
+assert_kw_get "$ini_file" "Resolve" "DNS_Server1" "\"61.61;61.61\"" "; inside double-quote"
+assert_kw_get "$ini_file" "DifferentSection" "DNS" "\"62.62//62.62\"" "// inside double-quote"
+assert_kw_get "$ini_file" "Resolve" "DNS_Server2" "\";64.64.64.64\"" "; inside LHS double-quote"
+assert_kw_get "$ini_file" "DifferentSection2" "DNS_2" "\"//65.65.65.65\"" "// inside LHS double-quote"
+assert_kw_get "$ini_file" "Resolve" "DNS" "\"66.66.66.66;\"" "; inside RHS double-quote"
+assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master" "\"67.67.67.67#\"" "# inside RHS double-quote"
+assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master2" "\"68.68.68.68//\"" "// inside RHS double-quote"
 
 # comment symbols are inside AND outside of single-quotes 
 ini_file="# comment line
@@ -316,17 +316,17 @@ ini_file="# comment line
 [Gateway]Hidden_DNS_Master=\"77.77.77.77#\"  ; comment 8
 [Gateway]Hidden_DNS_Master2=\"78.78.78.78//\"  // comment 9
 "
-assert_kw_get "$ini_file" "" "" "" "unused keyword"
-assert_kw_get "$ini_file" "" "DNS" "" "unused keyword, 'no-section default"
-assert_kw_get "$ini_file" "NoSuchSection" "DNS" "" "unused keyword, noSuchSection"
-assert_kw_get "$ini_file" "Default" "FallbackDNS" "\"70.70#70.70\"" "standard"
-assert_kw_get "$ini_file" "Resolve" "DNS_Server1" "\"71.71;71.71\"" "standard"
-assert_kw_get "$ini_file" "DifferentSection" "DNS" "\"72.72//72.72\"" "standard"
-assert_kw_get "$ini_file" "Resolve" "DNS_Server2" "\";74.74.74.74\"" "standard"
-assert_kw_get "$ini_file" "DifferentSection2" "DNS_2" "\"//75.75.75.75\"" "standard"
-assert_kw_get "$ini_file" "Resolve" "DNS" "\"66.66.66.66;\"" "standard"
-assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master" "\"77.77.77.77#\"" "standard"
-assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master2" "\"78.78.78.78//\"" "standard"
+assert_kw_get "$ini_file" "Default" "FallbackDNS" "\"70.70#70.70\"" "# inside double-quote and outside"
+assert_kw_get "$ini_file" "Resolve" "DNS_Server1" "\"71.71;71.71\"" "; inside quote and outside"
+
+assert_kw_get "$ini_file" "Resolve" "DNS_Server2" "\";74.74.74.74\"" "; inside LHS double-quote and outside"
+assert_kw_get "$ini_file" "DifferentSection2" "DNS_2" "\"//75.75.75.75\"" "// inside LHS double-quote and outside"
+
+assert_kw_get "$ini_file" "Resolve" "DNS" "\"76.76.76.76;\"" "\"76.76.76.76;\"" "; inside RHS double-quote and outside"
+assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master" "\"77.77.77.77#\"" "\"77.77.77.77#\"" "# inside RHS double-quote and ouside"
+assert_kw_get "$ini_file" "Gateway" "Hidden_DNS_Master2" "\"78.78.78.78//\"" "// inside RHS double-quote and outside"
+
+assert_kw_get "$ini_file" "DifferentSection" "DNS" "\"72.72//72.72\"" "// inside quote and outside"
 echo
 
 echo "$(basename $0): Done."

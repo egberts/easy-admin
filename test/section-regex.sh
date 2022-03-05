@@ -21,6 +21,7 @@ ini_file_read()
   # Above works in https://www.debuggex.com/
   # Tested in https://extendsclass.com/regex-tester.html#pcre
   # Tested in https://www.freeformatter.com/regex-tester.html
+  # Tested in https://regexr.com/
   # 
   # 
   raw_buffer="$(echo "$raw_buffer" | sed '
