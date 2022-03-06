@@ -19,6 +19,14 @@
 #   DATA_DIRSPEC
 #   ZONE_DB_DIRSPEC
 #   KEYS_DIRSPEC
+#
+# References:
+#
+# 
+# * https://www.freeipa.org/page/Howto/DNSSEC#DNSSEC_in_isolated_networks
+# * https://www.freeipa.org/page/Howto/DNS_in_isolated_networks
+# * https://www.cymru.com/Documents/secure-bind-template.html
+#
 
 echo "Create a standalone root server for a closed network whitelab usage"
 echo ""
