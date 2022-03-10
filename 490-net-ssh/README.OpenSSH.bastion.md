@@ -20,24 +20,22 @@ SSH user session with each inbound SSH connection.
 
 A bastion SSH host is a server that only allows
 SSH connection with following `sshd_config` settings:
-- AllowTcpForwarding yes
-- PermitOpen <allowed_client_IP>:2222
-- ForceCommand echo 'Nope'
-- PermitTunnel no
-- PTY none
-- Shell none
-- Forwarding no
-- X11Forwarding no
-- No GatewayPorts
-- AllowAgentForwarding no
+- `PermitOpen <allowed_public_IP>:2222`
+- `PermitTunnel no`
+- `AllowTcpForwarding yes`
+- `X11Forwarding no`
+- `AllowAgentForwarding no`
+- `PermitTTY no`
+- `ForceCommand echo 'Nope'`
+- `GatewayPorts none`
 
-And SSH clients be forced to use:
+And SSH clients be forced to use keys OUTSIDE of their \$HOME directory:
 
 - AuthorizedKeysFile /etc/ssh/keys/%u
 
 Above setup supports following command:
 
-  ssh -J finaluser@finalhost@bastion.domain.tld
+  ssh -J finaluser@finalhost bastionuser@bastion.domain.tld
 
 Also its OS should also the following attributes:
 

@@ -62,7 +62,7 @@ sshd_config_filespec="${openssh_config_dirspec}/$sshd_config_filename"
 ssh_confd_dirspec="$extended_sysconfdir/ssh_config.d"
 sshd_confd_dirspec="$extended_sysconfdir/sshd_config.d"
 
-readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-ssh-common.sh"
+FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-ssh-common.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
 echo "Detected $ID distro."
