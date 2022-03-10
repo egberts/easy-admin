@@ -33,9 +33,12 @@ find_keyword()
 {
   local filespec=$1
   local keyword=$2
-  return [ $(grep -e -c "^#\s*${keyword}\s*=" /dev/null $filespec ) -ge 1 ]
+  return [ $(grep -e -c "^\s*${keyword}\s*=" /dev/null $filespec ) -ge 1 ]
 }
 
+# systemd conf files only uses last-encountered 
+# keyword and its value in the case of multiple 
+# declaration of its same keyword.
 find_keyvalue()
 {
   result=''
@@ -66,21 +69,26 @@ source ../distro-os.sh
 
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-systemd-resolved-dns-fallback-disabled.sh"
 
-dropin_filename="resolved.conf"
-dropin_dirspec="/etc/systemd"
-dropin_filespec="${dropin_dirspec}/$dropin_filename"
+resolv_filename="resolved.conf"
+resolv_dirspec="/etc/systemd"
+resolv_filespec="${resolv_dirspec}/$resolv_filename"
 
-find_keyvalue "$dropin_filespec" 'DNS'
-echo "find_keyword $dropin_filespec DNS = $result"
-if [ -n "$result" ]; then
-  echo "There is a DNS= statement in $dropin_filespec"
-  echo "You need to comment that out or delete that line."
-  echo "Aborted."
-fi
+find_keyvalue "$resolv_filespec" 'FallbackDNS'
+# result to find_keyvalue is in result
 
 dropin_filename="dns-fallback-disabled.conf"
 dropin_dirspec="/etc/systemd/resolved.conf.d"
 dropin_filespec="${dropin_dirspec}/$dropin_filename"
+
+COMMENT_OUT=
+if [ -n "$result" ]; then
+  echo "*****************************************************************"
+  echo "WARNING: There is a FallbackDNS= statement in $resolv_filespec"
+  echo "         You need to comment that out or delete that line."
+  echo "         before using this dropin $dropin_filespec file."
+  echo "*****************************************************************"
+  COMMENT_OUT="WARNING: Need to comment out $(grep -n -e '^\s*FallbackDNS\s*=' "$dropin_filespec" | tail -n1)\n# in file $dropin_filespec"
+fi
 
 flex_mkdir "$dropin_dirspec"
 
@@ -125,6 +133,8 @@ cat << DROPIN_EOF | $SUDO_BIN tee "${BUILDROOT}${CHROOT_DIR}/$dropin_filespec" >
 #       things, not to manage DNS querying; 
 #       we leave that DNS querying to ISC Bind9
 #       as a form of greatly lowering attack surface
+#
+# ${COMMENT_OUT}
 #
 [Resolve]
 FallbackDNS=
