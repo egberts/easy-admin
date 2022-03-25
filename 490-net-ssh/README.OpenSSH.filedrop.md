@@ -5,6 +5,7 @@ How to Set Up a File-Drop SSH Host
 A file-drop SSH host is a server that only allows
 SSH connection with following `sshd_config` settings:
 
+```ini
 Match sftpusers
     Banner /etc/ssh/banner_sftp.txt
     PubkeyAuthentication yes
@@ -14,22 +15,27 @@ Match sftpusers
     ChrootDirectory /data/sftphome/%u
     ForceCommand internal-sftp -l DEBUG1 -f AUTHPRIV -P symlink,hardlink,fsync,rmdir,remove,rename
     PermitOpen <allowed_client_IP>:2222
+```
 
-- PermitTunnel no
-- PTY none
-- Shell none
-- Forwarding no
-- X11Forwarding no
-- No GatewayPorts
-- AllowAgentForwarding no
-
+Also the same thing for bastion host:
+```ini
+PermitTunnel no
+PTY none
+Shell none
+Forwarding no
+X11Forwarding no
+No GatewayPorts
+AllowAgentForwarding no
+```
 And SSH clients be forced to use:
-
-- AuthorizedKeysFile /etc/ssh/keys/%u
+```
+AuthorizedKeysFile /etc/ssh/keys/%u
+```
 
 Above supports following command:
-
-  ssh -J finaluser@finalhost@bastion.domain.tld
+```bash
+ssh -J finaluser@finalhost@bastion.domain.tld
+```
 
 Also its OS must have the following attributes:
 
