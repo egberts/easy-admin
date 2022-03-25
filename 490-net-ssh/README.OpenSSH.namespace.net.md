@@ -18,7 +18,7 @@ useradd -a -G devops johnd
 Then limit all SSH network traffic connections 
 to `devops` group.
 ```bash
-ptables -I OUTPUT \
+iptables -I OUTPUT \
         -m sshd \
         --gid-owner devops \
         -p tcp \
