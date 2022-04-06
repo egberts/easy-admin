@@ -2,42 +2,67 @@
 # File: 498-net-ssh-user-add.sh
 # Title: Add authorized users to 'ssh' group for using 'ssh' tools
 
+echo "Adds outbound SSH privilege to a specified user"
+echo
 
 source ./maintainer-ssh-openssh.sh
 
-echo "Adding '$SSH_GROUP_NAME' GID to a user's supplementary group"
+echo "   using the '${SSH_GROUP_NAME}' supplementary group."
 echo
 
-if [ $UID -ne 0 ]; then
-  echo "WARNING: sudo password may appear."
-fi
+default_user="$USER"
 
-read -rp "Add the name of user to '$SSH_GROUP_NAME' group [$USER]?: "
-if [ -z "$REPLY" ]; then
-  SSH_USER="$USER"
+prompt_me="Add username to the '$SSH_GROUP_NAME' supplementary group?"
+if [ -z "$default_user" ]; then
+  prompt_me+=": "
 else
-  SSH_USER="$REPLY"
+  prompt_me+=" [$USER]: "
+fi
+read -rp "$prompt_me"
+username_to_add_to_ssh=
+if [ -z "$REPLY" ]; then
+  username_to_add_to_ssh="$default_user"
+else
+  username_to_add_to_ssh="$REPLY"
 fi
 echo ""
+
+if [ -z "$username_to_add_to_ssh" ]; then
+  echo "Empty input; aborted."
+  exit 3
+fi
 
 # check if user already has that supplemental group ID
-USER_HAS_GID="$(grep -E -c "^${SSH_USER}:" /etc/group )"
-if [ "$USER_HAS_GID" -ge 1 ]; then
-  echo "User $SSH_USER already has $SSH_GROUP_NAME GID"
-  echo ""
-  echo "Done."
-  exit 0
+user_has_that_sgid="$(grep -E '^ssh:' /etc/group | awk -F: '{print $4}' | grep -E -c '(,)?'$default_user'(,|$)')"
+if [ "$user_has_that_sgid" -ge 1 ]; then
+  echo "User $username_to_add_to_ssh already a member of $SSH_GROUP_NAME GID"
+  echo
+  default_user=
 fi
 
-# Add user to SSH group: who can log into this host?
-echo "Executing: sudo addgroup $SSH_USER $SSH_GROUP_NAME"
-sudo usermod -a -G "$SSH_GROUP_NAME" "$SSH_USER"
-RETSTS=$?
-if [ $RETSTS -ne 0 ]; then
-  echo "Unable to add '$SSH_USER' user to '$SSH_GROUP_NAME' group: Error $RETSTS"
-  exit $RETSTS
+if [ $UID -ne 0 ]; then
+  SUDO_BIN="/usr/bin/sudo"
 fi
-echo ""
+
+echo "Preparing to execute:"
+echo "   $SUDO_BIN usermod -a -G $SSH_GROUP_NAME $username_to_add_to_ssh"
+if [ $UID -ne 0 ]; then
+  read -rp "Execute above 'sudo' command? (N/y): " -ein
+  REPLY="${REPLY:0:1}"
+else
+  REPLY='y'
+fi
+if [ "$REPLY" == 'y' ]; then
+
+  # Add user to SSH group: who can log into this host?
+  $SUDO_BIN usermod -a -G "$SSH_GROUP_NAME" "$username_to_add_to_ssh"
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Unable to add '$username_to_add_to_ssh' user to '$SSH_GROUP_NAME' group: Error $retsts"
+    exit $retsts
+  fi
+fi
+echo
 
 echo "Done."
 

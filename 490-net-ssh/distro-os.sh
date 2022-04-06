@@ -18,34 +18,34 @@ source /etc/os-release
 # libdir and $HOME are two separate grouping (that Fedora, et. al. merged)
 case $ID in
   debian|devuan)
-    DISTRO_PREFIX="/usr"
+    distro_prefix="/usr"
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""
-    DISTRO_SYSCONFDIR="/etc"
+    distro_sysconfdir="/etc"
     DEFAULT_LIB_DIRSPEC="/var/lib"
     WHEEL_GROUP="sudo"
     ;;
   centos|fedora|redhat)
-    DISTRO_PREFIX="/usr"
+    distro_prefix="/usr"
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""
-    DISTRO_SYSCONFDIR="/etc"
+    distro_sysconfdir="/etc"
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
   arch)
-    DISTRO_PREFIX="/usr"
+    distro_prefix="/usr"
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""
-    DISTRO_SYSCONFDIR="/etc"
+    distro_sysconfdir="/etc"
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
   arch)
-    DISTRO_PREFIX="/usr"
+    distro_prefix="/usr"
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""
-    DISTRO_SYSCONFDIR="/etc"
+    distro_sysconfdir="/etc"
     DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
     WHEEL_GROUP="wheel"
     ;;
@@ -56,8 +56,8 @@ case $ID in
 esac
 
 # Vendor-specific autotool/autoconf
-prefix="${prefix:-${DISTRO_PREFIX}}"
-sysconfdir="${sysconfdir:-${DISTRO_SYSCONFDIR}}"
+prefix="${prefix:-${distro_prefix}}"
+sysconfdir="${sysconfdir:-${distro_sysconfdir}}"
 exec_prefix="${exec_prefix:-${DISTRO_EXEC_PREFIX}}"
 libdir="${libdir:-"${DEFAULT_LIB_DIRSPEC}"}"
 libexecdir="${libexecdir:-"${exec_prefix}/libexec"}"

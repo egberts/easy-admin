@@ -22,13 +22,56 @@ echo
 
 source ./maintainer-ssh-openssh.sh
 
+function sshd_syntax_check()
+{
+  if [ "$SUDO_REQUIRED_SSHD" -ge 1 ]; then
+    SUDO_BIN="/usr/bin/sudo"
+    exit
+  fi
+    
+  # Fake generate throwaway host key for syntax-checking effort
+  temp_throwaway_key="fake-ssh-keys-$USER.key"
+  ssh-keygen \
+    -t ed25519 \
+    -f "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
+    -q \
+    -N ""
+
+  # Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
+  echo "Checking sshd_config syntax ..."
+  $SUDO_BIN /usr/sbin/sshd -T -t \
+    -f "${BUILDROOT}${SSHD_CONFIG_FILESPEC}" \
+    -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
+    -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
+    >/dev/null 2>&1
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error during ssh config syntax checking."
+    echo "Showing sshd_config output"
+    $SUDO_BIN /usr/sbin/sshd \
+      -T \
+      -t \
+      -f "${BUILDROOT}${SSHD_CONFIG_FILESPEC}" \
+      -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
+      -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}"
+    rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
+    rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
+    exit "$retsts"
+  fi
+  echo "${BUILDROOT}$SSHD_CONFIG_FILESPEC passes syntax-checker."
+  echo
+  rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
+  rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
+}
+
+
 if [ "$BUILD_ABSOLUTE" -eq 0 ]; then
   readonly FILE_SETTINGS_FILESPEC="${BUILD_DIRNAME}/file-settings-openssh-server.sh"
   rm -f "${FILE_SETTINGS_FILESPEC}"
 fi
 
 # Check if root takes a password locally on this host
-WARNING_NO_ROOT_LOGIN=0
+warning_no_root_login=0
 
 if [ "$USER" == "root" ]; then
   # We are forcing no-root login permitted here
@@ -36,14 +79,14 @@ if [ "$USER" == "root" ]; then
   # log back in as non-root and become root
 
   # Check for '!' substring in root entry of /etc/shadow file.
-  ROOT_LOGIN_PWD="$(grep "^root:" /etc/shadow | awk -F: '{ print $2; }')"
-  if [[ "$ROOT_LOGIN_PWD" == *'!'* ]]; then
-    WARNING_NO_ROOT_LOGIN=1
+  root_login_pwd="$(grep "^root:" /etc/shadow | awk -F: '{ print $2; }')"
+  if [[ "$root_login_pwd" == *'!'* ]]; then
+    warning_no_root_login=1
   fi
 
   # Check for '*' substring in root entry of /etc/shadow file.
-  if [[ "$ROOT_LOGIN_PWD" == *'*'* ]]; then
-    WARNING_NO_ROOT_LOGIN=1
+  if [[ "$root_login_pwd" == *'*'* ]]; then
+    warning_no_root_login=1
   fi
   echo "This host has no direct root login (only sudo)"
 else
@@ -52,13 +95,15 @@ fi
 echo
 
 # Check if anyone has 'sudo' group access on this host
-SUDO_USERS_BY_GROUP="$(grep "^$WHEEL_GROUP:" /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SUDO_USERS_BY_GROUP" ]; then
+sudo_users_by_group="$(grep "^$WHEEL_GROUP:" /etc/group | awk -F: '{ print $4; }')"
+if [ -z "$sudo_users_by_group" ]; then
   echo "There is no user account involving with the '$WHEEL_GROUP' group; "
   echo "... Add a 'ssh' supplemental group to qualified user(s)."
+  echo "... Do not do this step on a bastion SSH server for anyone."
+  echo "... Such a bastion SSH server can only be root-login via a tty1"
 
   # Well, no direct root and no sudo-able user account, this is rather bad.
-  if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
+  if [ $warning_no_root_login -ne 0 ]; then
     echo "no root access possible from non-root"
     echo
     echo "You probably need to run:"
@@ -73,8 +118,8 @@ if [ -z "$SUDO_USERS_BY_GROUP" ]; then
 fi
 
 # Check if 'sshd' group exist
-SSHD_GROUP_FOUND="$(grep -c "^${SSHD_GROUP_NAME}:" /etc/group)"
-if [ "$SSHD_GROUP_FOUND" -eq 0 ]; then
+sshd_group_found="$(grep -c "^${SSHD_GROUP_NAME}:" /etc/group)"
+if [ "$sshd_group_found" -eq 0 ]; then
   echo "There is no '$SSHD_GROUP_NAME' group; "
   echo "Other process may view memory of SSH daemon process"
   echo "To add daemon access by UNIX group, run:"
@@ -85,8 +130,8 @@ if [ "$SSHD_GROUP_FOUND" -eq 0 ]; then
 fi
 
 # Check if 'ssh' group exist
-SSH_GROUP_FOUND="$(grep -c "^${SSH_GROUP_NAME}:" /etc/group)"
-if [ "$SSH_GROUP_FOUND" -eq 0 ]; then
+ssh_group_found="$(grep -c "^${SSH_GROUP_NAME}:" /etc/group)"
+if [ "$ssh_group_found" -eq 0 ]; then
   echo "There is no '$SSH_GROUP_NAME' group; "
   echo "no remote access possible by this UNIX group name."
   echo "To add remote access by UNIX group, run:"
@@ -97,8 +142,8 @@ if [ "$SSH_GROUP_FOUND" -eq 0 ]; then
 fi
 
 # Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "^${SSH_GROUP_NAME}:" /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SSH_USERS_BY_GROUP" ]; then
+ssh_users_by_group="$(grep "^${SSH_GROUP_NAME}:" /etc/group | awk -F: '{ print $4; }')"
+if [ -z "$ssh_users_by_group" ]; then
   echo "There is no one in the '$GROUP_NAME' group; "
   echo "Anyone can ssh outward."
   echo "Anyone can ssh inbound."
@@ -113,19 +158,19 @@ if [ -z "$SSH_USERS_BY_GROUP" ]; then
 fi
 
 # Only the first copy is saved as the backup
-if [ ! -f "${sshd_config_filespec}.backup" ]; then
+if [ ! -f "${SSHD_CONFIG_FILESPEC}.backup" ]; then
   if [ "$BUILD_ABSOLUTE" -eq 1 ]; then
-    mv "$sshd_config_filespec" "${sshd_config_filespec}.backup"
+    mv "$SSHD_CONFIG_FILESPEC" "${SSHD_CONFIG_FILESPEC}.backup"
   fi
 fi
 
 # Update the SSH server settings
 #
 
-echo "Creating ${BUILDROOT}${CHROOT_DIR}$sshd_config_filespec ..."
-cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$SSHD_CONFIG_FILESPEC ..."
+cat << SSHD_EOF | tee "${BUILDROOT}$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
 #
-# File: $sshd_config_filename
+# File: $SSHD_CONFIG_FILENAME
 # Path: $extended_sysconfdir
 # Title: SSH server configuration file
 #
@@ -171,91 +216,70 @@ cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
 # * Channel/Connection Layer
 
 SSHD_EOF
-flex_chmod 640 "$sshd_config_filespec"
-flex_chown "root:$SSHD_GROUP_NAME" "$sshd_config_filespec"
+flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
+flex_chown "root:$SSHD_GROUP_NAME" "$SSHD_CONFIG_FILESPEC"
 
 
 if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
 
-  cat << SSHD_EOF | tee -a "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
-  include "${sshd_configd_dirspec}/*.conf"
+  cat << SSHD_EOF | tee -a "${BUILDROOT}$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
+  include "${SSHD_CONFIGD_DIRSPEC}/*.conf"
 
 SSHD_EOF
 
-  flex_mkdir "$sshd_configd_dirspec"
-  flex_chown "root:$SSHD_GROUP_NAME" "$sshd_configd_dirspec"
-  flex_chmod 750 "$sshd_configd_dirspec"
+  flex_ckdir "$SSHD_CONFIGD_DIRSPEC"
+  flex_chown "root:$SSHD_GROUP_NAME" "$SSHD_CONFIGD_DIRSPEC"
+  flex_chmod 750 "$SSHD_CONFIGD_DIRSPEC"
 
-  cp "${sshd_configd_dirname}"/*.conf "$BUILDROOT$sshd_configd_dirspec"/
+  cp "${SSHD_CONFIGD_DIRNAME}"/*.conf "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
   pushd .
-  cd "${sshd_configd_dirname}"
+  cd "${SSHD_CONFIGD_DIRNAME}"
   conf_list="$(find . -maxdepth 1 -name "*.conf")"
   popd
   for this_subconf_file in $conf_list; do
-    flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
-    flex_chmod 640 "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
+    flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
+    flex_chmod 640 "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
   done
 else
   exit 123
 #  otherwise, we do not have 'include' directive option available in openssh daemon config file
 
   # concatenate all the config files together into "/etc/ssh/sshd_config".
-  conf_list="$(find "${MINI_REPO}/${sshd_configd_dirspec}" -maxdepth 1 -name "*.conf")"
+  conf_list="$(find "${MINI_REPO}/${SSHD_CONFIGD_DIRSPEC}" -maxdepth 1 -name "*.conf")"
   for this_subconf_file in $conf_list; do
-    cat "$this_subconf_file" >> "$BUILDROOT$sshd_config_filespec"
+    cat "$this_subconf_file" >> "$BUILDROOT$SSHD_CONFIG_FILESPEC"
   done
-  flex_chown "root:$SSHD_GROUP_NAME" "$sshd_config_filespec"
-  flex_chmod 640 "$sshd_config_filespec"
+  flex_chown "root:$SSHD_GROUP_NAME" "$SSHD_CONFIG_FILESPEC"
+  flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
 fi
 
-# Fake generate throwaway host key for syntax-checking effort
-TEMP_THROWAWAY_KEY="fake-ssh-keys-$USER.key"
-ssh-keygen \
-    -t ed25519 \
-    -f "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}" \
-    -q \
-    -N ""
-
-# Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
-echo "Checking sshd_config syntax ..."
-sudo /usr/sbin/sshd -T -t \
-    -f "${BUILDROOT}${sshd_config_filespec}" \
-    -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
-    -h "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}" \
-    >/dev/null 2>&1
-retsts=$?
-if [ $retsts -ne 0 ]; then
-  echo "Error during ssh config syntax checking."
-  echo "Showing sshd_config output"
-  sudo /usr/sbin/sshd \
-      -T \
-      -t \
-      -f "${BUILDROOT}${sshd_config_filespec}" \
-      -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
-      -h "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}"
-  rm "${BUILDROOT}${CHROOT_DIR}/$TEMP_THROWAWAY_KEY"
-  rm "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}.pub"
-  exit "$retsts"
+if [ "$SYNTAX_CHECKABLE_SSHD" -ge 1 ]; then
+  if [ "$SUDO_REQUIRED_SSHD" -ge 1 ]; then
+    read -rp "Use sudo to perform passive syntax checking on $SSHD_CONFIG_FILESPEC? (y/N): " 
+    if [ "${REPLY:0:1}" == 'y' ]; then
+      sshd_syntax_check
+    fi
+  else
+    sshd_syntax_check
+  fi
+else
+  echo "No syntax checking available on $SSHD_CONFIG_FILESPEC without 'sudo'."
 fi
-echo "${BUILDROOT}$sshd_config_filespec passes syntax-checker."
-echo
-rm "${BUILDROOT}${CHROOT_DIR}/$TEMP_THROWAWAY_KEY"
-rm "${BUILDROOT}${CHROOT_DIR}/${TEMP_THROWAWAY_KEY}.pub"
 
 # Check if non-root user has 'ssh' supplementary group membership
 
-FOUND=0
-USERS_IN_SSH_GROUP="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4 }')"
-for this_users in $USERS_IN_SSH_GROUP; do
+found_a_user_with_access=0
+users_in_ssh_group="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4 }')"
+for this_users in $users_in_ssh_group; do
   for this_user in $(echo "$this_users" | sed 's/,/ /g' | xargs -n1); do
     if [ "$this_user" == "$USER" ]; then
       echo "User ${USER} has access to this hosts SSH server"
-      FOUND=1
+      found_a_user_with_access=1
     fi
   done
 done
 
-if [ $FOUND -eq 0 ]; then
+if [ $found_a_user_with_access -eq 0 ]; then
   echo "User ${USER} cannot access this SSH server here."
   # check if this is root (and root passwd is disabled)
   if [ "$USER" != "root" ]; then

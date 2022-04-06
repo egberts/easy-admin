@@ -17,7 +17,7 @@
 echo "Creating SSH client configuration files..."
 echo ""
 MINI_REPO="${PWD}"
-OPENSSH_SSH_BIN_FILESPEC="/usr/bin/ssh"
+openssh_ssh_bin_filespec="/usr/bin/ssh"
 
 function check_redhat_crypto_policy()
 {
@@ -38,32 +38,19 @@ source ./maintainer-ssh-openssh.sh
 case $ID in
   debian|devuan)
     ;;
-  centos)
-    check_redhat_crypto_policy
-    ;;
-  fedora)
-    check_redhat_crypto_policy
-    ;;
-  redhat)
+  centos|fedora|redhat)
     check_redhat_crypto_policy
     ;;
 esac
 
-DEFAULT_ETC_CONF_DIRNAME="ssh"
-
 readonly FILE_SETTINGS_FILESPEC="$BUILDROOT/file-settings-openssh-client.sh"
 rm -f "$FILE_SETTINGS_FILESPEC"
 
-REPO_DIR="$PWD/$ssh_configd_dirname"
+repo_dirspec="$MINI_REPO/$SSH_CONFIGD_DIRNAME"
 
 
 echo "Check the OpenSSH client for appropriate file permission settings"
 echo ""
-
-if [ -z "$ssh_bin_filespec" ]; then
-  echo "SSH client binary is not found; aborted."
-  exit 9
-fi
 
 # Check if 'ssh' client is useable at file permission level
 ssh_bin_filespec="$(whereis ssh|awk '{print $2;}')"
@@ -80,8 +67,8 @@ if [ "$ssh_perm" -gt "750" ]; then
   echo "  chmod o-rwx $ssh_bin_filespec"
 else
   # Check if anyone has 'ssh' (client) group access on this host
-  SSH_USERS_BY_GROUP="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4; }' | xargs -n1 )"
-  if [ -z "$SSH_USERS_BY_GROUP" ]; then
+  ssh_users_by_group="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4; }' | xargs -n1)"
+  if [ -z "$ssh_users_by_group" ]; then
     echo "There is no one in the '$SSH_GROUP_NAME' group; "
     echo "The $ssh_bin_filespec has restrictive $ssh_perm file permission;"
     echo "Only user with '$ssh_bin_group' supplemental group can use this 'ssh' client binary"
@@ -94,15 +81,15 @@ fi
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.
-ABSPATH="$(dirname "$BUILDROOT")"
-if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
+absolute_dirname="$(dirname "$BUILDROOT")"
+if [ "$absolute_dirname" != "." ] && [ "${absolute_dirname:0:1}" != '/' ]; then
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
   echo "We are backing up old SSH settings"
   # Only the first copy is saved as the backup
-  if [ ! -f "${ssh_config_filespec}.backup" ]; then
-    BACKUP_FILENAME=".backup-$(date +'%Y%M%d%H%M')"
-    echo "Moving /etc/ssh/* to /etc/ssh/${BACKUP_FILENAME}/ ..."
-    mv "$ssh_config_filespec" "${ssh_config_filespec}.backup"
+  if [ ! -f "${SSH_CONFIG_FILESPEC}.backup" ]; then
+    backup_filename=".backup-$(date +'%Y%M%d%H%M')"
+    echo "Moving /etc/ssh/* to /etc/ssh/${backup_filename}/ ..."
+    mv "$SSH_CONFIG_FILESPEC" "${SSH_CONFIG_FILESPEC}.backup"
     retsts=$?
     if [ $retsts -ne 0 ]; then
       echo "ERROR: Failed to create a backup of /etc/ssh/*"
@@ -123,27 +110,27 @@ else
   } >> "$FILE_SETTINGS_FILESPEC"
 fi
 
-mkdir -p "$BUILDROOT$ssh_configd_dirspec"
+mkdir -p "$BUILDROOT$SSH_CONFIGD_DIRSPEC"
 
 
 
 # Update the SSH server settings
 #
 
-TEST_SSH_CONFIG_FILESPEC="build/${ssh_config_filename}.build-test-only"
-TEST_SSH_CONFIGD_DIRSPEC="build/${ssh_configd_dirname}"
+test_ssh_config_filespec="build/${SSH_CONFIG_FILENAME}.build-test-only"
+test_ssh_configd_dirspec="build/${SSH_CONFIGD_DIRNAME}"
 
 DATE="$(date)"
-echo "Creating $TEST_SSH_CONFIG_FILESPEC ..."
-cat << TEST_SSH_EOF | tee "$TEST_SSH_CONFIG_FILESPEC" >/dev/null
-include "${TEST_SSH_CONFIGD_DIRSPEC}/*.conf"
+echo "Creating $test_ssh_config_filespec ..."
+cat << TEST_SSH_EOF | tee "$test_ssh_config_filespec" >/dev/null
+include "${test_ssh_configd_dirspec}/*.conf"
 TEST_SSH_EOF
 
-echo "Creating ${BUILDROOT}$ssh_config_filespec ..."
-cat << SSH_EOF | tee "${BUILDROOT}${ssh_config_filespec}" >/dev/null
+echo "Creating ${BUILDROOT}$SSH_CONFIG_FILESPEC ..."
+cat << SSH_EOF | tee "${BUILDROOT}${SSH_CONFIG_FILESPEC}" >/dev/null
 #
 # File: $SSH_CONFIG_FILENAME
-# Path: $openssh_config_dirspec
+# Path: $OPENSSH_CONFIG_DIRSPEC
 # Title: SSH client configuration file
 #
 # Edition: ssh(8) v8.4p1 compiled-default
@@ -160,42 +147,42 @@ cat << SSH_EOF | tee "${BUILDROOT}${ssh_config_filespec}" >/dev/null
 # follows (note that keywords are case-insensitive and
 # arguments are case-sensitive):
 
-include "${ssh_configd_dirspec}/*.conf"
+include "${SSH_CONFIGD_DIRSPEC}/*.conf"
 SSH_EOF
-flex_chmod 640 "$ssh_config_filespec"
-flex_chown "root:$SSH_GROUP_NAME" "$ssh_config_filespec"
+flex_chmod 640 "$SSH_CONFIG_FILESPEC"
+flex_chown "root:$SSH_GROUP_NAME" "$SSH_CONFIG_FILESPEC"
 
-if [ ! -d "$REPO_DIR" ]; then
-  echo "Repo directory $REPO_DIR missing; aborted."
+if [ ! -d "$repo_dirspec" ]; then
+  echo "Repo directory $repo_dirspec missing; aborted."
   exit 9
 fi
-flex_mkdir ${ssh_configd_dirspec}
-cp ${REPO_DIR}/* "${BUILDROOT}${ssh_configd_dirspec}/"
+flex_ckdir ${SSH_CONFIGD_DIRSPEC}
+cp ${repo_dirspec}/* "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
 
-flex_chmod 750 "$ssh_configd_dirspec"
-flex_chown "root:$SSH_GROUP_NAME" "$ssh_configd_dirspec"
+flex_chmod 750 "$SSH_CONFIGD_DIRSPEC"
+flex_chown "root:$SSH_GROUP_NAME" "$SSH_CONFIGD_DIRSPEC"
 
-CONF_LIST="$(find "${REPO_DIR}" -maxdepth 1 -name "*.conf")"
-for this_subconf_file in $CONF_LIST; do
+config_list="$(find "${repo_dirspec}" -maxdepth 1 -name "*.conf")"
+for this_subconf_file in $config_list; do
   base_name="$(basename "$this_subconf_file")"
-  cp "$this_subconf_file" "${BUILDROOT}${ssh_configd_dirspec}/"
-  flex_chmod 640 "${ssh_configd_dirspec}/$base_name"
-  flex_chown "root:$SSH_GROUP_NAME" "${ssh_configd_dirspec}/$base_name"
+  cp "$this_subconf_file" "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
+  flex_chmod 640 "${SSH_CONFIGD_DIRSPEC}/$base_name"
+  flex_chown "root:$SSH_GROUP_NAME" "${SSH_CONFIGD_DIRSPEC}/$base_name"
 done
 
 
-echo "Checking ${BUILDROOT}${ssh_config_filespec} for any syntax error ..."
-$OPENSSH_SSH_BIN_FILESPEC -G \
-    -F ${TEST_SSH_CONFIG_FILESPEC} \
+echo "Checking ${BUILDROOT}${SSH_CONFIG_FILESPEC} for any syntax error ..."
+$openssh_ssh_bin_filespec -G \
+    -F ${test_ssh_config_filespec} \
     localhost \
     >/dev/null 2>&1
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
   echo "Error during ssh config syntax checking. Showing error output"
-  echo "Cmd: ssh -G -v -F ${TEST_SSH_CONFIG_FILESPEC} localhost"
+  echo "Cmd: ssh -G -v -F ${test_ssh_config_filespec} localhost"
   echo "Showing ssh_config output"
-  $OPENSSH_SSH_BIN_FILESPEC -G -v \
-      -F "${TEST_SSH_CONFIG_FILESPEC}" \
+  $openssh_ssh_bin_filespec -G -v \
+      -F "${test_ssh_config_filespec}" \
       localhost
   exit "$retsts"
 fi
@@ -204,18 +191,18 @@ echo ""
 
 # Check if non-root user has 'ssh' supplementary group membership
 
-FOUND=0
-USERS_IN_SSH_GROUP="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4 }' | xargs -n1)"
-for THIS_USERS in $USERS_IN_SSH_GROUP; do
+found_a_user_with_access=0
+users_in_ssh_group="$(grep "$SSH_GROUP_NAME" /etc/group | awk -F: '{ print $4 }' | xargs -n1)"
+for THIS_USERS in $users_in_ssh_group; do
   for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
     if [ "${this_user}" == "${USER}" ]; then
       echo "User ${USER} has access to this hosts SSH server"
-      FOUND=1
+      found_a_user_with_access=1
     fi
   done
 done
 
-if [ $FOUND -eq 0 ]; then
+if [ $found_a_user_with_access -eq 0 ]; then
   echo "No one will be able to SSH outward of this box:"
   echo "No user in '$SSH_GROUP_NAME' group."
   echo "User ${USER} cannot access this SSH server here."
@@ -223,7 +210,7 @@ if [ $FOUND -eq 0 ]; then
   echo "  usermod -a -G ${SSH_GROUP_NAME} ${USER}"
   exit 1
 else
-  echo "Only these users can use '${SSH_GROUP_NAME}' tools: '$USERS_IN_SSH_GROUP'"
+  echo "Only these users can use '${SSH_GROUP_NAME}' tools: '$users_in_ssh_group'"
   echo ""
   echo "If you have non-root apps that also uses '$ssh_bin_filespec', then add that user"
   echo "to the '$SSH_GROUP_NAME' supplemental group; run:"
