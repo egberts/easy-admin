@@ -23,32 +23,32 @@ source ./maintainer-ssh-openssh.sh
 # log back in as non-root and become root
 
 # Check if root takes a password locally on this host
-WARNING_NO_ROOT_LOGIN=0
+warning_no_root_login=0
 
 # Check for '!' substring in root entry of /etc/shadow file.
 if [ -r /etc/shadow ]; then
-  ROOT_LOGIN_PWD="$(grep root /etc/shadow | awk -F: '{ print $2; }')"
-  if [[ "$ROOT_LOGIN_PWD" == *'!'* ]]; then
-    WARNING_NO_ROOT_LOGIN=1
+  root_login_pwd="$(grep root /etc/shadow | awk -F: '{ print $2; }')"
+  if [[ "$root_login_pwd" == *'!'* ]]; then
+    warning_no_root_login=1
   fi
 else
   echo "Skipping the check for no-root-login condition..."
 fi
 
 # Check for '*' substring in root entry of /etc/shadow file.
-if [[ "$ROOT_LOGIN_PWD" == *'*'* ]]; then
-  WARNING_NO_ROOT_LOGIN=1
+if [[ "$root_login_pwd" == *'*'* ]]; then
+  warning_no_root_login=1
   echo "This host has no direct root login for SSH client."
 fi
 
 # Check if anyone has 'sudo' group access on this host
-SUDO_USERS_BY_GROUP="$(grep "$WHEEL_NAME" /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SUDO_USERS_BY_GROUP" ]; then
+sudo_users_by_group="$(grep "$WHEEL_NAME" /etc/group | awk -F: '{ print $4; }')"
+if [ -z "$sudo_users_by_group" ]; then
   echo "There is no user account involving with the '$WHEEL_NAME' group; "
   echo "... You may want to add 'ssh' supplemental group to various users."
 
   # Well, no direct root and no sudo-able user account, this is rather bad.
-  if [ $WARNING_NO_ROOT_LOGIN -ne 0 ]; then
+  if [ $warning_no_root_login -ne 0 ]; then
     echo "no root access possible from non-root"
     echo "Run:"
     echo "  usermod -a -G $WHEEL_NAME <your-user-name>"
@@ -58,8 +58,8 @@ fi
 echo ""
 
 # Check if 'sftponly' group exist
-FOUND_SFTPUSERS_GROUP="$(grep "$SSH_SFTP_GROUP_NAME" /etc/group | awk -F: '{ print $1; }')"
-if [ -z "$FOUND_SFTPUSERS_GROUP" ]; then
+found_sftpusers_group="$(grep "$SSH_SFTP_GROUP_NAME" /etc/group | awk -F: '{ print $1; }')"
+if [ -z "$found_sftpusers_group" ]; then
   echo "There is no one in the '$SSH_SFTP_GROUP_NAME' group; "
   echo "ALL remote file copy possible by ALL users."
   echo ""
@@ -72,12 +72,12 @@ if [ -z "$FOUND_SFTPUSERS_GROUP" ]; then
 fi
 echo ""
 
-SFTP_SERVER_BINSPEC="${libdir}/${MAINT_SSH_DIR_NAME}/sftp-server"
+sftp_server_binspec="${libdir}/${MAINT_SSH_DIR_NAME}/sftp-server"
 
 # Even if we are root, we abide by BUILDROOT directive as to
 # where the final configuration settings goes into.
-ABSPATH="$(dirname "$BUILDROOT")"
-if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
+absolute_dirname="$(dirname "$BUILDROOT")"
+if [ "$absolute_dirname" != "." ] && [ "${absolute_dirname:0:1}" != '/' ]; then
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
 else
   echo "Creating subdirectories to $BUILDROOT ..."
@@ -97,12 +97,12 @@ else
 fi
 
 # Create the build script file before checking if anyone is using it.
-flex_chown root:${SSH_SFTP_GROUP_NAME} "$SFTP_SERVER_BINSPEC"
-flex_chmod 0750 "$SFTP_SERVER_BINSPEC"
+flex_chown root:${SSH_SFTP_GROUP_NAME} "$sftp_server_binspec"
+flex_chmod 0750 "$sftp_server_binspec"
 
 # Check if anyone has 'ssh' group access on this host
-SSH_USERS_BY_GROUP="$(grep "$SSH_SFTP_GROUP_NAME" /etc/group | awk -F: '{ print $4; }')"
-if [ -z "$SSH_USERS_BY_GROUP" ]; then
+ssh_users_by_group="$(grep "$SSH_SFTP_GROUP_NAME" /etc/group | awk -F: '{ print $4; }')"
+if [ -z "$ssh_users_by_group" ]; then
   echo "There is no one in the '$SSH_SFTP_GROUP_NAME' group; "
   echo "no remote file copy possible."
   echo ""
@@ -115,18 +115,18 @@ fi
 echo ""
 
 
-FOUND=0
-USERS_IN_SFTP_GROUP="$(grep "^${SSH_SFTP_GROUP_NAME}:" /etc/group | awk -F: '{ print $4 }')"
-for THIS_USERS in $USERS_IN_SFTP_GROUP; do
-  for this_user in $(echo "$THIS_USERS" | sed 's/,/ /g' | xargs -n1); do
+found_user_in_supplemental_group=0
+users_in_sftp_group="$(grep "^${SSH_SFTP_GROUP_NAME}:" /etc/group | awk -F: '{ print $4 }')"
+for this_user_in_sftp_sgid in $users_in_sftp_group; do
+  for this_user in $(echo "$this_user_in_sftp_sgid" | sed 's/,/ /g' | xargs -n1); do
     if [ "${this_user}" == "${USER}" ]; then
       echo "User ${USER} has access to this hosts SSH server"
-      FOUND=1
+      found_user_in_supplemental_group=1
     fi
   done
 done
 
-if [ $FOUND -eq 0 ]; then
+if [ $found_user_in_supplemental_group -eq 0 ]; then
   echo "No one will be able to \`scp\` to this box:"
   echo "No user in '$SSH_SFTP_GROUP_NAME' group."
   echo "User ${USER} cannot access this SFTP server here."
@@ -134,7 +134,7 @@ if [ $FOUND -eq 0 ]; then
   echo "  usermod -g ${SSH_SFTP_GROUP_NAME} ${USER}"
   exit 1
 else
-  echo "Only these users can use '${SSH_SFTP_GROUP_NAME}' tools: '$USERS_IN_SFTP_GROUP'"
+  echo "Only these users can use '${SSH_SFTP_GROUP_NAME}' tools: '$users_in_sftp_group'"
   echo
   echo "If you have non-root apps that also uses '${SSH_SFTP_GROUP_NAME}', then add that user"
   echo "to the '$SSH_SFTP_GROUP_NAME' supplemental group; run:"

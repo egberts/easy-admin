@@ -49,11 +49,10 @@ if [ "${BUILDROOT:0:1}" != '/' ]; then
   if [ -n "$CHROOT_DIR" ]; then
     flex_ckdir "$CHROOT_DIR"
   fi
-  flex_ckdir "${CHROOT_DIR}/$sysconfdir"
-  flex_ckdir "${CHROOT_DIR}/$extended_sysconfdir"
-  flex_ckdir "${CHROOT_DIR}/$VAR_DIRSPEC"
-  flex_ckdir "${CHROOT_DIR}/$VAR_LIB_DIRSPEC"
-  flex_ckdir "${CHROOT_DIR}/$VAR_LIB_SSH_DIRSPEC"
+  flex_ckdir "${CHROOT_DIR}$sysconfdir"
+  flex_ckdir "${CHROOT_DIR}$extended_sysconfdir"
+  flex_ckdir "${CHROOT_DIR}$VAR_DIRSPEC"
+  flex_ckdir "${CHROOT_DIR}$VAR_LIB_DIRSPEC"
   BUILD_ABSOLUTE=0
 else
   BUILD_ABSOLUTE=1
@@ -69,9 +68,11 @@ SSHD_CONFIG_FILESPEC="${OPENSSH_CONFIG_DIRSPEC}/$SSHD_CONFIG_FILENAME"
 # sshd_confd_dirspec="$extended_sysconfdir/sshd_config.d"
 
 # FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-ssh-common.sh"
-if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
-  if [ -f "$FILE_SETTINGS_FILESPEC" ]; then
-    rm -f "$FILE_SETTINGS_FILESPEC"
+if [ "$FILE_SETTING_PERFORM" == "true" ]; then
+  if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
+    if [ -f "$FILE_SETTINGS_FILESPEC" ]; then
+      rm -f "$FILE_SETTINGS_FILESPEC"
+    fi
   fi
 fi
 
@@ -79,8 +80,8 @@ fi
 
 case $ID in
   debian|devuan)
-    USER_NAME="ssh"
-    GROUP_NAME="ssh"
+    USER_NAME="ssh"  # to be replaced by SSH[D]_USER_NAME
+    GROUP_NAME="ssh"  # to be replaced by SSH[D]_GROUP_NAME
     SSH_USER_NAME="ssh"  # future proofing
     SSH_GROUP_NAME="ssh"  # future proofing
     SSHD_USER_NAME="sshd"  # future proofing
@@ -92,8 +93,8 @@ case $ID in
     WHEEL_GROUP="sudo"
     package_tarname="openssh"
     package_tarname="openssh"
-    systemd_unitname="TBD"
-    sysvinit_unitname="TBD"
+    systemd_unitname="ssh"
+    sysvinit_unitname="ssh"
     if [ "$VERSION_ID" -le 7 ]; then
       HAS_SSHD_CONFIG_D=0
       HAS_SSH_CONFIG_D=0
@@ -202,17 +203,16 @@ flex_ckdir "$sysconfdir"
 
 
 if [ 0 -ne 0 ]; then
-# We will assume that /etc/ssh is not installed, so create them anyway
-flex_mkdir "$extended_sysconfdir"
+  # We will assume that /etc/ssh is not installed, so create them anyway
+  flex_mkdir "$extended_sysconfdir"
 
-if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
-  flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
-fi
-exit
+  if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
+    flex_mkdir "$SSHD_CONFIGD_DIRSPEC"
+  fi
 
-if [ "$HAS_SSH_CONFIG_D" -ne 0 ]; then
-  flex_mkdir "$SSH_CONFIGD_DIRSPEC"
-fi
+  if [ "$HAS_SSH_CONFIG_D" -ne 0 ]; then
+    flex_mkdir "$SSH_CONFIGD_DIRSPEC"
+  fi
 fi  # [0 -ne 0] needs copying into other main SSH scripts
 
 SSH_FOUND=0
@@ -264,3 +264,6 @@ else
 fi
 
 SSHD_HOME_DIRSPEC="$( egrep "^${SSHD_USER_NAME}:" /etc/passwd | awk -F: '{print $6 }')"
+
+
+VAR_RUN_SSHD_DIRSPEC="${rundir}/sshd"

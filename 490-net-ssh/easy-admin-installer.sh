@@ -408,7 +408,32 @@ function flex_ckdir()
   #  exit 9
   #fi
 
-  build_root_this_dir="${BUILDROOT}${CHROOT_DIR}/$1"
+  # Checking BUILDROOT for correctness
+  if [ -n "$BUILDROOT" ]; then
+    if [ "${BUILDROOT:0:1}" == '/' ]; then
+      echo "WARNING: BUILDROOT is targeting current '/' root file system"
+    else
+      if [ "${BUILDROOT: -1:1}" == '/' ]; then
+        echo "ERROR: BUILDROOT has terminating '/', remove it"
+        exit 3
+      fi
+    fi
+  fi
+
+  # Checking CHROOT_DIR for correctness
+  if [ -n "$CHROOT_DIR" ]; then
+    if [ "${CHROOT_DIR:0:1}" == '/' ]; then
+      echo "ERROR: CHROOT_DIR does not start with '/'; remove it."
+      exit 9
+    else
+      if [ "${BUILDROOT: -1:1}" != '/' ]; then
+        echo "ERROR: CHROOT_DIR does not end with '/'; add it."
+        exit 3
+      fi
+    fi
+  fi
+
+  build_root_this_dir="${BUILDROOT}${CHROOT_DIR}$1"
 
   # If absolute, tread gently
   if [ "${BUILDROOT:0:1}" == '/' ]; then
@@ -715,5 +740,4 @@ function flex_chcon()
 # function replace_line()
 # {
 # }
-
 
