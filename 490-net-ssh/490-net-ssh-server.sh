@@ -295,7 +295,8 @@ fi
 ssh_keys_group_found="$(egrep "^${SSHKEY_GROUP_NAME}:" /etc/group)"
 if [ -n "$ssh_keys_group_found" ]; then
   echo "SSH key group ID found: $SSHKEY_GROUP_NAME in /etc/group"
-  file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"
+  # file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"
+  file_list="ssh_host_ed25519_key"
   for this_file in $file_list; do
     this_filespec="${extended_sysconfdir}/$this_file"
     flex_chmod 640 "$this_filespec"

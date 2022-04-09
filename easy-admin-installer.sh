@@ -513,11 +513,12 @@ function flex_chown()
 
   # now for the actual file-settings performance
   if [ "$FILE_SETTING_PERFORM" == 'true' ]; then
+    # Now do it without the BUILDROOT (as the script will be run at a later time)
     if [ -n "$DRY_RUN" ]; then
-      printf "chown %s \"%s\"\n" "${1}" "${BUILDROOT}$destdir_filespec"
+      printf "chown %s \"%s\"\n" "${1}" "$destdir_filespec"
     else
       # We do no error checking for non-root users, if they errored, they errored.
-      chown $1 "${BUILDROOT}$destdir_filespec"
+      chown $1 "$destdir_filespec"
     fi
   fi
 
@@ -529,7 +530,8 @@ function flex_chown()
         "${destdir_filespec}" \
         "$FILE_SETTINGS_FILESPEC"
     fi
-    printf "chown %s \"%s\"\n" "$1" "${BUILDROOT}$destdir_filespec" \
+    # Record command but without BUILDROOT
+    printf "chown %s \"%s\"\n" "$1" "$destdir_filespec" \
         >> "$FILE_SETTINGS_FILESPEC"
   fi
   unset destdir_filespec
@@ -574,10 +576,10 @@ function flex_chmod()
   # now for the actual file-settings performance
   if [ "$FILE_SETTING_PERFORM" == 'true' ]; then
     if [ -n "$DRY_RUN" ]; then
-      printf "chmod %s \"%s\"\n" "${1}" "${BUILDROOT}$destdir_filespec"
+      printf "chmod %s \"%s\"\n" "${1}" "$destdir_filespec"
     else
       # We do no error checking for non-root users, if they errored, they errored.
-      chmod $1 "${BUILDROOT}$destdir_filespec"
+      chmod $1 "$destdir_filespec"
     fi
   fi
 
@@ -589,7 +591,7 @@ function flex_chmod()
         "${destdir_filespec}" \
         "$FILE_SETTINGS_FILESPEC"
     fi
-    printf "chmod %s \"%s\"\n" "$1" "${BUILDROOT}$destdir_filespec" \
+    printf "chmod %s \"%s\"\n" "$1" "$destdir_filespec" \
         >> "$FILE_SETTINGS_FILESPEC"
   fi
   unset destdir_filespec
@@ -637,10 +639,10 @@ function flex_touch()
   # now for the actual file-settings performance
   if [ "$FILE_SETTING_PERFORM" == 'true' ]; then
     if [ -n "$DRY_RUN" ]; then
-      printf "touch %s\n" "${BUILDROOT}$destdir_filespec"
+      printf "touch %s\n" "$destdir_filespec"
     else
       # We do no error checking for non-root users, if they errored, they errored.
-      touch "${BUILDROOT}$destdir_filespec"
+      touch "$destdir_filespec"
     fi
   fi
 
@@ -651,7 +653,7 @@ function flex_touch()
         "${destdir_filespec}" \
         "$FILE_SETTINGS_FILESPEC"
     fi
-    printf "touch %s\n" "${BUILDROOT}$destdir_filespec" \
+    printf "touch %s\n" "$destdir_filespec" \
         >> "$FILE_SETTINGS_FILESPEC"
   fi
   unset destdir_filespec
@@ -693,7 +695,7 @@ function flex_chcon()
   if [ "$FILE_SETTING_PERFORM" == 'true' ]; then
     if [ -n "$DRY_RUN" ]; then
       printf "chcon system_u:object_r:%s:s0 to %s ...\n" \
-            "${1}" "${BUILDROOT}${CHROOT_DIR}$destdir_filespec"
+            "${1}" "$destdir_filespec"
     else
       # We do no error checking for non-root users, if they errored, they errored.
       selinuxenabled
@@ -713,7 +715,7 @@ function flex_chcon()
         "$FILE_SETTINGS_FILESPEC"
     fi
     printf "chcon system_u:object_r:%s:s0 %s\n" \
-            "${1}" "${BUILDROOT}${CHROOT_DIR}$destdir_filespec" \
+            "${1}" "$destdir_filespec" \
         >> "$FILE_SETTINGS_FILESPEC"
   fi
   unset destdir_filespec
