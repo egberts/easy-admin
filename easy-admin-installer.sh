@@ -61,6 +61,8 @@ myecho_no_n () ( z=''; for x; do printf "$z%s" "$x"; z=' '; done; )
 # Supports 8 arguments
 critical_section()
 {
+  local b retsts
+
   # Leverage file descriptior 9 as 'high-enough'
   b=$(basename "$0")
   (
@@ -77,7 +79,6 @@ critical_section()
   # Do not create a full file spec variable to replace this static string+$var
   # because any of a var content may contain just a "/".
   rm "/var/lock/.empty_lock_file_for_$b"
-  unset b
 }
 
 
@@ -115,6 +116,8 @@ critical_section()
 #
 real_dirname_noline()
 {
+  local filespec dirspec
+
   # get full filespec from a simple file
   filespec=${1:A}
 
@@ -138,6 +141,10 @@ real_dirname_noline()
 # Flexible mkdir()
 # Description:
 #   Make a directory
+#
+#   if FILE_SETTINGS_FILESPEC then generate script files of settings
+#   if no FILE_SETTINGS_FILESPEC then do nothing
+#
 # Globals:
 #   BUILDROOT - if undefined or '/', then there is no build but a direct install
 #   CHROOT_DIR - a full directory specification for chroot use.
@@ -149,6 +156,7 @@ real_dirname_noline()
 #   none
 ################################################################
 function flex_mkdir() {
+  local parent_dir destdir_dirspec
 
   if [ "${1:0:1}" != "/" ]; then
     echo "flex_mkdir: argument '$1' must be an absolute directory path"
@@ -174,11 +182,14 @@ function flex_mkdir() {
   fi
 
   if [ -n "$FILE_SETTINGS_FILESPEC" ]; then
-    echo "mkdir -p $destdir_dirspec" >> "$FILE_SETTINGS_FILESPEC"
+    build_dirspec="${BUILDROOT}${CHROOT_DIR}"
+    build_canonical="$(realpath "$build_dirspec")"
+    if [ "${build_canonical:0:1}" != '/' ]; then
+      echo "mkdir -p $destdir_dirspec" >> "$FILE_SETTINGS_FILESPEC"
+    fi
   else
     echo "\$dry-run: mkdir $destdir_dirspec"
   fi
-  unset destdir_dirspec
 }
 
 ###############################################################
@@ -203,6 +214,8 @@ function flex_mkdir() {
 ################################################################
 function flex_ckdir()
 {
+  local parent_dir
+
   echo "Checking for $1 directory ..."
   if [ -z "$1" ]; then
     echo "Must supply argument; aborted."
@@ -248,6 +261,7 @@ function flex_ckdir()
 #   none
 ################################################################
 function flex_chown() {
+  local destdir_filespec
 
   destdir_filespec="$(realpath -m "${CHROOT_DIR}${2}")"
 
@@ -262,7 +276,6 @@ function flex_chown() {
   else
     echo "\$dry-run: chown $1 $destdir_filespec"
   fi
-  unset destdir_dirspec
 }
 
 ###############################################################
@@ -281,6 +294,7 @@ function flex_chown() {
 #   none
 ################################################################
 function flex_chmod() {
+  local destdir_filespec
 
   destdir_filespec="$(realpath -m "${CHROOT_DIR}${2}")"
 
@@ -297,7 +311,6 @@ function flex_chmod() {
   else
     echo "\$dry-run chmod $1 $destdir_filespec"
   fi
-  unset destdir_dirspec
 }
 
 ###############################################################
@@ -316,6 +329,7 @@ function flex_chmod() {
 ################################################################
 
 function flex_touch() {
+  local destdir_filespec
 
   destdir_filespec="$(realpath -m "${CHROOT_DIR}${1}")"
 
@@ -350,6 +364,7 @@ function flex_touch() {
 ################################################################
 
 function flex_chcon() {
+  local destdir_filespec
 
   destdir_filespec="$(realpath -m "${CHROOT_DIR}${2}")"
 
@@ -372,7 +387,6 @@ function flex_chcon() {
   else
     echo "\$dry-run chcon $1 $destdir_filespec"
   fi
-  unset destdir_dirspec
 }
 
 # Wanted:
