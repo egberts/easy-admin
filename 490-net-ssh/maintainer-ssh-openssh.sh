@@ -19,7 +19,7 @@ BUILDROOT="${BUILDROOT:-${BUILD_DIRNAME}}"
 BUILD_SSH="${BUILDROOT}/partial-ssh"
 MINI_REPO="."
 
-source ./easy-admin-installer.sh
+source ../easy-admin-installer.sh
 
 DEFAULT_ETC_CONF_DIRNAME="ssh"
 
