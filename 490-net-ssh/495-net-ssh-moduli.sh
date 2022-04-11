@@ -66,6 +66,15 @@ temp_moduli_filespec="/tmp/${ssh_moduli_filename}-${ssh_moduli_bits}"
 temp_moduli_candidates_filespec="${temp_moduli_filespec}.candidates"
 temp_moduli_safe_filespec="${temp_moduli_filespec}.safe"
 
+touch "$temp_moduli_filespec"
+chmod og-rwx "$temp_moduli_filespec"
+
+touch "$temp_moduli_candidates_filespec"
+chmod og-rwx "$temp_moduli_candidates_filespec"
+
+touch "$temp_moduli_safe_filespec"
+chmod og-rwx "$temp_moduli_safe_filespec"
+
 echo "Generating ${ssh_moduli_bits}-bit moduli candidates (long time)..."
 echo "... in ${temp_moduli_candidates_filespec} ..."
 if [ "$ssh_keygen_version" -eq 0 ]; then
