@@ -442,7 +442,8 @@ search_sshd_keyvalue AllowGroups
 allow_groups="$KEYVALUE"
 
 # Pick up all the host_key files
-hostkeys_list="$(ls -1 ${BUILDROOT}${CHROOT_DIR}${extended_sysconfdir}/ssh_host_* \
+####hostkeys_list="$(ls -1 ${BUILDROOT}${CHROOT_DIR}${extended_sysconfdir}/ssh_host_* \
+hostkeys_list="$(ls -1 ${extended_sysconfdir}/ssh_host_* \
                  | grep -Ev '.pub$' \
                  | xargs )"
 
@@ -487,6 +488,13 @@ echo "  Allow Groups : $allow_groups"
 echo
 echo "Server config files:  $sshd_config_files_list"
 echo "Server hostkey files: $hostkeys_used_list"
+# hostkeys_used_list is the final absolute filespec inside a config file
+# hostkeys_list is the slippery BUILDROOT within this script
+# recouncil the two together somehow:  strip BUILDROOT or tack-on BUILDROOT?
+# try strip
+# instead of doing a combinatorial double-loop through a two-list
+# we could reduce a list (without a BUILDROOT) into a new list then
+# do a direct two-list compare
 if [ "$hostkeys_used_list" != "$hostkeys_list" ]; then
   echo WARN: remove unused hostkey files
   echo INFO: refer to 'HostKey' in sshd_config, et. al.
