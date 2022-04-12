@@ -243,9 +243,21 @@ SSHD_EOF
   echo "Copying $sshd_configd_bastion_dirname into $BUILDROOT$SSHD_CONFIGD_DIRSPEC ..."
   cp "${sshd_configd_bastion_dirname}"/*.conf "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
   pushd . >/dev/null 2>&1
+  #shellcheck disable=SC2164
   cd "${sshd_configd_bastion_dirname}"
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error in popd: errno $retsts; aborted."
+    exit $retsts
+  fi
   conf_list="$(find . -maxdepth 1 -name "*.conf")"
+  #shellcheck disable=SC2164
   popd > /dev/null 2>&1
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error in popd: errno $retsts; aborted."
+    exit $retsts
+  fi
   for this_subconf_file in $conf_list; do
     flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
     flex_chmod 640 "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
@@ -304,7 +316,7 @@ if [ $found_user_access -eq 0 ]; then
 fi
 
 # check keys
-ssh_keys_group_found="$(egrep "^${SSHKEY_GROUP_NAME}:" /etc/group)"
+ssh_keys_group_found="$(grep -E "^${SSHKEY_GROUP_NAME}:" /etc/group)"
 if [ -n "$ssh_keys_group_found" ]; then
   echo "SSH key group ID found: $SSHKEY_GROUP_NAME in /etc/group"
   file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"

@@ -41,9 +41,9 @@ function sshd_syntax_check()
   echo "Checking sshd_config syntax ..."
   $SUDO_BIN /usr/sbin/sshd -T -t \
     -f "${BUILDROOT}${SSHD_CONFIG_FILESPEC}" \
-    -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
     -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
     >/dev/null 2>&1
+    # -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
   retsts=$?
   if [ $retsts -ne 0 ]; then
     echo "Error during ssh config syntax checking."
@@ -52,8 +52,8 @@ function sshd_syntax_check()
       -T \
       -t \
       -f "${BUILDROOT}${SSHD_CONFIG_FILESPEC}" \
-      -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
       -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}"
+      # -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
     rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
     rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
     exit "$retsts"
@@ -233,9 +233,20 @@ SSHD_EOF
 
   cp "${SSHD_CONFIGD_DIRNAME}"/*.conf "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
   pushd .
-  cd "${SSHD_CONFIGD_DIRNAME}"
+  #shellcheck disable=SC2164
+  cd "${SSHD_CONFIGD_DIRNAME}" ; retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error during 'cd ${SSHD_CONFIGD_DIRNAME}'; errno $retsts; aborted."
+    exit $retsts
+  fi
+
   conf_list="$(find . -maxdepth 1 -name "*.conf")"
-  popd
+  #shellcheck disable=SC2164
+  popd ; retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error during popd; errno $retsts; aborted."
+    exit $retsts
+  fi
   for this_subconf_file in $conf_list; do
     flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
     flex_chmod 640 "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
@@ -292,14 +303,18 @@ if [ $found_a_user_with_access -eq 0 ]; then
 fi
 
 # check keys
-ssh_keys_group_found="$(egrep "^${SSHKEY_GROUP_NAME}:" /etc/group)"
+ssh_keys_group_found="$(grep -E "^${SSHKEY_GROUP_NAME}:" /etc/group)"
 if [ -n "$ssh_keys_group_found" ]; then
   echo "SSH key group ID found: $SSHKEY_GROUP_NAME in /etc/group"
   # file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"
   file_list="ssh_host_ed25519_key"
   for this_file in $file_list; do
     this_filespec="${extended_sysconfdir}/$this_file"
-    flex_chmod 640 "$this_filespec"
+    if [ "$SSHKEY_GROUP_NAME" == 'root' ]; then
+      flex_chmod 600 "$this_filespec"
+    else
+      flex_chmod 640 "$this_filespec"
+    fi
     flex_chown "root:$SSHKEY_GROUP_NAME" "$this_filespec"
     pub_file="${extended_sysconfdir}/${this_file}.pub"
     flex_chmod 644 "$pub_file"

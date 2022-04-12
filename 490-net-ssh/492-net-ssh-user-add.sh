@@ -33,6 +33,7 @@ if [ -z "$username_to_add_to_ssh" ]; then
 fi
 
 # check if user already has that supplemental group ID
+#shellcheck disable=SC2086
 user_has_that_sgid="$(grep -E '^ssh:' /etc/group | awk -F: '{print $4}' | grep -E -c '(,)?'$default_user'(,|$)')"
 if [ "$user_has_that_sgid" -ge 1 ]; then
   echo "User $username_to_add_to_ssh already a member of $SSH_GROUP_NAME GID"

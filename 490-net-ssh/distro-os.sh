@@ -1,4 +1,5 @@
 #
+#shellcheck disable=SC2148
 # File: distro-os.sh
 # Title: Determine OS distro
 #
@@ -26,14 +27,6 @@ case $ID in
     WHEEL_GROUP="sudo"
     ;;
   centos|fedora|redhat)
-    distro_prefix="/usr"
-    DISTRO_EXEC_PREFIX="/usr"
-    DISTRO_LOCALSTATEDIR=""
-    distro_sysconfdir="/etc"
-    DEFAULT_LIB_DIRSPEC="/var"  # WTF?!
-    WHEEL_GROUP="wheel"
-    ;;
-  arch)
     distro_prefix="/usr"
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""

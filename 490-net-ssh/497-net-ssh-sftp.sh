@@ -97,7 +97,7 @@ else
 fi
 
 # Create the build script file before checking if anyone is using it.
-flex_chown root:${SSH_SFTP_GROUP_NAME} "$sftp_server_binspec"
+flex_chown "root:${SSH_SFTP_GROUP_NAME}" "$sftp_server_binspec"
 flex_chmod 0750 "$sftp_server_binspec"
 
 # Check if anyone has 'ssh' group access on this host

@@ -241,9 +241,9 @@ fi
 # Needs to deal with 'DEFAULT_ETC_CONF_DIRNAME' there.
 # libdir and $HOME are three separate grouping (that Fedora, et. al. merged)
 
-[[ -n "$VERBOSE" ]] && echo "VAR_LIB_SSH_DIRSPEC: $sshd_home_dirspec"
+[[ -n "$VERBOSE" ]] && echo "VAR_LIB_SSH_DIRSPEC: $SSHD_HOME_DIRSPEC"
 
-EXPECTED_SSH_SHELL_FILESPEC="/usr/sbin/nologin"
+# EXPECTED_SSH_SHELL_FILESPEC="/usr/sbin/nologin"
 if [ -z "$SSH_SHELL_FILESPEC" ]; then
   SSH_SHELL_FILESPEC="$(grep $SSH_USER_NAME /etc/passwd | awk -F: '{print $7}')"
 fi
@@ -253,7 +253,7 @@ fi
 if [ -z "$SSH_HOME_DIRSPEC" ]; then
   SSH_HOME_DIRSPEC="$(grep $SSH_USER_NAME /etc/passwd | awk -F: '{print $6}')"
 fi
-SSH_HOME_DIRSPEC="$sshd_home_dirspec"
+# SSH_HOME_DIRSPEC="$SSHD_HOME_DIRSPEC"
 
 
 # SSH_BIN_GROUP
@@ -282,6 +282,7 @@ if [ ! -f "$SSH_CONFIG_FILESPEC" ]; then
     echo "...file permission to world-read."
     echo "No changes shall be made."
   else
+    #shellcheck disable=SC2086
     read -rp "Enter in SSH config file: " -ei${SSH_CONFIG_FILESPEC}
     if [ ! -f "$REPLY" ]; then
       echo "No such file: $REPLY"
@@ -307,6 +308,7 @@ function find_include_clauses
   local val
   local filespec="$1"
   [[ -n "$VERBOSE" ]] && echo "Begin scanning for 'include' clauses..."
+  #shellcheck disable=SC2154
   val="$($sudo_bin cat "$filespec" | grep -E -- "^\s*[\s\{]*\s*include\s*")"
   val="$(echo "$val" | awk '{print $2}' | tr -d ';')"
   val="${val//\"/}"
@@ -345,6 +347,7 @@ echo "SSHD (Server) Config File(s) Layout: $SSHD_CONFIG_FILE_MODE"
 echo "Reading in ${BUILDROOT}${CHROOT_DIR}$SSHD_CONFIG_FILESPEC ..."
 # Capture non-STDERR output of ssh, if any
 # shellcheck disable=SC2086
+# shellcheck disable=SC2034
 sshd_conf_all_includes="$($SSHD_BIN_FILESPEC $sshd_opt -t -T -d -f "$SSHD_CONFIG_FILESPEC" 2>/dev/null)$"
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
@@ -365,12 +368,14 @@ echo "SSH (Client) Config File(s) Layout: $SSH_CONFIG_FILE_MODE"
 echo "Reading in ${BUILDROOT}${CHROOT_DIR}$SSH_CONFIG_FILESPEC ..."
 # Capture non-STDERR output of ssh, if any
 # shellcheck disable=SC2086
-ssh_conf_all_includes="$($SSH_BIN_FILESPEC $ssh_opt -G -F "$SSH_CONFIG_FILESPEC" localhost 2>/dev/null)$"
+# shellcheck disable=SC2154
+# ssh_conf_all_includes="$($SSH_BIN_FILESPEC $ssh_opt -G -F "$SSH_CONFIG_FILESPEC" localhost 2>/dev/null)$"
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
   echo "User '${USER}(${UID})' has no read-access to $SSH_CONFIG_FILESPEC; errno $RETSTS"
   # capture only STDERR output of ssh
   # shellcheck disable=SC2086
+  # shellcheck disable=SC2154
   errmsg="$($SSH_BIN_FILESPEC $ssh_opt -G -F "$SSH_CONFIG_FILESPEC" localhost )"
   echo "Need to fix error in $SSH_CONFIG_FILESPEC before going further"
   echo "CLI: $SSH_BIN_FILESPEC $ssh_opt -G -F $SSH_CONFIG_FILESPEC localhost"
@@ -382,11 +387,8 @@ echo "Content of $SSH_CONFIG_FILESPEC Syntax OK."
 echo
 
 # Typically, when sshd shell switches user, current directory switches to new $HOME
-cwd_dir="$SSHD_HOME_DIRSPEC"
 
 # Now for the many default settings
-DEFAULT_LOCKFILE_DIRNAME="$rundir/sshd"
-DEFAULT_LOCKFILE_FILENAME="sshd.lock"
 DEFAULT_PIDFILE_DIRNAME="$rundir/sshd"  # sshd/config.c/defaultconf
 DEFAULT_PIDFILE_FILENAME="sshd.pid"  # sshd/config.c/defaultconf
 
@@ -415,15 +417,13 @@ function its_dir_exist
 }
 
 
-# in case of split-horizon bastion
-#sshd_home="$cwd_dir"
-
 function search_sshd_keyvalue()
 {
   keyword="${1,,}"
+  #shellcheck disable=SC2086
   KEYVALUE="$(sudo $SSHD_BIN_FILESPEC -t -T -f "$SSHD_CONFIG_FILESPEC" \
               | grep -E "^${keyword}\s+" \
-              | awk -F' ' '{print $2}')"
+              | awk -F' ' '{print $2, $3, $4, $5, $6, $7, $8, $9}')"
   retsts=$?
   if [ $retsts -ne 0 ]; then
     echo "Error in grep; errno $retsts"
@@ -443,6 +443,8 @@ allow_groups="$KEYVALUE"
 
 # Pick up all the host_key files
 ####hostkeys_list="$(ls -1 ${BUILDROOT}${CHROOT_DIR}${extended_sysconfdir}/ssh_host_* \
+#shellcheck disable=SC2010
+#shellcheck disable=SC2086
 hostkeys_list="$(ls -1 ${extended_sysconfdir}/ssh_host_* \
                  | grep -Ev '.pub$' \
                  | xargs )"
@@ -450,6 +452,10 @@ hostkeys_list="$(ls -1 ${extended_sysconfdir}/ssh_host_* \
 # List the host_key files actually used by SSHD
 search_sshd_keyvalue HostKey
 hostkeys_used_list="$(echo "$KEYVALUE" | xargs)"
+
+# Get the AuthorizedMethods
+search_sshd_keyvalue AuthenticationMethods
+auth_methods_list="$(echo "$KEYVALUE" | xargs)"
 
 printf "Version: %s\n" "$($SSH_BIN_FILESPEC -V 2>&1)"
 echo "'sshd' \$HOME:  $SSHD_HOME_DIRSPEC"
@@ -480,6 +486,22 @@ if [ "$allow_groups" == "$SSH_GROUP_NAME" ]; then
 fi
 # InboundSSH != OutboundSSH
 echo
+echo "Auth Methods   : $auth_methods_list"
+auth_method_password=0
+# auth_method_publickey=0
+for this_method in $auth_methods_list; do
+  if [ "$this_method" == 'password,publickey' ]; then
+    echo "WARN: Authentication Method '$this_method' found weak"
+    echo "INFO: Switch the keyvalues around to 'publickey,password'"
+  elif [ "$this_method" == 'password' ]; then
+    auth_method_password=1
+  elif [ "$this_method" == 'publickey' ]; then
+    if [ $auth_method_password -eq 1 ]; then
+      echo "WARN: Authentication Method 'password' came before 'publickey'"
+      echo "INFO: Switch the keyvalues around to 'publickey password'"
+    fi
+  fi
+done
 echo "Inbound Policy"
 echo "  Deny Users   : $deny_users"
 echo "  Allow Users  : $allow_users"
@@ -584,6 +606,7 @@ case $REPLY in
     # SELinux Entrypoint
     # SELinux ssh_exec_t
     file_perm_check SSH_BIN_FILESPEC "750" "root" "$SSH_GROUP_NAME"
+    #shellcheck disable=SC2034
     NM_SSH_SERVICE='/usr/libexec/nm-ssh-service'
     file_perm_check NM_SSH_SERVICE "750" "root" "$SSHD_GROUP_NAME"
 
@@ -602,9 +625,11 @@ case $REPLY in
     # Disabled by default
     # SELinux ssh_keysign_t
 
+    #shellcheck disable=SC2034
     for this_config_file in $sshd_config_files_list; do
       file_perm_check this_config_file "640" "root" "$SSHD_GROUP_NAME"
     done
+    #shellcheck disable=SC2034
     for this_config_file in $ssh_config_files_list; do
       file_perm_check this_config_file "640" "root" "$SSH_GROUP_NAME"
     done

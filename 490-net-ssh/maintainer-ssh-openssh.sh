@@ -263,7 +263,7 @@ else
   SUDO_REQUIRED_SSHD=1
 fi
 
-SSHD_HOME_DIRSPEC="$( egrep "^${SSHD_USER_NAME}:" /etc/passwd | awk -F: '{print $6 }')"
+SSHD_HOME_DIRSPEC="$( grep -E "^${SSHD_USER_NAME}:" /etc/passwd | awk -F: '{print $6 }')"
 
 
 VAR_RUN_SSHD_DIRSPEC="${rundir}/sshd"

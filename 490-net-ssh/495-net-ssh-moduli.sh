@@ -14,12 +14,7 @@
 echo "OpenSSH Moduli File Creator"
 echo
 
-# getrandom(3) SSH_USE_STRONG_RNG
-GRND_RANDOM=1
 # SSH_USE_STRONG_RNG - 14 to infinity, default 14
-SSH_USE_STRONG_RNG=1
-GRND_NONBLOCK=1
-GRND_RANDOM=1
 
 source ./maintainer-ssh-openssh.sh
 
@@ -84,7 +79,7 @@ if [ "$ssh_keygen_version" -eq 0 ]; then
       -f "$temp_moduli_candidates_filespec" 
 else
   ssh-keygen -M generate \
-      -O bits=${ssh_moduli_bits} \
+      -O bits="${ssh_moduli_bits}" \
       "${temp_moduli_safe_filespec}"
 
   echo "Screening moduli of ${ssh_moduli_bits} bits..."
@@ -93,13 +88,7 @@ else
           "${temp_moduli_safe_filespec}"
 fi
 
-if [ false ]; then
-  awk '$5 > 3071' \
-    ${temp_moduli_safe_filespec} \
-    | tee ${temp_moduli_filespec}
-else
-  cp "${temp_moduli_safe_filespec}" "${BUILDROOT}$ssh_moduli_filespec"
-fi
+cp "${temp_moduli_safe_filespec}" "${BUILDROOT}$ssh_moduli_filespec"
 echo "Completed the Moduli Generation."
 
 flex_chmod 640 "$ssh_moduli_filespec"

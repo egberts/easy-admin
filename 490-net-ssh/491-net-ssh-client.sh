@@ -54,8 +54,8 @@ echo ""
 
 # Check if 'ssh' client is useable at file permission level
 ssh_bin_filespec="$(whereis ssh|awk '{print $2;}')"
-ssh_bin_group="$(stat -c%G $ssh_bin_filespec)"
-ssh_perm="$(stat -c%a $ssh_bin_filespec)"
+ssh_bin_group="$(stat -c%G "$ssh_bin_filespec")"
+ssh_perm="$(stat -c%a "$ssh_bin_filespec")"
 if [ "$ssh_perm" -gt "750" ]; then
   echo "But the $ssh_bin_filespec has sufficient $ssh_perm file permission;"
   echo "so anyone can use 'ssh'"
@@ -120,7 +120,6 @@ mkdir -p "$BUILDROOT$SSH_CONFIGD_DIRSPEC"
 test_ssh_config_filespec="build/${SSH_CONFIG_FILENAME}.build-test-only"
 test_ssh_configd_dirspec="build/${SSH_CONFIGD_DIRNAME}"
 
-DATE="$(date)"
 echo "Creating $test_ssh_config_filespec ..."
 cat << TEST_SSH_EOF | tee "$test_ssh_config_filespec" >/dev/null
 include "${test_ssh_configd_dirspec}/*.conf"
@@ -156,7 +155,8 @@ if [ ! -d "$repo_dirspec" ]; then
   echo "Repo directory $repo_dirspec missing; aborted."
   exit 9
 fi
-flex_ckdir ${SSH_CONFIGD_DIRSPEC}
+flex_ckdir "${SSH_CONFIGD_DIRSPEC}"
+#shellcheck disable=SC2086
 cp ${repo_dirspec}/* "${BUILDROOT}${SSH_CONFIGD_DIRSPEC}/"
 
 flex_chmod 750 "$SSH_CONFIGD_DIRSPEC"
@@ -173,7 +173,7 @@ done
 
 echo "Checking ${BUILDROOT}${SSH_CONFIG_FILESPEC} for any syntax error ..."
 $openssh_ssh_bin_filespec -G \
-    -F ${test_ssh_config_filespec} \
+    -F "${test_ssh_config_filespec}" \
     localhost \
     >/dev/null 2>&1
 RETSTS=$?
