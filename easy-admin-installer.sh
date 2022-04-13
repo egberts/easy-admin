@@ -335,7 +335,7 @@ function flex_mkdir() {
 
   # Now we check if this already exist
   if [ -d "${BUILDROOT}$destdir_dirspec" ]; then
-    echo "ERROR: Directory $destdir_dirspec already exist; aborted."
+    echo "ERROR: Directory ${BUILDROOT}$destdir_dirspec already exist; aborted."
     echo "Usually a coding error."
     exit 15
   fi
