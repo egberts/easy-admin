@@ -72,10 +72,14 @@ ANNOTATE=${ANNOTATE:-y}
 function create_file
 {
   local dir_name
+  local file_perm
+  file_perm="$1"
+  file_group_owner="$2"
   dir_name="$(dirname "$FILESPEC")"
+  echo "Creating $FILESPEC file..."
   flex_touch "$FILESPEC"
-  flex_chmod "$FILESPEC" "$1"
-  flex_chown "$FILESPEC" "$2"
+  flex_chmod "$file_perm" "$FILESPEC"
+  flex_chown "$file_group_owner" "$FILESPEC"
   cat << CREATE_FILE_EOF | tee "${BUILDROOT}$FILESPEC" >/dev/null
 #
 # File: $(basename "$FILESPEC")
@@ -87,6 +91,8 @@ function create_file
 #
 CREATE_FILE_EOF
   unset dir_name
+  unset file_perm
+  unset file_group_owner
 }
 
 function write_conf
@@ -279,13 +285,9 @@ CHRONY_DROPIN_CONF_EOF
 # All done with querying of user-input on about
 # the administrator/administration part of NTP
 #################################################
-
 FILENAME="$DROP_IN_CONF_FILENAME"
 FILEPATH="$CHRONY_CONFD_DIR"
 FILESPEC="$FILEPATH/$FILENAME"
-
-echo "Creating $FILESPEC file..."
-echo
 
 create_file 0640 "${USERNAME}:${GROUPNAME}" \
     "Protection of NTP protocol against Man-in-the-Middle"
@@ -353,8 +355,8 @@ write_conf "rtcsync"
 write_note ""
 
 echo "Done writing $FILESPEC."
+echo
 
-echo ""
 echo "Verifying syntax of Chrony config files..."
 # Verify the configuration files to be correct, syntax-wise.
 $CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC" >/dev/null 2>&1
@@ -366,6 +368,7 @@ if [ "$retsts" -ne 0 ]; then
   exit 13
 fi
 echo "${BUILDROOT}$FILESPEC passes syntax-check"
+echo
 
 echo "Reloading config file in chronyd daemon..."
 chronyc reload sources >/dev/null 2>&1

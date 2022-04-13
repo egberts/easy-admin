@@ -34,8 +34,6 @@
 #   util-linux (whereis)
 #   coreutils (basename, cat, chmod, chown, date, touch)
 
-SUDO_BIN=
-
 NTP_POOL_SOURCES_MAX=4  # in case the DNS_based anycast got too big of a pool!
 IBURST_MAX_HOPS_CUTOFF=3  # try to stay within local/home LAN
 DEFAULT_NTP_SERVER="pool.ntp.org"
@@ -67,29 +65,11 @@ else
   CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
   CONF_PATHNAME="$extended_sysconfdir"
 fi
-CONF_FILESPEC="$(realpath -m "${BUILDROOT}${CONF_PATHNAME}/$CONF_FILENAME")"
-
-if [ ! -e "$CONF_FILESPEC" ]; then
-  echo "$CONF_FILESPEC does not exist; aborted."
-  exit 9
-elif [ ! -f "$CONF_FILESPEC" ]; then
-  echo "$CONF_FILESPEC is not a file; aborted."
-  exit 10
-elif [ ! -r "$CONF_FILESPEC" ]; then
-  if [ $UID -ne 0 ]; then
-    read -rp "$CONF_FILESPEC is probably read-protected; use SUDO? (N/y): " -eiN
-    REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
-    if [ "$REPLY" != y ]; then
-      echo "Aborted."
-      exit 1
-    fi
-    SUDO_BIN="$(whereis -b sudo | awk '{print $2}')"
-  fi
-fi
+CONF_FILESPEC="${CONF_PATHNAME}/$CONF_FILENAME"
 
 echo "Checking if 'sourcedir' exist in Chrony config file"
 # Oh, yeah, we can have multiple 'sourcedir' directives, so use an array
-SOURCEDIR_A=("$(grep -e '^[^#]*\s*sourcedir' "$CONF_FILESPEC" | awk '{print $2}')")
+SOURCEDIR_A=("$(grep -e '^[^#]*\s*sourcedir' "${BUILDROOT}$CONF_FILESPEC" | awk '{print $2}')")
 if [ -z "${#SOURCEDIR_RESULT[@]}" ]; then
   echo "$FILESPEC is missing 'sourcedir' statement; cannot drop-in config file"
   echo "Aborted."
@@ -106,10 +86,11 @@ fi
 # Syntax: create_file FILESPEC [file-permission [owner:group]]
 function create_file
 {
-  $SUDO_BIN touch "$1"
-  $SUDO_BIN chmod "$2" "$1"
-  $SUDO_BIN chown "$3" "$1"
-  $SUDO_BIN cat << CREATE_FILE_EOF | $SUDO_BIN tee "$FILESPEC" >/dev/null
+  flex_touch "$1"
+  flex_chmod "$2" "$1"
+  flex_chown "$3" "$1"
+  echo "Creating ${BUILDROOT}$FILESPEC ..."
+  cat << CREATE_FILE_EOF | tee "${BUILDROOT}$FILESPEC" >/dev/null
 #
 # File: $FILENAME
 # Path: $FILEPATH
@@ -118,7 +99,7 @@ CREATE_FILE_EOF
 
 function add_file_headers
 {
-  cat << CREATE_FILE_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << CREATE_FILE_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # Title: $1
 # Creator: $(basename "$0")
 # Date: $(date)
@@ -131,7 +112,7 @@ function add_note_pool
 {
   if [ -z "$not_a_first_pool" ]; then
     not_a_first_pool=1
-  cat << DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 #
 # pool name [option]...
 #   The syntax of this directive is similar to that for the server
@@ -167,7 +148,7 @@ function add_note_server
 {
   if [ -z "$not_a_first_server" ]; then
     not_a_first_server=1
-    cat << DROPIN_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+    cat << DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # server hostname [option]...
 #   The server directive specifies an NTP server which can be used as a
 #   time source. The client-server relationship is strictly
@@ -451,14 +432,14 @@ DROPIN_CONF_EOF
 
 function write_conf
 {
-  cat << WRITE_CONF_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << WRITE_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 $1
 WRITE_CONF_EOF
 }
 
 function write_note
 {
-  cat << WRITE_NOTE_EOF | $SUDO_BIN tee -a "$FILESPEC" >/dev/null
+  cat << WRITE_NOTE_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 $1
 WRITE_NOTE_EOF
 }
@@ -492,13 +473,14 @@ NTPDATE="$(whereis -b ntpdate | awk '{print $2}')"
 echo "...Found: $NTPDATE"
 if [ ! -e "$NTPDATE" ]; then
   echo "Running 'apt install ntpdate'..."
-  $SUDO_BIN apt install ntpdate
+  apt install ntpdate
   RETSTS=$?
   if [ $RETSTS -ne 0 ]; then
     echo "Error running 'apt install ntpdate': Error $RETSTS"
     exit $RETSTS
   fi
 fi
+echo
 
 # See if local ISC DHCP client has gathered any NTP servers
 # /run/ntp.conf.dhcp or /run/chrony-dhcp/* has any entries
@@ -507,18 +489,20 @@ fi
 CHRONY_DHCP_NTP_LIST=
 CHRONY_DHCP_NTP_LIST_COUNT=0
 # Obtain Chrony's copy of DHCP-info containing NTP server(s), if any
-echo ""
 echo "Checking if Chrony already got the NTP servers given out by a DHCP server"
 FILENAME="*.sources"
 FILEPATH="$localstatedir/run/chrony-dhcp"
 FILESPEC="$FILEPATH/$FILENAME"
 # Wildcard subdirectory
 # shellcheck disable=SC2086 disable=SC2012
-FILE_CNT="$(ls -1 $FILESPEC 2>/dev/null | wc -l)"
+FILE_CNT="$(ls -1 "${BUILDROOT}$FILESPEC" 2>/dev/null | wc -l)"
 if [ "$FILE_CNT" -ge 1 ]; then
-  echo "Checking '$FILESPEC' subdirectory for any files..."
+  echo "Checking '${BUILDROOT}$FILESPEC' subdirectory for any files..."
   # shellcheck disable=SC2086 disable=SC2012
-  NTP_LIST=$(grep -E '^(\s*(~#)*\s*server\s+)' $FILESPEC| awk '{print $2}' | sort -u | xargs)
+  NTP_LIST=$(grep -E '^(\s*(~#)*\s*server\s+)' "${BUILDROOT}$FILESPEC" \
+             | awk '{print $2}' \
+             | sort -u \
+             | xargs)
   CHRONY_DHCP_NTP_LIST="$NTP_LIST"
   CHRONY_DHCP_NTP_LIST_COUNT="$(echo "$NTP_LIST" | wc -w)"
   if [ "$CHRONY_DHCP_NTP_LIST_COUNT" -ge 1 ]; then
@@ -532,17 +516,20 @@ else
   echo "...Nope; File $FILESPEC is missing."
   echo "...ISC dhclient is not maintaining a NTP list in '$FILESPEC'."
 fi
+echo
 
 NTPD_DHCP_NTP_LIST_COUNT=0
 NTPD_DHCP_NTP_LIST=
 # Obtain NTPD's copy of DHCP-info containing NTP server(s), if any
-echo ""
 echo "Checking if NTPD already got the NTP servers given out by a DHCP server"
 FILENAME="ntp.conf.dhcp"
 FILEPATH="$localstatedir/run"
 FILESPEC="$FILEPATH/$FILENAME"
-if [ -e "$FILESPEC" ]; then
-  NTP_LIST=$(grep -E '^(\s*(~#)*\s*server\s+)' "$FILESPEC"| awk '{print $2}' | sort -u | xargs)
+if [ -e "${BUILDROOT}$FILESPEC" ]; then
+  NTP_LIST=$(grep -E '^(\s*(~#)*\s*server\s+)' "${BUILDROOT}$FILESPEC" \
+             | awk '{print $2}' \
+             | sort -u \
+             | xargs)
   NTPD_DHCP_NTP_LIST="$NTP_LIST"
   NTPD_DHCP_NTP_LIST_COUNT="$(echo "$NTP_LIST" | wc -w)"
   if [ "$NTPD_DHCP_NTP_LIST_COUNT" -ge 1 ]; then
@@ -550,18 +537,19 @@ if [ -e "$FILESPEC" ]; then
     echo "...They are: $NTPD_DHCP_NTP_LIST."
     HAVE_NTP_DHCP=1
   else
-    echo "...Nope.  NTPD has an empty NTP list in '$FILESPEC'."
+    echo "...Nope.  NTPD has an empty NTP list in '${BUILDROOT}$FILESPEC'."
   fi
 else
-  echo "...Nope; File '$FILESPEC' is missing."
-  echo "...ISC dhclient is not maintaining a NTP list in '$FILESPEC'."
+  echo "...Nope; File '${BUILDROOT}$FILESPEC' is missing."
+  echo "...ISC dhclient is not maintaining a NTP list in '${BUILDROOT}$FILESPEC'."
 fi
+echo
+
 ((DHCP_NTP_LIST_COUNT=NTPD_DHCP_NTP_LIST_COUNT+CHRONY_DHCP_NTP_LIST_COUNT))
 NTP_LIST="$CHRONY_DHCP_NTP_LIST $NTPD_DHCP_NTP_LIST"
 DHCP_NTP_LIST="$(echo "$NTP_LIST"|xargs -n1|sort -u|xargs)"
 
 # Check our global NTP server pool for accessibility
-echo ""
 echo "Test for global '$DEFAULT_NTP_SERVER' NTP time serving capability..."
 $NTPDATE -q $DEFAULT_NTP_SERVER
 RETSTS=$?
@@ -574,6 +562,7 @@ else
   echo "...WARNING: No response from '$DEFAULT_NTP_SERVER'; firewalled?"
   NTP_SERVERS_LIST_EXTERNAL=""
 fi
+echo
 
 HAVE_NTP_LOCAL=0
 NTP_SERVERS_LIST_INTERNAL=
@@ -588,6 +577,7 @@ if [ "$CHRONY_DHCP_NTP_LIST_COUNT" -eq 0 ]; then
     NTP_SERVERS_LIST_INTERNAL="$DEFAULT_ROUTE"
   fi
 fi
+echo
 
 NEED_NTP_SERVER=0
 # Neither Internet nor our local router has an accessible NTP server
@@ -688,11 +678,11 @@ echo "NTP server count: $NTP_SERVERS_LIST_COUNT"
 
 FILENAME="ntp_pools.sources"
 FILEPATH="$CHRONY_SOURCESD_DIRSPEC"
-FILESPEC="$(realpath "${BUILDROOT}${FILEPATH}/$FILENAME")"
+FILESPEC="${FILEPATH}/$FILENAME"
 
 create_file "$FILESPEC" 0640 _chrony:_chrony
 add_file_headers "NTP Pools for Chrony NTP daemon"
-echo "Creating Chrony $FILESPEC drop-in configuration file..."
+echo "Creating Chrony ${BUILDROOT}$FILESPEC drop-in configuration file..."
 
 
 # for 'maxsources' on 'pool' keyword, use this command:
@@ -762,8 +752,8 @@ for this_ntp in $NTP_SERVERS_LIST; do
 done
 
 echo ""
-echo "Look at your new configuration file at $FILESPEC:"
-cat "$FILESPEC"
+echo "Look at your new configuration file at ${BUILDROOT}$FILESPEC:"
+cat "${BUILDROOT}$FILESPEC"
 echo ""
 
 
@@ -785,15 +775,15 @@ echo ""
 
 
 # Verify the configuration files to be correct, syntax-wise.
-$CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
+$CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # rerun it but with verbosity
-  $CHRONYD_BIN -p -f "$FILESPEC"
-  echo "ERROR: $FILESPEC failed syntax check."
+  $CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC"
+  echo "ERROR: ${BUILDROOT}$FILESPEC failed syntax check."
   exit 13
 fi
-echo "$FILESPEC passes syntax-check"
+echo "${BUILDROOT}$FILESPEC passes syntax-check"
 
 # Objective is to 'enable' chrony service
 # and only restart or try-restart the service
