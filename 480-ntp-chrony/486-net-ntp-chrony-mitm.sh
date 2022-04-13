@@ -23,7 +23,23 @@
 #   util-linux (whereis)
 #
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-setting-chronyd-mitm-defense.sh"
+
+flex_ckdir "$ETC_DIRSPEC"
+flex_ckdir "$extended_sysconfdir"
+flex_ckdir "$CHRONY_CONFD_DIRSPEC"
+flex_ckdir "$VAR_DIRSPEC"
+flex_ckdir "$VAR_LIB_DIRSPEC"
+flex_ckdir "$CHRONY_VAR_LIB_DIRSPEC"
 
 DROP_IN_CONF_FILENAME="50-chronyd_mitm_defense.conf"
 USERNAMES_LIST="_chrony chrony ntp"  # new Chrony
@@ -51,30 +67,16 @@ CHRONY_CONFD_DIR="${extended_sysconfdir}/conf.d"  # /etc/chrony/conf.d
 
 ANNOTATE=${ANNOTATE:-y}
 
-if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" = '/' ]]; then
-  SUDO_BIN=sudo
-  echo "Writing ALL files as 'root'..."
-else
-  echo "Writing ALL files into $BUILDROOT as user '$USER')..."
-fi
-
-readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony-mitm.sh"
 
 # Syntax: create_file file-permission owner:group
 function create_file
 {
   local dir_name
   dir_name="$(dirname "$FILESPEC")"
-  if [ -z "$SUDO_BIN" ]; then
-    if [ ! -d "$dir_name" ]; then
-      mkdir -p "$dir_name"
-      echo "Creating $dir_name directory..."
-    fi
-  fi
-  [[ -n "$SUDO_BIN" ]] && $SUDO_BIN touch "$FILESPEC"
+  flex_touch "$FILESPEC"
   flex_chmod "$FILESPEC" "$1"
   flex_chown "$FILESPEC" "$2"
-  cat << CREATE_FILE_EOF | $SUDO_BIN tee "$FILESPEC" >/dev/null
+  cat << CREATE_FILE_EOF | tee "${BUILDROOT}$FILESPEC" >/dev/null
 #
 # File: $(basename "$FILESPEC")
 # Path: $dir_name
@@ -89,7 +91,7 @@ CREATE_FILE_EOF
 
 function write_conf
 {
-  cat << WRITE_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+  cat << WRITE_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 $1
 WRITE_CONF_EOF
 }
@@ -97,7 +99,7 @@ WRITE_CONF_EOF
 function write_note
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << WRITE_NOTE_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << WRITE_NOTE_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 $1
 WRITE_NOTE_EOF
   fi
@@ -106,7 +108,7 @@ WRITE_NOTE_EOF
 function write_note_makestep
 {
   if [ "$ANNOTATE" = "y" ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # makestep threshold limit
 #  Normally chronyd will cause the system to gradually correct any
 #  time offset, by slowing down or speeding up the clock as required.
@@ -136,7 +138,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_minsources
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # minsources sources
 #   The minsources directive sets the minimum number of sources that
 #   need to be considered as selectable in the source selection
@@ -155,7 +157,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_maxchange
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # maxchange offset start ignore
 #   This directive sets the maximum allowed offset corrected on a clock
 #   update. The check is performed only after the specified number of
@@ -180,7 +182,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_maxdrift
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # maxdrift drift-in-ppm
 #   This directive specifies the maximum assumed drift (frequency
 #   error) of the system clock. It limits the frequency adjustment that
@@ -200,7 +202,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_maxslewrate
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # maxslewrate rate-in-ppm
 #   The maxslewrate directive sets the maximum rate at which chronyd is
 #   allowed to slew the time. It limits the slew rate controlled by the
@@ -231,7 +233,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_ntsdumpdir
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # ntsdumpdir directory
 #   This directive specifies a directory for the client to save NTS
 #   cookies it received from the server in order to avoid making an
@@ -255,7 +257,7 @@ CHRONY_DROPIN_CONF_EOF
 function write_note_ntsdumpdir
 {
   if [ "$ANNOTATE" = 'y' ]; then
-    cat << CHRONY_DROPIN_CONF_EOF | $SUDO_BIN tee -a "${BUILDROOT}$FILESPEC" >/dev/null
+    cat << CHRONY_DROPIN_CONF_EOF | tee -a "${BUILDROOT}$FILESPEC" >/dev/null
 # rtcsync
 #   The rtcsync directive enables a mode where the system time is
 #   periodically copied to the RTC and chronyd does not try to track
@@ -282,11 +284,8 @@ FILENAME="$DROP_IN_CONF_FILENAME"
 FILEPATH="$CHRONY_CONFD_DIR"
 FILESPEC="$FILEPATH/$FILENAME"
 
-echo ""
 echo "Creating $FILESPEC file..."
-if [ -n "$SUDO_BIN" ]; then
-  read -rp "Press any key to perform sudo operations (Ctrl-C to abort): " -n 1
-fi
+echo
 
 create_file 0640 "${USERNAME}:${GROUPNAME}" \
     "Protection of NTP protocol against Man-in-the-Middle"

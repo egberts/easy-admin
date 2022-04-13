@@ -22,7 +22,7 @@ issue_filepath="/etc"
 issue_filespec="${issue_filepath}/${issue_filename}"
 
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$issue_filespec..."
-flex_mkdir "$(dirname "$issue_filespec")"
+flex_ckdir "$(dirname "$issue_filespec")"
 flex_touch "$issue_filespec"
 flex_chown root:root "$issue_filespec"
 flex_chmod 0644      "$issue_filespec"

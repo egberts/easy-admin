@@ -1,7 +1,7 @@
 #!/bin/bash
-#
-# File: build-network-shorewall-dhclient.sh
+# File: 429-fw-shorewall-dhclient.sh
 # Title: Configure files between Shorewall and ISC dhclient
+#
 # Description:
 #   DHCP client enter hook for `shorewall reload`
 #
@@ -17,7 +17,18 @@
 DHCLIENT_ENTER_HOOK_SHOREWALL=/etc/dhcp/dhclient-exit-hooks.d/shorewall
 
 echo "Installing Shorewall-dhclient settings (may ask for sudo password)..."
-echo ""
+echo
+
+BUILDROOT="${BUILDROOT:-build}"
+
+source ./maintainer-fw-shorewall.sh
+if [ "${BUILDROOT:0:1}" == '/' ]; then
+  FILE_SETTING_PERFORM='true'
+fi
+
+flex_ckdir /etc
+flex_ckdir /etc/dhcp
+flex_ckdir /etc/dhcp/dhclient-exit-hooks.d
 
 # check for existing dynamic IP interface (as a DHCP client)
 # if no dynamic IP interface, error and exit
@@ -43,15 +54,15 @@ if [ -z "${SHOREWALL_EXIST}" ]; then
 fi
 
 # check if dhclient is installed
-DHCLIENT_EXIST="$(sudo whereis -b dhclient | awk '{ print $2 }')"
+DHCLIENT_EXIST="$(whereis -b dhclient | awk '{ print $2 }')"
 if [ -z "${DHCLIENT_EXIST}" ]; then
   echo "dhclient does not exist"
   exit 9
 fi
 
 DATE="$(date)"
-echo "Creating ${DHCLIENT_ENTER_HOOK_SHOREWALL} file ..."
-cat << SH_EOF > "/tmp/$0.tmp"
+echo "Creating ${BUILDROOT}${DHCLIENT_ENTER_HOOK_SHOREWALL} file ..."
+cat << SH_EOF > "${BUILDROOT}$DHCLIENT_ENTER_HOOK_SHOREWALL"
 #
 # File: ${DHCLIENT_ENTER_HOOK_SHOREWALL}
 # Title: DHCP client enter hook for 'shorewall reload'
@@ -121,9 +132,8 @@ exit \$RETSTS
 
 SH_EOF
 
-sudo cp "/tmp/${0}.tmp" $DHCLIENT_ENTER_HOOK_SHOREWALL
-sudo chown root:root $DHCLIENT_ENTER_HOOK_SHOREWALL
-sudo chmod 0640 $DHCLIENT_ENTER_HOOK_SHOREWALL
-echo "File permission/ownership set for $DHCLIENT_ENTER_HOOK_SHOREWALL"
+flex_chown root:root $DHCLIENT_ENTER_HOOK_SHOREWALL
+flex_chmod 0640 $DHCLIENT_ENTER_HOOK_SHOREWALL
+
 echo ""
 echo "Done."

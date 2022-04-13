@@ -23,8 +23,51 @@ echo
 source ./maintainer-ssh-openssh.sh
 
 # $CWD/sshd_config.d-bastion/
-sshd_configd_bastion_dirname="${sshd_configd_dirname}-bastion"
-sshd_configd_bastion_dirspec="${MINI_REPO}/${sshd_configd_dirname}-bastion"
+sshd_configd_bastion_dirname="${SSHD_CONFIGD_DIRNAME}-bastion"
+sshd_configd_bastion_dirspec="${MINI_REPO}/${SSHD_CONFIGD_DIRNAME}-bastion"
+
+function sshd_syntax_check()
+{
+  if [ "$SUDO_REQUIRED_SSHD" -ge 1 ]; then
+    SUDO_BIN="/usr/bin/sudo"
+    exit
+  fi
+    
+  # Fake generate throwaway host key for syntax-checking effort
+  temp_throwaway_key="fake-ssh-keys-$USER.key"
+  ssh-keygen \
+    -t ed25519 \
+    -f "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
+    -q \
+    -N ""
+
+  # Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
+  echo "Checking sshd_config syntax ..."
+  $SUDO_BIN /usr/sbin/sshd -T -t \
+    -f "${BUILDROOT}${SSHD_CONFIG_FILESPEC}" \
+    -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
+    -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
+    >/dev/null 2>&1
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error during ssh config syntax checking."
+    echo "Showing sshd_config output"
+    $SUDO_BIN /usr/sbin/sshd \
+      -T \
+      -t \
+      -f "${BUILDROOT}${SSHD_CONFIG_FILESPEC}" \
+      -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
+      -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}"
+    rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
+    rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
+    exit "$retsts"
+  fi
+  echo "${BUILDROOT}$SSHD_CONFIG_FILESPEC passes syntax-checker."
+  echo
+  rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
+  rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
+}
+
 
 if [ ! -d "./${sshd_configd_bastion_dirspec}" ]; then
   echo "Directory $sshd_configd_bastion_dirspec not found; aborted."
@@ -124,19 +167,19 @@ if [ -z "$ssh_users_by_group" ]; then
 fi
 
 # Only the first copy is saved as the backup
-if [ ! -f "${sshd_config_filespec}.backup" ]; then
+if [ ! -f "${SSHD_CONFIG_FILESPEC}.backup" ]; then
   if [ "$BUILD_ABSOLUTE" -eq 1 ]; then
-    mv "$sshd_config_filespec" "${sshd_config_filespec}.backup"
+    mv "$SSHD_CONFIG_FILESPEC" "${SSHD_CONFIG_FILESPEC}.backup"
   fi
 fi
 
 # Update the SSH server settings
 #
 
-echo "Creating ${BUILDROOT}${CHROOT_DIR}$sshd_config_filespec ..."
-cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$SSHD_CONFIG_FILESPEC ..."
+cat << SSHD_EOF | tee "${BUILDROOT}$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
 #
-# File: $sshd_config_filename
+# File: $SSHD_CONFIG_FILENAME
 # Path: $extended_sysconfdir
 # Title: SSH server configuration file
 #
@@ -182,78 +225,69 @@ cat << SSHD_EOF | tee "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
 # * Channel/Connection Layer
 
 SSHD_EOF
-flex_chmod 640 "$sshd_config_filespec"
-flex_chown "root:$SSHD_GROUP_NAME" "$sshd_config_filespec"
+flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
+flex_chown "root:$SSHD_GROUP_NAME" "$SSHD_CONFIG_FILESPEC"
 
 
 if [ "$HAS_SSHD_CONFIG_D" -ne 0 ]; then
 
-  cat << SSHD_EOF | tee -a "${BUILDROOT}$sshd_config_filespec" >/dev/null 2>&1
-  include "${sshd_configd_dirspec}/*.conf"
+  cat << SSHD_EOF | tee -a "${BUILDROOT}$SSHD_CONFIG_FILESPEC" >/dev/null 2>&1
+  include "${SSHD_CONFIGD_DIRSPEC}/*.conf"
 
 SSHD_EOF
 
-  flex_mkdir "$sshd_configd_dirspec"
-  flex_chown "root:$SSHD_GROUP_NAME" "$sshd_configd_dirspec"
-  flex_chmod 750 "$sshd_configd_dirspec"
+  flex_ckdir "$SSHD_CONFIGD_DIRSPEC"
+  flex_chown "root:$SSHD_GROUP_NAME" "$SSHD_CONFIGD_DIRSPEC"
+  flex_chmod 750 "$SSHD_CONFIGD_DIRSPEC"
 
-  echo "Copying $sshd_configd_bastion_dirname into $BUILDROOT$sshd_configd_dirspec ..."
-  cp "${sshd_configd_bastion_dirname}"/*.conf "$BUILDROOT$sshd_configd_dirspec"/
+  echo "Copying $sshd_configd_bastion_dirname into $BUILDROOT$SSHD_CONFIGD_DIRSPEC ..."
+  cp "${sshd_configd_bastion_dirname}"/*.conf "$BUILDROOT$SSHD_CONFIGD_DIRSPEC"/
   pushd . >/dev/null 2>&1
+  #shellcheck disable=SC2164
   cd "${sshd_configd_bastion_dirname}"
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error in popd: errno $retsts; aborted."
+    exit $retsts
+  fi
   conf_list="$(find . -maxdepth 1 -name "*.conf")"
+  #shellcheck disable=SC2164
   popd > /dev/null 2>&1
+  retsts=$?
+  if [ $retsts -ne 0 ]; then
+    echo "Error in popd: errno $retsts; aborted."
+    exit $retsts
+  fi
   for this_subconf_file in $conf_list; do
-    flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
-    flex_chmod 640 "${extended_sysconfdir}/${sshd_configd_dirname}/$this_subconf_file"
+    flex_chown "root:$SSHD_GROUP_NAME" "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
+    flex_chmod 640 "${extended_sysconfdir}/${SSHD_CONFIGD_DIRNAME}/$this_subconf_file"
   done
 else
   exit 123
 #  otherwise, we do not have 'include' directive option available in openssh daemon config file
 
   # concatenate all the config files together into "/etc/ssh/sshd_config".
-  conf_list="$(find "${MINI_REPO}/${sshd_configd_dirspec}" -maxdepth 1 -name "*.conf")"
+  conf_list="$(find "${MINI_REPO}/${SSHD_CONFIGD_DIRSPEC}" -maxdepth 1 -name "*.conf")"
   for this_subconf_file in $conf_list; do
-    cat "$this_subconf_file" >> "$BUILDROOT$sshd_config_filespec"
+    cat "$this_subconf_file" >> "$BUILDROOT$SSHD_CONFIG_FILESPEC"
   done
-  flex_chown "root:$SSHD_GROUP_NAME" "$sshd_config_filespec"
-  flex_chmod 640 "$sshd_config_filespec"
+  flex_chown "root:$SSHD_GROUP_NAME" "$SSHD_CONFIG_FILESPEC"
+  flex_chmod 640 "$SSHD_CONFIG_FILESPEC"
 fi
 
-# Fake generate throwaway host key for syntax-checking effort
-temp_throwaway_key="fake-ssh-keys-$USER.key"
-echo "Creating a temporary SSH key for syntax checking effort ..."
-ssh-keygen \
-    -t ed25519 \
-    -f "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
-    -q \
-    -N ""
-
-# Check syntax of sshd_config/sshd_config.d/*.conf, et. al.
-echo "Checking sshd_config syntax ..."
-sudo /usr/sbin/sshd -T -t \
-    -f "${BUILDROOT}${sshd_config_filespec}" \
-    -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
-    -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}" \
-    >/dev/null 2>&1
-retsts=$?
-if [ $retsts -ne 0 ]; then
-  echo "Error during ssh config syntax checking."
-  echo "Showing sshd_config output"
-  sudo /usr/sbin/sshd \
-      -T \
-      -t \
-      -f "${BUILDROOT}${sshd_config_filespec}" \
-      -o ChrootDirectory="${BUILDROOT}${CHROOT_DIR}/" \
-      -h "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}"
-  rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
-  rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
-  exit "$retsts"
+if [ "$SYNTAX_CHECKABLE_SSHD" -ge 1 ]; then
+  if [ "$SUDO_REQUIRED_SSHD" -ge 1 ]; then
+    read -rp "Use sudo to perform passive syntax checking on $SSHD_CONFIG_FILESPEC? (y
+/N): "
+    if [ "${REPLY:0:1}" == 'y' ]; then
+      sshd_syntax_check
+    fi
+  else
+    sshd_syntax_check
+  fi
+else
+  echo "No syntax checking available on $SSHD_CONFIG_FILESPEC without 'sudo'."
 fi
-echo "${BUILDROOT}$sshd_config_filespec passes syntax-checker."
-echo "Removing temporary SSH key files ..."
-rm "${BUILDROOT}${CHROOT_DIR}/$temp_throwaway_key"
-rm "${BUILDROOT}${CHROOT_DIR}/${temp_throwaway_key}.pub"
 echo
 
 # Check if non-root user has 'ssh' supplementary group membership
@@ -282,7 +316,7 @@ if [ $found_user_access -eq 0 ]; then
 fi
 
 # check keys
-ssh_keys_group_found="$(egrep "^${SSHKEY_GROUP_NAME}:" /etc/group)"
+ssh_keys_group_found="$(grep -E "^${SSHKEY_GROUP_NAME}:" /etc/group)"
 if [ -n "$ssh_keys_group_found" ]; then
   echo "SSH key group ID found: $SSHKEY_GROUP_NAME in /etc/group"
   file_list="ssh_host_rsa_key ssh_host_ecdsa_key ssh_host_ed25519_key"

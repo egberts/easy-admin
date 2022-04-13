@@ -41,8 +41,18 @@ IBURST_MAX_HOPS_CUTOFF=3  # try to stay within local/home LAN
 DEFAULT_NTP_SERVER="pool.ntp.org"
 
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
+
+CHRONYD_BIN="$(whereis -b chronyd | awk -F: '{print $2}')"
 
 ######################################
 
@@ -775,11 +785,11 @@ echo ""
 
 
 # Verify the configuration files to be correct, syntax-wise.
-chronyd -p -f "$FILESPEC" >/dev/null 2>&1
+$CHRONYD_BIN -p -f "$FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # rerun it but with verbosity
-  chronyd -p -f "$FILESPEC"
+  $CHRONYD_BIN -p -f "$FILESPEC"
   echo "ERROR: $FILESPEC failed syntax check."
   exit 13
 fi

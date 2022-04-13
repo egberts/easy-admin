@@ -32,7 +32,20 @@
 #   util-linux (whereis)
 #
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony-admin.sh"
+
+flex_ckdir "$ETC_DIRSPEC"
+flex_ckdir "$VAR_DIRSPEC"
+flex_ckdir "$extended_sysconfdir"
 
 DROP_IN_CONF_FILENAME="20-chronyc_cli_admin_access.conf"
 
@@ -55,7 +68,8 @@ fi
 echo "Username '$USERNAME' found."
 GROUPNAME="$USERNAME"
 
-runstatedir="$localstatedir/run"
+flex_ckdir "$CHRONY_RUN_DIRSPEC"
+flex_ckdir "$CHRONY_VAR_LIB_DIRSPEC"
 
 
 
@@ -712,7 +726,7 @@ if [ "$retsts" -ne 0 ]; then
 fi
 echo "${BUILDROOT}${CHROOT_DIR}$FILESPEC passes syntax-check"
 
-if [ "$BUILD_ABSOLUTE" -ge 1 ]; then
+if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Reloading config file in chronyd daemon..."
   chronyc reload sources >/dev/null 2>&1
   retsts=$?

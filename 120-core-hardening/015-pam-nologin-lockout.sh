@@ -19,6 +19,6 @@ echo "    auth [default=ignore success=1] pam_succeed_if.so quiet user ingroup a
 echo
 echo "Then add user(s) that can ignore this /etc/nologin toward the 'adm' group:"
 echo
-echo "   groupmod -a -G adm <privileged-username>"
+echo "   usermod -a -G adm <privileged-username>"
 echo
 echo "Aborted."

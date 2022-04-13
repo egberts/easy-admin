@@ -32,12 +32,32 @@
 #    481-net-ntp-choices.sh
 #    ANNOTATION=1 481-net-ntp-choices.sh
 
-SUDO_BIN=
 ANNOTATION=${ANNOTATION:-y}
 
 ARG1_CHRONY_CONF=${1}
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-setting-chrony-conf-main.sh"
+
+flex_ckdir "$ETC_DIRSPEC"
+flex_ckdir "$extended_sysconfdir"
+flex_ckdir "$CHRONY_CONFD_DIRSPEC"
+flex_ckdir "$CHRONY_SOURCESD_DIRSPEC"
+
+flex_ckdir "$VAR_DIRSPEC"
+flex_ckdir "$VAR_LIB_DIRSPEC"
+flex_ckdir "$CHRONY_VAR_LIB_DIRSPEC"
+
+CHRONYD_BIN="$(whereis -b chronyd | awk -F: '{print $2}')"
+
 
 # Useful directories that autoconf/configure/autoreconf does not offer.
 
@@ -50,37 +70,8 @@ else
   CONF_FILENAME="$DEFAULT_CHRONY_CONF_FILENAME"
   CONF_PATHNAME="$extended_sysconfdir"
 fi
-CONF_FILESPEC="$(realpath -m "${BUILDROOT}$CONF_PATHNAME/$CONF_FILENAME")"
+CONF_FILESPEC="$CONF_PATHNAME/$CONF_FILENAME"
 
-# minimum default settings of /etc/chrony/chrony.conf
-
-if [ ! -e "$CONF_FILESPEC" ]; then
-  echo "File $CONF_FILESPEC does not exist; Aborted."
-  exit 9
-elif [ ! -f "$CONF_FILESPEC" ]; then
-  echo "File $CONF_FILESPEC is not a file; Aborted."
-  exit 9
-elif [ ! -r "$CONF_FILESPEC" ]; then
-  echo "File $CONF_FILESPEC is not readable; Aborted."
-  exit 9
-else
-  read -rp "File $CONF_FILESPEC exists; over-write it? [N/y]: " -eiN
-  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
-  if [ "$REPLY" != "y" ]; then
-    echo "Aborted."
-    exit 1
-  fi
-fi
-if [ ! -w "$CONF_FILESPEC" ]; then
-  read -rp "File $CONF_FILESPEC is not writeable; use 'sudo' command? [N/y]: " -eiN
-  REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
-  if [ "$REPLY" != "y" ]; then
-    echo "Aborted."
-    exit 1
-  fi
-  echo "Continuing on with over-writing $CONF_FILESPEC..."
-  SUDO_BIN=sudo
-fi
 
 # USERNAMES_LIST="_ntp ntp chrony"  # new NTP
 USERNAMES_LIST="_chrony chrony ntp"  # new Chrony
@@ -104,25 +95,25 @@ GROUPNAME="$(id -G -n "$USERNAME")"
 # Syntax: create_file CONF_FILESPEC [file-permission [owner:group]]
 function create_file
 {
-  $SUDO_BIN touch "$1"
+  flex_touch "$1"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error touching '$1' file; Aborted."
     exit $retsts
   fi
-  $SUDO_BIN chmod "$2" "$1"
+  flex_chmod "$2" "$1"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error changing '$1' file permission to $2; Aborted."
     exit $retsts
   fi
-  $SUDO_BIN chown "$3" "$1"
+  flex_chown "$3" "$1"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error changing '$1' file ownership to $3; Aborted."
     exit $retsts
   fi
-  cat << CREATE_FILE_EOF | $SUDO_BIN tee "$1" >/dev/null
+  cat << CREATE_FILE_EOF | tee "${BUILDROOT}$1" >/dev/null
 #
 # File: $(basename "$1")
 # Path: $(dirname "$1")
@@ -136,7 +127,7 @@ CREATE_FILE_EOF
 
 function add_file_headers
 {
-  cat << CREATE_FILE_EOF | $SUDO_BIN tee -a "$CONF_FILESPEC" >/dev/null
+  cat << CREATE_FILE_EOF | tee -a "${BUILDROOT}$CONF_FILESPEC" >/dev/null
 # Title: $1
 # Creator: $(basename "$0")
 # Date: $(date)
@@ -147,13 +138,13 @@ CREATE_FILE_EOF
 
 function write_conf
 {
-  $SUDO_BIN echo "$1" >> "$CONF_FILESPEC"
+  echo "$1" >> "${BUILDROOT}$CONF_FILESPEC"
 }
 
 function write_note
 {
   if [ "$ANNOTATION" = 'y' ]; then
-    $SUDO_BIN echo "$1" >> "$CONF_FILESPEC"
+    echo "$1" >> "${BUILDROOT}$CONF_FILESPEC"
   fi
 }
 
@@ -208,7 +199,8 @@ function annotate
   fi
 }
 
-echo "Writing $CONF_FILESPEC config file..."
+
+echo "Writing ${BUILDROOT}$CONF_FILESPEC config file..."
 create_file "$CONF_FILESPEC" 0640 "${USERNAME}:${GROUPNAME}"
 add_file_headers "Configuration file for Chrony NTP daemon"
 
@@ -216,7 +208,9 @@ add_file_headers "Configuration file for Chrony NTP daemon"
 # 'chrony' script is executed by 'dhclient' service as needed
 # content of /run/chrony-dhcp subdirectory is written by 'dhclient'
 # content of /run/chrony-dhcp subdirectory is read by 'chronyd'
-DHCP_CHRONY_SCRIPT="/etc/dhcp/dhclient-exit-hooks.d/chrony"
+DHCP_EXITHOOKSD_DIRNAME="dhclient-exit-hooks.d"
+DHCP_EXITHOOKSD_DIRSPEC="${extended_sysconfdir}/$DHCP_EXITHOOKSD_DIRNAME"
+DHCP_CHRONY_SCRIPT="${DHCP_EXITHOOKSD_DIRSPEC}/chrony"
 if [ -f "$DHCP_CHRONY_SCRIPT" ]; then
   write_note ""
   write_note "# pool pool.ntp.org goes into a separate sourcedir directory."
@@ -272,12 +266,12 @@ write_note "# Set the default access for all NTP commands to 'nobody'"
 write_conf "cmddeny all"  # This is the DEFAULT-DENY approach
 write_conf ""
 
-echo ""
-echo "Creating empty $CHRONY_DRIFT_FILESPEC drift file..."
-$SUDO_BIN touch "$CHRONY_DRIFT_FILESPEC"
+echo
+echo "Creating empty ${BUILDROOT}$CHRONY_DRIFT_FILESPEC drift file..."
+flex_touch "$CHRONY_DRIFT_FILESPEC"
 # CIS Security recommended file permission setting
-$SUDO_BIN chmod 0600 "$CHRONY_DRIFT_FILESPEC"
-$SUDO_BIN chown "$USERNAME":"$GROUPNAME" "$CHRONY_DRIFT_FILESPEC"
+flex_chmod 0600 "$CHRONY_DRIFT_FILESPEC"
+flex_chown "$USERNAME":"$GROUPNAME" "$CHRONY_DRIFT_FILESPEC"
 
 
 # CMD_NET_ACL_NEEDED=0
@@ -285,17 +279,20 @@ $SUDO_BIN chown "$USERNAME":"$GROUPNAME" "$CHRONY_DRIFT_FILESPEC"
 #
 
 # Verify the configuration files to be correct, syntax-wise.
-echo ""
-echo "Checking syntax of $CONF_FILESPEC config file..."
-chronyd -p -f "$CONF_FILESPEC" >/dev/null 2>&1
+echo
+echo "Checking syntax of ${BUILDROOT}$CONF_FILESPEC config file..."
+$CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   # Re-run but verbosely
-  chronyd -p -f "$CONF_FILESPEC"
-  echo "ERROR: $CONF_FILESPEC failed syntax check."
+  $CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC"
+  echo "ERROR: ${BUILDROOT}$CONF_FILESPEC failed syntax check."
   exit 13
 fi
-echo "$CONF_FILESPEC passes syntax-check"
+echo "${BUILDROOT}$CONF_FILESPEC passes syntax-check"
+echo
+echo "Done."
+exit
 
 # Objective is to 'enable' chrony service
 # and only restart or try-restart the service
@@ -312,7 +309,7 @@ if [ "$retsts" -ne 0 ]; then
   systemctl enable "$chrony_systemd_unit_name"
 fi
 
-echo ""
+echo
 systemctl --quiet is-active "$chrony_systemd_unit_name"
 retsts=$?
 if [ "$retsts" -ne 0 ]; then

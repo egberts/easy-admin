@@ -29,9 +29,17 @@ DEFAULT_DROPIN_CONF_FILENAME="debian-stock-pool.sources"
 
 
 echo "Relocate debian-assigned pool fron chrony.conf into sources.d/ subdir"
-echo ""
+echo
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+source ./maintainer-ntp-chrony.sh
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-setting-chrony-debian-patch.sh"
 
 echo "ID: $ID"
 case $ID in
@@ -47,18 +55,15 @@ case $ID in
     ;;
 esac
 
-sysconfdir="/etc"
-
-DEFAULT_CHRONY_CONF_FILENAME="chrony.conf"
-
-CHRONY_CONF_DIRPATH="$sysconfdir/chrony"
+CHRONY_CONF_DIRPATH="$extended_sysconfdir"
 
 CHRONY_CONF_FILESPEC="$CHRONY_CONF_DIRPATH/$DEFAULT_CHRONY_CONF_FILENAME"
+exit
 
 echo "This script patches the Debian-version of Chrony configuration file."
 echo "It simply relocates the 'pool' directive from the main"
 echo "configuration file into one of those drop-in config directory."
-echo ""
+echo
 
 ####################################################################
 # Defensive coding between NTP clients

@@ -48,11 +48,10 @@ fi
 
 declare sysconfdir  # assigned in distro-os.sh/maintainer-dhcp-isc.sh
 source ./maintainer-dhcp-isc.sh
+FILE_SETTING_PERFORM='yes'
 
-if [ "${BUILDROOT:0:1}" != "/" ]; then
-  mkdir -p "${BUILDROOT}/$extended_sysconfdir"
-fi
-flex_mkdir "$extended_sysconfdir"
+flex_ckdir "$sysconfdir"
+flex_ckdir "$extended_sysconfdir"
 
 dhcpd_conf_filename="dhcpd.conf"
 dhcpd_conf_filespec="${extended_sysconfdir}/$dhcpd_conf_filename"
@@ -339,7 +338,7 @@ DHCPD_CONF_EOF
 
 dhcpd_pool1_filename="dhcpd.conf.pool.10.22.0-vir"
 dhcpd_pool1_filespec="${extended_sysconfdir}/$dhcpd_pool1_filename"
-flex_chown root:root "${dhcpd_pool1_filename}"
+flex_chown root:root "${dhcpd_pool1_filespec}"
 flex_chmod 0644 "${dhcpd_pool1_filespec}"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$dhcpd_pool1_filespec ..."
 cat << DHCPD_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dhcpd_pool1_filespec" >/dev/null

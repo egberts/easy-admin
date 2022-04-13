@@ -11,20 +11,7 @@ DEFAULT_ETC_CONF_DIRNAME="chrony"  # feeds into DEFAULT_EXTENDED_SYSCONFDIR in d
 
 source ../distro-os.sh
 
-extended_sysconfdir="${extended_sysconfdir:-${DEFAULT_EXTENDED_SYSCONFDIR}}"
-
-
-if [ "${BUILDROOT:0:1}" != '/' ]; then
-  # relative build, create subdirectories
-  # absolute build, do not create build directory
-  if [ ! -d "$BUILDROOT" ]; then
-    mkdir -p "$BUILDROOT"
-  fi
-  mkdir -p "${BUILDROOT}$extended_sysconfdir"
-  BUILD_ABSOLUTE=0
-else
-  BUILD_ABSOLUTE=1
-fi
+extended_sysconfdir="${sysconfdir:-${DEFAULT_EXTENDED_SYSCONFDIR}}/$DEFAULT_ETC_CONF_DIRNAME"
 
 
 # Package maintainer-specific
@@ -104,4 +91,8 @@ CHRONY_DUMP_DIRPATH="$CHRONY_LOG_DIRSPEC/dump"
 
 
 unset varlibdir
+
+# flex_ckdir "$extended_sysconfdir"
+# flex_ckdir "${extended_sysconfdir}/conf.d"
+# flex_ckdir "${extended_sysconfdir}/sources.d"
 
