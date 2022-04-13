@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 
-source ./maintainer-firewall-shorewall.sh
+source ./maintainer-fw-shorewall.sh
 
 if [ 0 -ne 0 ]; then
 case $ID in

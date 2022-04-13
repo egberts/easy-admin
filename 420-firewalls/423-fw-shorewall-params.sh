@@ -18,11 +18,10 @@ fi
 DEFAULT_ETC_CONF_DIRNAME="shorewall"
 
 source ./maintainer-fw-shorewall.sh
+FILE_SETTING_PERFORM='yes'
 
 shorewall_dirspec="$extended_sysconfdir"
-if [ "${BUILDROOT:0:1}" != "/" ]; then
-  mkdir -p "${BUILDROOT}/$shorewall_dirspec"
-fi
+flex_ckdir "$shorewall_dirspec"
 
 shorewall_conf_filename="shorewall.conf"
 shorewall_conf_filespec="${shorewall_dirspec}/$shorewall_conf_filename"

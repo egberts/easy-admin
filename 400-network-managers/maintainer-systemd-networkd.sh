@@ -1,6 +1,6 @@
 #
-# File: maintainer-NetworkManager.sh
-# Title: Package Maintainer-specific settings for NetworkManager
+# File: maintainer-systemd-networkd.sh
+# Title: Package Maintainer-specific settings for systemd-networkd
 
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"

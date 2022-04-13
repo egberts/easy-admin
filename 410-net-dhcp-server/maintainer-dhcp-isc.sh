@@ -12,7 +12,6 @@ CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 
 source ../easy-admin-installer.sh
-
 source ../distro-os.sh
 
 case $ID in
