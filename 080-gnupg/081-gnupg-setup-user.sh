@@ -39,7 +39,8 @@ if [ -z "$MIGRATE_BIN" ]; then
   echo "GNU migrate-pubring-from-classic-gpg is not installed"
   # gnupg-utils, makes it easier to upgrade from older GPGv1
   sudo apt install gnupg-utils gpgconf
-  if [ $? -eq 0 ]; then
+  retsts=$?
+  if [ $retsts -eq 0 ]; then
     migrate-pubring-from-classic-gpg --default
   fi
 fi
