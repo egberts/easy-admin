@@ -37,7 +37,17 @@ ANNOTATION=${ANNOTATION:-y}
 
 ARG1_CHRONY_CONF=${1}
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-setting-chrony-conf-main.sh"
+
 
 # Useful directories that autoconf/configure/autoreconf does not offer.
 

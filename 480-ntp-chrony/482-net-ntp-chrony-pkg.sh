@@ -21,7 +21,16 @@
 #   /etc/chrony/conf.d/*
 #
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-setting-chrony-debian-pkg.sh"
 
 DEFAULT_DROPIN_CONF_FILENAME="zzz-remote-chronyc-all-denied.conf"
 DROPIN_CONF_FILESPEC="$CHRONY_CONFD_DIRSPEC/$DEFAULT_DROPIN_CONF_FILENAME"

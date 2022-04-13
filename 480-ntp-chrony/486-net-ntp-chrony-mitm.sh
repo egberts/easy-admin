@@ -23,7 +23,17 @@
 #   util-linux (whereis)
 #
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-setting-chronyd-mitm-defense.sh"
+
 
 DROP_IN_CONF_FILENAME="50-chronyd_mitm_defense.conf"
 USERNAMES_LIST="_chrony chrony ntp"  # new Chrony

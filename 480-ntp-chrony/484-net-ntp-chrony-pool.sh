@@ -41,7 +41,15 @@ IBURST_MAX_HOPS_CUTOFF=3  # try to stay within local/home LAN
 DEFAULT_NTP_SERVER="pool.ntp.org"
 
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony.sh"
 
 ######################################

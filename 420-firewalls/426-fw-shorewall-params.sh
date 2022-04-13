@@ -3,7 +3,7 @@
 # Title: Configure params and interfaces config files of Shorewall firewall
 
 echo "Configure params and interfaces config files of Shorewall firewall"
-echo ""
+echo
 
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
@@ -13,12 +13,13 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "$BUILDROOT"
   rm -f "$FILE_SETTINGS_FILESPEC"
+else
+  FILE_SETTING_PERFORM='true'
 fi
 
 DEFAULT_ETC_CONF_DIRNAME="shorewall"
 
 source ./maintainer-fw-shorewall.sh
-FILE_SETTING_PERFORM='yes'
 
 shorewall_dirspec="$extended_sysconfdir"
 flex_ckdir "$shorewall_dirspec"
@@ -106,7 +107,7 @@ MACLIST_CONF_EOF
   cat << MACLIST_CONF_EOF | tee -a "$maclist_output_file" >/dev/null
 ACCEPT      \$$intf_label         $macaddr
 MACLIST_CONF_EOF
-  echo ""
+  echo
   unset intf_label
   unset macaddr
   unset maclist_output_file
@@ -119,7 +120,7 @@ for this_intf in $netdevs_list; do
   short_intf_details="$(ip -br -4 -o addr show dev $this_intf)"
   echo "$short_intf_details"
 done
-echo ""
+echo
 
 # Select netdevs and label them
 # man shorewall-params(5)
@@ -145,18 +146,19 @@ else
   netdev_labels_A+=("WHITE_IF")
   netdev_labels_A+=("ORANGE_IF")
 fi
-echo ""
+echo
 
 shorewall_params_filename="params"
 shorewall_params_filespec="${shorewall_dirspec}/$shorewall_params_filename"
 echo "Labels in $shorewall_params_filename file are:"
 echo "netdev_labels_A[*]: ${netdev_labels_A[@]}"
-echo ""
-OUTPUT_FILE="${BUILDROOT}${CHROOT_DIR}$shorewall_params_filespec"
+echo
+OUTPUT_FILE="${BUILDROOT}$shorewall_params_filespec"
 echo "Creating ${OUTPUT_FILE} file ..."
 cat << SHOREWALL_CONF_EOF | tee "${OUTPUT_FILE}" >/dev/null
 #
-# Shorewall -- $shorewall_params_filespec
+# File: $shorewall_params_filespec
+# Title: Shorewall Parameters configuration file
 #
 # Assign any variables that you need here.
 #
@@ -196,10 +198,10 @@ cat << SHOREWALL_CONF_EOF | tee -a "${OUTPUT_FILE}" >/dev/null
 
 #LAST LINE -- DO NOT REMOVE
 SHOREWALL_CONF_EOF
-echo ""
+echo
 
-flex_chmod 0640 ${OUTPUT_FILE}
-flex_chown root:root ${OUTPUT_FILE}
+flex_chmod 0640 "$shorewall_params_filespec"
+flex_chown root:root "$shorewall_params_filespec"
 
 ####################################################################
 #  Creating 'interfaces' config file
@@ -834,7 +836,7 @@ cat << SHOREWALL_CONF_EOF | tee "${interfaces_output}" >/dev/null
 
 -       lo      -
 SHOREWALL_CONF_EOF
-echo ""
+echo
 
 echo "Processing public-side interfaces ..."
 echo "public_netdevs: $public_netdevs"
@@ -914,7 +916,7 @@ for this_public_netdev in $public_netdevs; do
   echo "$zone_netdev \$$intfname_netdev $INTF_OPTS" >> "$interfaces_output"
 
 done
-echo ""
+echo
 
 # identify the netdev(s) to downstream Internet
 # Compute remaining list of netdev(s) to assign
@@ -938,7 +940,7 @@ select this_private_netdev in $downstream_netdevs; do
   echo "Selected non-public-side netdevs: $selected_private_netdevs_list"
 done
 echo "List of remaining private netdev(s): $selected_private_netdevs_list"
-echo ""
+echo
 
 
 ###############################################################
@@ -981,7 +983,7 @@ for this_private_netdev in $selected_private_netdevs_list; do
     ((idx++))
   done
   echo "$zone_netdev    \$$intfname_netdev  $INTF_OPTS" >> "$interfaces_output"
-  echo ""
+  echo
 done
 
 echo "Done."

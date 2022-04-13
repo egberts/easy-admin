@@ -32,7 +32,16 @@
 #   util-linux (whereis)
 #
 
-source ./maintainer-chrony.sh
+BUILDROOT="${BUILDROOT:-build}"
+source ./maintainer-ntp-chrony.sh
+
+if [ "${BUILDROOT:0:1}" != '/' ]; then
+  mkdir -p "$BUILDROOT"
+else
+  FILE_SETTING_PERFORM='true'
+fi
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-chrony-admin.sh"
 
 DROP_IN_CONF_FILENAME="20-chronyc_cli_admin_access.conf"
 

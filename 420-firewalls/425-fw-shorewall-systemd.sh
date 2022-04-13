@@ -13,14 +13,13 @@ if [ "${BUILDROOT:0:1}" != "/" ]; then
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
   mkdir -p "$BUILDROOT"
   rm -f "$FILE_SETTINGS_FILESPEC"
+else
+  FILE_SETTING_PERFORM='true'
 fi
-
-source ../easy-admin-installer.sh
 
 DEFAULT_ETC_CONF_DIRNAME="shorewall"
 
-source ../distro-os.sh
-FILE_SETTING_PERFORM='yes'
+source maintainer-fw-shorewall.sh
 
 shorewall_dirspec="$extended_sysconfdir"
 flex_ckdir "$shorewall_dirspec"
@@ -33,7 +32,8 @@ flex_ckdir "$system_dirspec"
 shorewall_sys_unitname="shorewall.service"
 shorewall_sys_override_dirname="${shorewall_sys_unitname}.d"
 shorewall_sys_override_dirspec="${system_dirspec}/${shorewall_sys_override_dirname}"
-flex_mkdir "$shorewall_sys_override_dirspec"
+flex_ckdir "$shorewall_sys_override_dirspec"
+
 override_conf_filename="override.conf"
 shorewall_override_filespec="${shorewall_sys_override_dirspec}/$override_conf_filename"
 echo "Creating '$BUILDROOT$CHROOT_DIR$shorewall_override_filespec' file ..."
