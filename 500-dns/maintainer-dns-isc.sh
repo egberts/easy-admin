@@ -12,6 +12,12 @@ CHROOT_DIR="${CHROOT_DIR:-}"
 BUILDROOT="${BUILDROOT:-build}"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+extracted_dirspec="$(dirname $(realpath $0))"
+set
+echo "PWD: $PWD"
+echo "CWD: $CWD"
+echo "extracted_disrspec: $extracted_dirspec"
+exit
 source ../easy-admin-installer.sh
 
 SYSD_BIND_TEMPLATE_SVCNAME="named"
