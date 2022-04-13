@@ -33,14 +33,16 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
     SUDO_BIN="/usr/bin/sudo"
   fi
 else
-  mkdir -p "./$BUILDROOT"
-  mkdir -p "./${BUILDROOT}/etc"
-  mkdir -p "./${BUILDROOT}/etc/systemd"
+  mkdir "$BUILDROOT"
 fi
-
 
 source ../easy-admin-installer.sh
 source ../distro-os.sh
+FILE_SETTING_PERFORM='yes'
+
+flex_ckdir "/etc"
+flex_ckdir "/etc/systemd"
+
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-systemd-resolved-dnssec-fallback-disabled.sh"
 
 dropin_filename="dnssec-fallback-disabled.conf"

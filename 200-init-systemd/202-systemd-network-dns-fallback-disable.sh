@@ -66,7 +66,7 @@ fi
 
 source ../easy-admin-installer.sh
 source ../distro-os.sh
-
+FILE_SETTING_PERFORM='yes'
 FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-systemd-resolved-dns-fallback-disabled.sh"
 
 resolv_filename="resolved.conf"
