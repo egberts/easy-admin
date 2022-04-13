@@ -1,7 +1,7 @@
 How to configure a bastion OpenSSH server so that
 a simple command of:
 
-   ssh -J finaluser@finalhost bastionuser@bastionhost
+    ssh -J finaluser@finalhost bastionuser@bastionhost
 
 is the ONLY thing that is supported.
 
@@ -13,7 +13,7 @@ is the ONLY thing that is supported.
 * No user home directories
 
 Also configures OpenSSH for:
-
+```
    AllowAgentForwarding no
    AllowTcpForwarding yes
    X11Forwarding no
@@ -27,4 +27,4 @@ Also configures OpenSSH for:
    # MaxSessions=1 means:
    #  - All logins get logged  (>1 would miss-out on some audit)
    MaxSessions 1
-
+```
