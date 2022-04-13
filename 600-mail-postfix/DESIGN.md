@@ -6,6 +6,62 @@ Dependencies:
     domain DNS has no MX record
   disable_dns_lookup
 
+  notify_classes
+    2bounce_notice_recipient = postmaster
+
+  smtpd_client_restrictions
+    check_ccert_access
+    check_client_access
+    check_client_a_access
+    check_client_mx_access
+    check_client_ns_access
+    check_reverse_client_hostname
+    check_reverse_client_a_access
+    check_reverse_client_mx_access
+    check_reverse_client_ns_access
+    check_sasl_access
+    permit_inet_interfaces
+    permit_mynetworks
+    permit_sasl_authenticated
+    permit_tls_all_clientcerts
+    permit_tls_clientcerts
+    reject_rbl_client
+    permit_dnswl_client
+    reject_rhsbl_client
+    permit_rhswl_client
+    reject_rhsbl_reverse
+    reject_unknown_client_hostname
+    reject_unknown_reverse_client
+    check_policy_service
+    defer
+    defer_if_permit
+    defer_if_reject
+    permit
+    reject_multi_recipient_bounce
+    reject_plaintext_session
+    reject_unauth_pipelining
+    reject
+    sleep
+    warn_if_reject
+  smtpd_command_filter
+  smtpd_data_restrictions
+  smtpd_delay_open_until_valid_rcpt
+  smtpd_delay_reject
+  smtp_discard_ehlo_keyword_address_maps
+  smtp_discard_ehlo_keywords
+  smtpd_dns_reply_filter
+  smtpd_end_of_data_restrictions
+  smtpd_enforce_tls
+  smtpd_error_sleep_time
+  smtpd_etrn_restrictions
+  smtpd_expansion_filter
+  smtpd_forbidden_commands
+  smtpd_hard_error_limit:wq
+
+  
+
+  access_maps
+    access_map_defer_code
 
 
 default-ssl-wide-settings {
@@ -24,21 +80,27 @@ default-ssl-wide-settings {
     smtp_tls_secure_cert_match = nexthop, dot-nexthop
 }
 
-Do you generate email?
-if not-generate-email
-  exit
-fi
-
-Accept mail from the network?
-if smtp-inbound-supported == no then
-  inet_interfaces = loopback-only
-fi
-
 if $mydomain has no MX record (DNS) then
   relayhost = $my_actual_hostname
 fi
 
-if smtp-inbound-supported == yes then
+if want-host-using-ipv6-only then
+    inet_protocols = ipv6
+elif want-host-using-ipv4-only then
+    inet_protocols = ipv6
+else
+    inet_protocols = all
+fi
+
+if want-host-email-listen-external == yes then
+  inet_interfaces = all
+  Which netdev interface(s) to listen on?
+  inet_interfaces = <list_of_ip_addresses>
+else
+  inet_interfaces = loopback-only
+fi  
+
+if wants-smtp-inbound-supported == yes then
   if this-hostname is a primary OR a secondary DNX MX record then
     relay_domains += this-hostname   # note this '+='
     smtpd_relay_restrictions += permit_mynetworks_reject_unauth_destination 
@@ -83,7 +145,8 @@ if smtp-inbound-supported == yes then
     ### # File: /etc/postfix/transport:
     ### the.backed-up.mx2.domain.tld       relay:[their.mail.host.tld]
   fi
-
+elif wants-smtp-inbound-supported == no then
+    inet_interfaces = loopback-only
 fi
 
 
@@ -179,7 +242,7 @@ while no-more-smtp-password-store == no; do
 endwhile
 `smtp_sasl_password_maps = ${my_sasl_password_store[*]}`
 
-# LSMTP
+# LSMTP - local client - inbound-only 
 Does your email needs to be sent to a local user on this host?
 if local-users-supported
   Do you need authentication from users trying to send local email?
@@ -226,7 +289,7 @@ else
 fi
 
 
-# LMTP
+# LMTP inbound - relaying
 Does this host need to relay mail from clients within your local network?
 if relay-network-localnet == yes then
     # mynetworks: type: non-mailhost/mailhost
@@ -284,7 +347,36 @@ if remote-firewall-blocks-smtp then
   fi
 fi
 
-if request-remote-smart-host-port-custom then
+if postfix-type-null-client then
+    # Set myhostname to hostname.example.com, in case the 
+    # machine name isn't set to a fully-qualified domain 
+    # name (use the command "postconf -d myhostname" to 
+    # find out what the machine name is).
+    # The myhostname value also provides the default value 
+    # for the mydomain parameter (here, "mydomain = example.com").
+    myhostname = hostname.example.com
+
+    # Send mail as "user@example.com" (instead of 
+    # "user@hostname.example.com"), so that nothing ever 
+    #has a reason to send mail to "user@hostname.example.com".
+    myorigin = $mydomain
+
+    #  Forward all mail to the mail server that is 
+    # responsible for the "example.com" domain. This 
+    # prevents mail from getting stuck on the null client 
+    # if it is turned off while some remote destination is 
+    # unreachable. Specify a real hostname here if your 
+    # "example.com" domain has no MX record.
+    relayhost = $mydomain
+
+    # Do not accept mail from the network. 
+    inet_interfaces = loopback-only
+
+    # Disable local mail delivery. All mail goes to the mail server as specified in relayhost=
+    mydestination =
+fi
+
+if postfix-type-request-remote-smart-host-port-custom then
   # IMPORTANT: do not specify a relayhost
 
   # Request that intranet mail is delivered directly, and 
@@ -313,10 +405,23 @@ if request-remote-smart-host-port-custom then
 fi
 
 ###########################################################
+#  local(8) mail delivery
+###########################################################
+
+# security local(8) mail delivery 
+allow_mail_to_commands = alias,forward
+allow_mail_to_files = alias, forward
+allow_percent_hack = no
+allow_untrusted_routing = no
+
+###########################################################
 # Post integrity test
 if this-hostname is a primary DNX MX record then
   Do not list the.backed-up.domain.tld in mydestination.
   Do not list the.backed-up.domain.tld in virtual_alias_domains.
   Do not list the.backed-up.domain.tld in virtual_mailbox_domains.
 fi
-
+if mydestination == <null> and relayhost == <null> then
+  Postfix is deaf and mute. But it can still receive email (good for kitchen sink logger)
+  do-not-emit-email = yes
+fi
