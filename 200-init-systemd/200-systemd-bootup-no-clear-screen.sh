@@ -41,7 +41,7 @@ cat << SYSTEMD_UNIT_TWEAK_EOF | $SUDO_BIN tee "$service_unit_filespec" > /dev/nu
 TTYVTDisallocate=no
 
 SYSTEMD_UNIT_TWEAK_EOF
-$SUDO_BIN chmod 0640      "$service_unit_filespec"
+$SUDO_BIN chmod 0644      "$service_unit_filespec"
 $SUDO_BIN chown root:root "$service_unit_filespec"
 echo "File permission setted."
 echo
