@@ -55,5 +55,12 @@ have the following attributes:
 - OSSEC/Tripwire/audit/SELinux
 - Email outlet for alerts
 - Templates are destroyed and rebuilt every 8 hours
+- Disable `ptrace()` in OS
+- Compile `sshd` executable as a static executable (no `*.so` nor `dlopen()` capability)
 
 Enjoy.
+
+# References
+
+* [Introduction to Injection into sshd for Fun](https://papers.vx-underground.org/papers/VXUG/Mirrors/Injection/linux/blog.xpnsec.com-Linux%20ptrace%20introduction%20AKA%20injecting%20into%20sshd%20for%20fun.pdf)
+
