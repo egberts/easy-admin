@@ -56,7 +56,7 @@ have the following attributes:
 - Email outlet for alerts
 - Templates are destroyed and rebuilt every 8 hours
 - Disable `ptrace()` in OS
-- Compile `sshd` executable as a static executable (no `*.so` nor `dlopen()` capability)
+- Compile and link `sshd` binary file as a static executable (no `*.so` nor `dlopen()` capability)
 
 Enjoy.
 
