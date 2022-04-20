@@ -53,6 +53,9 @@ if [ "$SHELL_FILENAME" != "$NOLOGIN_FILENAME" ] || \
     echo "Unable to remediate shell '$USER_SHELL' of user '$user_name' into $NOLOGIN_BIN"
     echo "CIS-Bind9.11-2.2: FAIL"
     exit $retsts
+  else
+    echo "FORCIBLY replaced the $user_name SHELL with ${NOLOGIN_BIN}."
   fi
+  echo
 fi
 echo "CIS-Bind9.11-2.2: pass"

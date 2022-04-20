@@ -885,7 +885,7 @@ its_dir_exist "$bind_cfg_files"
 
 # Directory for managed keys which are dynamically updated
 # Directory for dynamically updated slave zone files.
-slave_dir="/var/bind/slave"
+slave_dir="/var/lib/bind/slave"
 
 # Directory for temporary files - Typically, '/tmp',
 # some methods for named to define temporary files are:
@@ -1009,10 +1009,70 @@ function file_perm_check
 }
 
 echo
-read -rp "CISecurity, Fedora, or Debian settings? (C/f/d): " -eiC
+echo "Four choices of file permission settings are:"
+echo "   \"M\"aximum security"
+echo "   \"F\"edora/CentOS/Redhat default"
+echo "   \"D\"ebian/Devuan default"
+echo "   \"C\"ISecurity recommendation"
+read -rp "Maximum, Fedora, Debian or CISecurity settings? (M/f/d/c): " -eiM
 REPLY="$(echo "${REPLY:0:1}"|awk '{print tolower($1)}')"
 
 case $REPLY in
+
+  # Maximum security
+  'm')
+    echo "Maximum security settings..."
+    file_perm_check TMPDIR "1777" "root" "root"
+    file_perm_check NAMED_SHELL_FILESPEC "755" "root" "root"
+    file_perm_check random_filespec "666" "root" "root"
+    file_perm_check keytab_filespec "640" "$USER_NAME" "$GROUP_NAME"
+
+    # unwanted reason for o-rx in named $HOME:
+    #   dhcp-client needs access to named session-key
+    #   Another good reason for relocating session-key to /var/run/named
+
+    # SELinux named_zone_t
+    file_perm_check NAMED_HOME_DIRSPEC "0750" "$USER_NAME" "$GROUP_NAME"
+    for zone_file in $zone_files_list; do
+      file_perm_check zone_file "640" "$USER_NAME" "$GROUP_NAME"
+    done
+
+    # SELinux named_cache_t
+    file_perm_check DYNAMIC_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check slave_dir "750" "$USER_NAME" "$GROUP_NAME"
+    for key_dir in $key_dir_list; do
+      file_perm_check key_dir "750" "$USER_NAME" "$GROUP_NAME"
+    done
+    if [ -d "$MANAGEDKEYS_FILESPEC" ]; then
+      file_perm_check MANAGEDKEYS_DIR  "640" "root" "$GROUP_NAME"
+    else
+      file_perm_check MANAGEDKEYS_FILESPEC "0640" "$USER_NAME" "$GROUP_NAME"
+      file_perm_check MANAGEDKEYS_DIR "750" "$USER_NAME" "$GROUP_NAME"
+    fi
+    file_perm_check DATA_DIRSPEC "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check dump_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check secroots_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check statistics_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check memstatistics_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check JOURNAL_DIR "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check recursing_filespec  "640" "$USER_NAME" "$GROUP_NAME"
+
+    # SELinux named_conf_t
+    for config_file in $config_files_list; do
+      file_perm_check config_file "640" "$USER_NAME" "$GROUP_NAME"
+    done
+    file_perm_check BINDKEY "644" "$USER_NAME" "$GROUP_NAME"
+
+    # named_var_run_t
+    file_perm_check CIS_RUNDIR "750" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check pid_filespec "640" "$USER_NAME" "$GROUP_NAME"
+    # session-key only occurs when DHCP server is coordinating with this DNS
+    file_perm_check SESSION_KEY_FILESPEC "600" "$USER_NAME" "$GROUP_NAME"
+    file_perm_check lock_filespec "640" "$USER_NAME" "$GROUP_NAME"
+
+    # named_log_t
+    file_perm_check log_dir "750" "$USER_NAME" "$GROUP_NAME"
+    ;;
   'd')
     echo "Debian default settings..."
     file_perm_check TMPDIR "1777" "root" "root"
