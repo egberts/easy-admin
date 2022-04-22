@@ -28,7 +28,6 @@ DB_ZONE_BIND_CHAOS_CLASS_FILENAME="db.ch.bind"
 ZONE_PRIMARY_BIND_FILENAME="pz.bind.ch"
 VIEW_CHAOS_FILENAME="view.chaos.ch"
 
-FILE_SETTING_PERFORM=true
 source ./maintainer-dns-isc.sh
 
 INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC="${INSTANCE_DB_PRIMARIES_DIRSPEC}/$DB_ZONE_BIND_CHAOS_CLASS_FILENAME"
@@ -37,16 +36,18 @@ INSTANCE_VIEW_CHAOS_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$VIEW_CHAOS_FILENAME
 
 # Are we making a build subdir or directly installing?
 if [ "${BUILDROOT:0:1}" != '/' ]; then
+  FILE_SETTING_PERFORM=false
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-class-chaos${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   rm -rf "$FILE_SETTINGS_FILESPEC"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
-  flex_ckdir "${BUILDROOT}${CHROOT_DIR}"
-  mkdir "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
-  mkdir "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
-  mkdir "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
+  mkdir -p "${BUILDROOT}${CHROOT_DIR}"
+  mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
+  mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
+  mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
 fi
 if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" == '/' ]]; then
   # SUDO_BIN=sudo
+  FILE_SETTING_PERFORM=true
   echo "Writing files as 'root'..."
 else
   echo "Writing ALL files into $BUILDROOT as user '$USER')..."
