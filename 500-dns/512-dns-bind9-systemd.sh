@@ -229,9 +229,9 @@ Environment=RNDC_BIN=/usr/sbin/rndc
 Environment=NAMED_BIN=/usr/sbin/named
 Environment=NAMED_CHECKCONF_BIN=/usr/sbin/named-checkconf
 
-EnvironmentFile=-/etc/default/bind9
+EnvironmentFile=-${INIT_DEFAULT_FILESPEC}
 # instantiation-specific Bind environment file is absolutely required
-EnvironmentFile=/etc/default/bind9-%I
+EnvironmentFile=${INSTANCE_INIT_DEFAULT_FILESPEC}
 
 # Far much easier to peel away additional capabilities after
 # getting a bare-minimum cap-set working
@@ -257,7 +257,7 @@ ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
 
-RootDirectory=/$CHROOT_DIR
+#RootDirectory=/$CHROOT_DIR
 UMask=0007
 LogsDirectory=${LOG_SUB_DIRNAME}/%I
 LogsDirectoryMode=0750
@@ -398,7 +398,7 @@ Environment=NAMED_BIN="/usr/sbin/named"
 Environment=NAMED_CHECKCONF_BIN="/usr/sbin/named-checkconf"
 
 # default bind9 (global) is optional
-EnvironmentFile=-/etc/default/bind9
+EnvironmentFile=-/etc/default/${sysvinit_unitname}
 
 # Far much easier to peel away additional capabilities after
 # getting a bare-minimum cap-set working

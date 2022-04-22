@@ -23,7 +23,6 @@ echo
 
 
 source ./maintainer-dns-isc.sh
-FILE_SETTING_PERFORM=true
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 
 echo "Checking against BUILDROOT=$BUILDROOT directory ..."
@@ -457,7 +456,7 @@ if [ $UID -ne 0 ]; then
   echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"
   echo "      ISC Bind9 Issue #3119"
   echo "You can execute:"
-  echo "  $named_checkconf_filespec -i -p -c -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
+  echo "  $named_checkconf_filespec -p -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
   read -rp "Do you want to sudo the previous command? (Y/n): " -eiY
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 fi

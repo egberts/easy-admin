@@ -85,7 +85,7 @@ cat << DB_CH_BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 ; Generator: $(basename "$0")
 ; Created on: $(date)
 ;
-$TTL 3600
+\$TTL 3600
 @   86400   CH  SOA localhost. root.localhost. (
                 2013050803 ; serial
                 3600       ; refresh
@@ -97,7 +97,9 @@ $TTL 3600
 
 version     CH  TXT "${BIND_VERSION}"
 authors     CH  TXT "${BIND_AUTHOR}"
+
 DB_CH_BIND_EOF
+
 flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
