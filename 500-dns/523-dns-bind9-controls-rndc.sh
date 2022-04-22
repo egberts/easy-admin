@@ -103,7 +103,7 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
 else
   mkdir -p build
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-security${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
-  mkdir -p build/etc
+  mkdir build/etc
   flex_ckdir "${ETC_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
     flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"

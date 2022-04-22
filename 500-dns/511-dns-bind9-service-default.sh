@@ -42,9 +42,9 @@ else
   FILE_SETTING_PERFORM=false
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
-  mkdir "${BUILDROOT}/etc"
-  mkdir "${BUILDROOT}/etc/systemd"
-  mkdir "${BUILDROOT}/etc/systemd/system"
+  mkdir -p "${BUILDROOT}/etc"
+  mkdir -p "${BUILDROOT}/etc/systemd"
+  mkdir -p "${BUILDROOT}/etc/systemd/system"
 
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
@@ -88,8 +88,6 @@ function create_sysv_default() {
 RESOLVCONF=no
 
 # default settings for startup options  of 'bind9'
-#
-# NAMED_PIDFILE="/run/bind/named.pid"
 #
 # NAMED_CONF="/etc/bind/named.conf"
 #

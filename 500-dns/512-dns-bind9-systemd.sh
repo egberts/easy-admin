@@ -134,34 +134,26 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 # Title: ISC Bind9 named daemon systemd unit
 # Creator: $(basename "$0")
 # Created on: $(date)
+# Description:
 #
+#   An instantiation of bind9.service to support
+#   bastion DNS hosting (multiple DNS servers on
+#   multi-home gateway)
 #
-# An instantiation of bind9.service to support
-# bastion DNS hosting (multiple DNS servers on
-# multi-home gateway)
+#   Cannot use '-f' nor '-g' option in this Bind9 
+#   named setup without additional but intensive 
+#   changes.
 #
-# PORT number must be defined in /etc/default/bind
-#
-# This same PORT number must be declared in 'default-port'
-#    statement of 'options' section in /etc/rndc.conf
-#
-# This same PORT number must be declared in 'listen-on'
-#    statement of 'options' section.
-#
-# NAMED_OPTIONS string must be defined in /etc/default/bind
-#    NAMED_OPTIONS cannot replace '-u' or '-c' option of
-#    named(8) for its hard-coded in this file as:
-#        '-u bind -c /etc/bind/named.conf'
-#    Useful examples:
+#   NAMED_OPTIONS string must be defined in /etc/default/bind
+#     Useful examples:
 #        NAMED_OPTIONS="-p 53 -s"  # open port 53/udp and write stats
 #        NAMED_OPTIONS="-d 63"   # turn on various debug bit flags
 #
-# RNDC_OPTIONS string must be defined in /etc/default/bind
-#    Secured Example: RNDC_OPTIONS="-p 953 -s 127.0.0.1"
+#   RNDC_OPTIONS string must be defined in /etc/default/bind
+#     Default example: RNDC_OPTIONS="-p 953 -s 127.0.0.1"
 #
 # References:
 #   * https://bind9-users.isc.narkive.com/qECPVuuu/enable-systemd-hardening-options-for-named
-#
 #
 #
 [Unit]
@@ -183,7 +175,6 @@ Before=nss-lookup.target
 # AssertPathExists=${VAR_LIB_NAMED_DIRSPEC}/%I
 # AssertPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}/%I
 # AssertPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}/%I
-
 
 # ConditionPathExists=/run/bind
 # ConditionPathIsDirectory=/run/bind
