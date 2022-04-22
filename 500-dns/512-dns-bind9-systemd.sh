@@ -391,7 +391,7 @@ InaccessiblePaths=/opt
 InaccessiblePaths=/root
 
 Environment=NAMED_OPTIONS="-c $NAMED_CONF_FILESPEC"
-Environment=RNDC_OPTIONS="-p 953 -s localhost"
+Environment=RNDC_OPTIONS=""
 
 Environment=RNDC_BIN="/usr/sbin/rndc"
 Environment=NAMED_BIN="/usr/sbin/named"
@@ -419,12 +419,7 @@ Group=${GROUP_NAME}
 
 # File Security settings
 NoNewPrivileges=true
-ProtectHome=true
-ProtectKernelModules=true
-ProtectKernelTunables=true
-ProtectControlGroups=true
 
-RootDirectory=/$CHROOT_DIR
 UMask=0007
 LogsDirectory=$LOG_SUB_DIRNAME
 LogsDirectoryMode=0750
@@ -436,6 +431,7 @@ ConfigurationDirectoryMode=0750
 # Tmpfiles
 PrivateTmp=false
 
+PermissionsStartOnly=True
 RuntimeDirectory=$VAR_SUB_DIRNAME
 RuntimeDirectoryMode=0750
 
@@ -451,15 +447,15 @@ StateDirectory=$VAR_SUB_DIRNAME
 StateDirectoryMode=0750
 
 PIDFile=$INSTANCE_PID_FILESPEC
-ExecStartPre=\$NAMED_CHECKCONF_BIN -z \$NAMED_CONF
-ExecStart=\$NAMED_BIN -u $USER_NAME \$NAMED_CONF
+ExecStartPre=$NAMED_CHECKCONF_FILESPEC -z \$NAMED_CONF
+ExecStart=$NAMED_BIN_FILESPEC -f -u $USER_NAME \$NAMED_CONF
 
 # rndc will dovetail any and all instantiations of
 # Bind9 'named' daemons into a single rndc.conf file
 # and use its '-s <server>' as a reference from
 # this rndc.conf config file.
-ExecReload=\$RNDC_BIN \$RNDC_OPTIONS reload
-ExecStop=\$RNDC_BIN \$RNDC_OPTIONS stop
+ExecReload=$RNDC_BIN_FILESPEC \$RNDC_OPTIONS reload
+ExecStop=$RNDC_BIN_FILESPE \$RNDC_OPTIONS stop
 #ExecStop=/bin/sh -c /usr/sbin/rndc stop > /dev/null 2>&1 || /bin/kill -TERM $MAINPID
 
 # No need for 'KillMode=process' unless cgroups get disabled
@@ -475,16 +471,20 @@ WantedBy=multi-user.target
 # CapabilityBoundingSet=CAP_SYS_RESOURCE
 # IgnoreSIGPIPE=false
 # LockPersonality=yes
-# PermissionsStartOnly=True
 # PrivateDevices=true
 # PrivateMounts=yes
+# ProtectControlGroups=true
+# ProtectHome=true
 # ProtectKernelLogs=yes
+# ProtectKernelModules=true
+# ProtectKernelTunables=true
 # ProtectSystem=strict
 # ReadWritePaths=/run/named /var/run/named
 # ReadWritePaths=/var/cache/bind
 # RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 # RestrictRealtime=yes
 # RestartPreventExitStatus=255
+# RootDirectory=/$CHROOT_DIR
 # SystemCallArchitectures=native
 # Type=notify
 

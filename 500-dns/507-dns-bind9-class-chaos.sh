@@ -86,17 +86,17 @@ cat << DB_CH_BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 ; Created on: $(date)
 ;
 \$TTL 3600
-@   86400   CH  SOA localhost. root.localhost. (
-                2013050803 ; serial
-                3600       ; refresh
-                3600       ; retry
-                1209600    ; expire (2 week, RFC1912)
-                86400 )    ; minimum
-;
-@       CH  NS  localhost.
+@   86400             SOA localhost. root.localhost. (
+                      2013050803
+                      3600
+                      3600
+                      1209600
+                      86400 )
 
-version     CH  TXT "${BIND_VERSION}"
-authors     CH  TXT "${BIND_AUTHOR}"
+                      NS  localhost.
+
+version     86400     TXT "${BIND_VERSION}"
+authors     86400     TXT "${BIND_AUTHOR}"
 
 DB_CH_BIND_EOF
 

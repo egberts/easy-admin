@@ -63,13 +63,13 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "BUILDROOT: $BUILDROOT"
 else
   rm -rf "$BUILDROOT"
-  mkdir "$BUILDROOT"  # no flex_mkdir, this is an intermediate-build tmp directory
-  mkdir "${BUILDROOT}${CHROOT_DIR}/etc"
-  mkdir "${BUILDROOT}${CHROOT_DIR}/etc/systemd"
-  mkdir "${BUILDROOT}${CHROOT_DIR}/etc/systemd/system"
-  mkdir "${BUILDROOT}${CHROOT_DIR}/var"
-  mkdir "${BUILDROOT}${CHROOT_DIR}/var/cache"
-  mkdir "${BUILDROOT}${CHROOT_DIR}$DEFAULT_LIB_DIRSPEC"
+  mkdir -v "$BUILDROOT"  # no flex_mkdir, this is an intermediate-build tmp directory
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}/etc"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}/etc/systemd"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}/etc/systemd/system"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}/var"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}/var/cache"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_NAMED_DIRSPEC"
 fi
 
 flex_ckdir "$extended_sysconfdir"
@@ -127,7 +127,6 @@ cat << NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$INSTANCE_NAMED_CONF_FILES
 include "${INSTANCE_ACL_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_CONTROLS_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_OPTIONS_NAMED_CONF_FILESPEC}";
-include "${INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_LOGGING_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_MANAGED_KEYS_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_PRIMARY_NAMED_CONF_FILESPEC}";
@@ -265,12 +264,20 @@ cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CO
     notify no;
         zone-statistics yes;
 
+include "${INSTANCE_OPTIONS_EXT_NAMED_CONF_FILESPEC}";
+    };
 OPTIONS_EOF
 
+create_header "${INSTANCE_OPTIONS_EXT_NAMED_CONF_FILESPEC}" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "extensions to 'options' clauses"
+
+
+if [ 0 -ne 0 ]; then
+# TODO: MOVE THIS BLOCK TO A SEPARATE SCRIPT FILE
+# TODO: Do 'listen-on' in a separate script file
+# TODO: Do 'bastion' in a separate script file
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC";
-
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC"
-
 append_include_clause \
   "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" \
   "$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC"
@@ -278,20 +285,18 @@ append_include_clause \
 append_include_clause \
   "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" \
   "$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC"
-
-cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
-    };
-OPTIONS_EOF
+# touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC"
+fi
 
 
-
-touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC"
-
+# /etc/named/key-named.conf
 create_header "${INSTANCE_KEY_NAMED_CONF_FILESPEC}" \
     "${USER_NAME}:$GROUP_NAME" 0640 "'key' clauses"
 
+# /etc/named/logging-named.conf
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_LOGGING_NAMED_CONF_FILESPEC"
 
+# /etc/named/logging-named.conf
 create_header "${INSTANCE_MANAGED_KEYS_NAMED_CONF_FILESPEC}" \
     "${USER_NAME}:$GROUP_NAME" 0640 "'managed-keys' clause"
 
@@ -307,7 +312,6 @@ create_header "${INSTANCE_VIEW_NAMED_CONF_FILESPEC}" \
 create_header "${INSTANCE_ZONE_NAMED_CONF_FILESPEC}" \
     "${USER_NAME}:$GROUP_NAME" 0640 "'zone' clauses"
 
-echo ""
+echo
 echo "Done."
-exit 0
 
