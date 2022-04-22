@@ -20,13 +20,13 @@ CATEGORY_NAMED_CONF_FILENAME="logging-categories-named.conf"
 echo "Create logging channel/category configuration files for ISC Bind9 named daemon"
 echo
 
-readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 
 
 source ./maintainer-dns-isc.sh
 FILE_SETTING_PERFORM=true
-echo "Checking against BUILDROOT=$BUILDROOT directory ..."
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 
+echo "Checking against BUILDROOT=$BUILDROOT directory ..."
 INSTANCE_LOGGING_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$LOGGING_NAMED_CONF_FILENAME"
 INSTANCE_CHANNEL_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CHANNEL_NAMED_CONF_FILENAME"
 INSTANCE_CATEGORY_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CATEGORY_NAMED_CONF_FILENAME"
@@ -42,12 +42,10 @@ else
   flex_ckdir "${ETC_NAMED_DIRSPEC}"
   mkdir -p build/var
   mkdir -p  build/var/log
-  mkdir -p "${log_dir}"
-  if [ -n "$INSTANCE" ]; then
-    flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
-    flex_ckdir "${INSTANCE_LOG_DIRSPEC}"
-  fi
 fi
+flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+flex_ckdir "${INSTANCE_LOG_DIRSPEC}"
+flex_ckdir "${INSTANCE_LOG_DIRSPEC}/$LOG_SUB_DIRNAME"
 
 # Generate generic `logging-named.conf`
 # /etc/bind/logging-named.conf
