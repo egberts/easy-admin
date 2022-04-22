@@ -20,7 +20,13 @@ CATEGORY_NAMED_CONF_FILENAME="logging-categories-named.conf"
 echo "Create logging channel/category configuration files for ISC Bind9 named daemon"
 echo
 
+echo "Checking against BUILDROOT=$BUILDROOT directory ..."
+FILE_SETTING_PERFORM=false   # we are not changing anything
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+
+
 source ./maintainer-dns-isc.sh
+FILE_SETTING_PERFORM=true
 
 INSTANCE_LOGGING_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$LOGGING_NAMED_CONF_FILENAME"
 INSTANCE_CHANNEL_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CHANNEL_NAMED_CONF_FILENAME"
@@ -31,15 +37,14 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "Absolute build"
 else
   mkdir -p build
-  readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
-  mkdir -p build/etc
-  flex_mkdir "${ETC_NAMED_DIRSPEC}"
-  mkdir -p build/var
-  mkdir -p build/var/log
-  flex_mkdir "${log_dir}"
+  flex_ckdir -p build/etc
+  flex_ckdir "${ETC_NAMED_DIRSPEC}"
+  flex_ckdir -p build/var
+  flex_ckdir -p build/var/log
+  flex_ckdir "${log_dir}"
   if [ -n "$INSTANCE" ]; then
-    flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
-    flex_mkdir "${INSTANCE_LOG_DIRSPEC}"
+    flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+    flex_ckdir "${INSTANCE_LOG_DIRSPEC}"
   fi
 fi
 
@@ -71,55 +76,59 @@ include "${INSTANCE_CATEGORY_NAMED_CONF_FILESPEC}";
 };
 RNDC_LOGGING_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$filespec"
 echo
 
 log_default_filespec="${INSTANCE_LOG_DIRSPEC}/default.log"
 flex_touch "$log_default_filespec"
 flex_chmod 0640 "$log_default_filespec"
-flex_chown "root:$GROUP_NAME" "$log_default_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_default_filespec"
 
 log_authoritative_servers_filespec="${INSTANCE_LOG_DIRSPEC}/authoritative_servers.log"
 flex_touch "$log_authoritative_servers_filespec"
 flex_chmod 0640 "$log_authoritative_servers_filespec"
-flex_chown "root:$GROUP_NAME" "$log_authoritative_servers_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_authoritative_servers_filespec"
 
 log_dnssec_filespec="${INSTANCE_LOG_DIRSPEC}/dnssec.log"
 flex_touch "$log_dnssec_filespec"
 flex_chmod 0640 "$log_dnssec_filespec"
-flex_chown "root:$GROUP_NAME" "$log_dnssec_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_dnssec_filespec"
 log_zone_transfers_filespec="${INSTANCE_LOG_DIRSPEC}/zone_transfers.log"
 flex_touch "$log_zone_transfers_filespec"
 flex_chmod 0640 "$log_zone_transfers_filespec"
-flex_chown "root:$GROUP_NAME" "$log_zone_transfers_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_zone_transfers_filespec"
 log_ddns_filespec="${INSTANCE_LOG_DIRSPEC}/ddns.log"
 flex_touch "$log_ddns_filespec"
 flex_chmod 0640 "$log_ddns_filespec"
-flex_chown "root:$GROUP_NAME" "$log_ddns_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_ddns_filespec"
 log_client_security_filespec="${INSTANCE_LOG_DIRSPEC}/client_security.log"
 flex_touch "$log_client_security_filespec"
 flex_chmod 0640 "$log_client_security_filespec"
-flex_chown "root:$GROUP_NAME" "$log_client_security_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_client_security_filespec"
 log_rate_limiting_filespec="${INSTANCE_LOG_DIRSPEC}/rate_limiting.log"
 flex_touch "$log_rate_limiting_filespec"
 flex_chmod 0640 "$log_rate_limiting_filespec"
-flex_chown "root:$GROUP_NAME" "$log_rate_limiting_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_rate_limiting_filespec"
 log_rpz_filespec="${INSTANCE_LOG_DIRSPEC}/rpz.log"
 flex_touch "$log_rpz_filespec"
 flex_chmod 0640 "$log_rpz_filespec"
-flex_chown "root:$GROUP_NAME" "$log_rpz_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_rpz_filespec"
 log_dnstap_filespec="${INSTANCE_LOG_DIRSPEC}/dnstap.log"
 flex_touch "$log_dnstap_filespec"
 flex_chmod 0640 "$log_dnstap_filespec"
-flex_chown "root:$GROUP_NAME" "$log_dnstap_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_dnstap_filespec"
+log_audit_filespec="${INSTANCE_LOG_DIRSPEC}/dnstap.log"
+flex_touch "$log_audit_filespec"
+flex_chmod 0640 "$log_audit_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_audit_filespec"
 log_queries_filespec="${INSTANCE_LOG_DIRSPEC}/queries.log"
 flex_touch "$log_queries_filespec"
 flex_chmod 0640 "$log_queries_filespec"
-flex_chown "root:$GROUP_NAME" "$log_queries_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_queries_filespec"
 log_query_errors_filespec="${INSTANCE_LOG_DIRSPEC}/query-errors.log"
 flex_touch "$log_query_errors_filespec"
 flex_chmod 0640 "$log_query_errors_filespec"
-flex_chown "root:$GROUP_NAME" "$log_query_errors_filespec"
+flex_chown "$USER_NAME:$GROUP_NAME" "$log_query_errors_filespec"
 
 # Create the /etc/bind/logging-channels-named.conf
 filename="$(basename "$INSTANCE_CHANNEL_NAMED_CONF_FILESPEC")"

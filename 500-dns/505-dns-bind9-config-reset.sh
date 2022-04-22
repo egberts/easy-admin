@@ -36,13 +36,16 @@
 #       + zone-example.org-named.conf (if no view clause)
 #       + zone-example.net-named.conf (if no view clause)
 #
+echo "Resetting build area to empty."
+echo
 
+BUILDROOT="${BUILDROOT:-build}"
+echo "Purging $BUILDROOT ..."
 
-BUILDROOT="${BUILDROOT:-build/}"
-
-source maintainer-dns-isc.sh
-
+FILE_SETTING_PERFORM=false
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-settings-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.conf"
+
+source ./maintainer-dns-isc.sh
 
 echo "Clearing out prior settings in $BUILDROOT"
 
@@ -60,61 +63,51 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
   echo "BUILDROOT: $BUILDROOT"
 else
   rm -rf "$BUILDROOT"
-  mkdir -p "$BUILDROOT"  # no flex_mkdir, this is an intermediate-build tmp directory
-  mkdir -p "${BUILDROOT}/etc"
-  mkdir -p "${BUILDROOT}/var"
+  mkdir "$BUILDROOT"  # no flex_mkdir, this is an intermediate-build tmp directory
+  mkdir "${BUILDROOT}${CHROOT_DIR}/etc"
+  mkdir "${BUILDROOT}${CHROOT_DIR}/etc/systemd"
+  mkdir "${BUILDROOT}${CHROOT_DIR}/etc/systemd/system"
+  mkdir "${BUILDROOT}${CHROOT_DIR}$DEFAULT_LIB_DIRSPEC"
+  mkdir "${BUILDROOT}${CHROOT_DIR}/var/lib"
 fi
-# Create skeleton subdirectory
-flex_mkdir "$sysconfdir"
-flex_chown root:bind "$sysconfdir"
-flex_chmod 0750      "$sysconfdir"
 
-flex_mkdir "$extended_sysconfdir"
-flex_chown root:bind "$extended_sysconfdir"
+flex_ckdir "$extended_sysconfdir"
+flex_chown bind:bind "$extended_sysconfdir"
 flex_chmod 0750      "$extended_sysconfdir"
 
-flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
-flex_chown root:bind "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_chown bind:bind "$INSTANCE_ETC_NAMED_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_ETC_NAMED_DIRSPEC"
 
-flex_mkdir "$ETC_SYSTEMD_DIRSPEC"
-flex_chown root:bind "$ETC_SYSTEMD_DIRSPEC"
-flex_chmod 0750      "$ETC_SYSTEMD_DIRSPEC"
-
-flex_mkdir "$ETC_SYSTEMD_SYSTEM_DIRSPEC"
-flex_chown root:bind "$ETC_SYSTEMD_SYSTEM_DIRSPEC"
-flex_chmod 0750      "$ETC_SYSTEMD_SYSTEM_DIRSPEC"
-
-flex_mkdir "$DEFAULT_LIB_DIRSPEC"
-flex_chown root:bind "$DEFAULT_LIB_DIRSPEC"
-flex_chmod 0750      "$DEFAULT_LIB_DIRSPEC"
-
 # /var/lib/bind
-flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
-flex_chown root:bind "$VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$VAR_LIB_NAMED_DIRSPEC"
+flex_chown bind:bind "$VAR_LIB_NAMED_DIRSPEC"
 flex_chmod 0750      "$VAR_LIB_NAMED_DIRSPEC"
 
 # /var/lib/bind/instance
-flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
-flex_chown root:bind "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_chown bind:bind "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
 
 # formerly masters/ subdirectory
 # /var/lib/bind[/instance]/primaries
-flex_mkdir "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
-flex_chown root:bind "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
+flex_ckdir "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
+flex_chown bind:bind "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_VAR_LIB_NAMED_PRIMARIES_DIRSPEC"
 
 # /var/lib/bind[/instance]/secondaries
-flex_mkdir "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
-flex_chown root:bind "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
+flex_ckdir "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
+flex_chown bind:bind "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_VAR_LIB_NAMED_SECONDARIES_DIRSPEC"
 
 # /var/lib/bind[/instance]/dynamic
-flex_mkdir "$INSTANCE_DYNAMIC_DIRSPEC"
-flex_chown root:bind "$INSTANCE_DYNAMIC_DIRSPEC"
+flex_ckdir "$INSTANCE_DYNAMIC_DIRSPEC"
+flex_chown bind:bind "$INSTANCE_DYNAMIC_DIRSPEC"
 flex_chmod 0750      "$INSTANCE_DYNAMIC_DIRSPEC"
 
+flex_ckdir "${INSTANCE_KEYS_DB_DIRSPEC}";
+flex_chown bind:bind "$INSTANCE_KEYS_DB_DIRSPEC"
+flex_chmod 0750      "$INSTANCE_KEYS_DB_DIRSPEC"
 # logrotate
 # apparmor
 # firewall?
@@ -145,8 +138,8 @@ include "${INSTANCE_ZONE_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_KEY_NAMED_CONF_FILESPEC}";
 
 NAMED_CONF_EOF
-flex_chown "root:$GROUP_NAME" "$INSTANCE_NAMED_CONF_FILESPEC"
-flex_chmod 0640      "$INSTANCE_NAMED_CONF_FILESPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_NAMED_CONF_FILESPEC"
+flex_chmod 0640 "$INSTANCE_NAMED_CONF_FILESPEC"
 
 
 function create_header()
@@ -167,8 +160,8 @@ function create_header()
 # Created on: $(date)
 
 CH_EOF
-flex_chown "$owner" "$FILESPEC"
-flex_chmod "$perms" "$FILESPEC"
+  flex_chown "$owner" "$FILESPEC"
+  flex_chmod "$perms" "$FILESPEC"
 }
 
 
@@ -180,26 +173,42 @@ function append_include_clause()
   echo "include \"${include}\";" >> "${BUILDROOT}${CHROOT_DIR}$filespec"
 }
 
-flex_mkdir "${INSTANCE_DYNAMIC_DIRSPEC}";
-flex_mkdir "${INSTANCE_KEYS_DB_DIRSPEC}";
+#flex_mkdir "${INSTANCE_DYNAMIC_DIRSPEC}";
 
-create_header "${INSTANCE_ACL_NAMED_CONF_FILESPEC}" root:bind 0640 "'acl' clauses"
+create_header "${INSTANCE_ACL_NAMED_CONF_FILESPEC}" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "'acl' clauses"
+
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC"
 
-create_header "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC"
+create_header "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "'options' clauses"
+
 cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
 options {
     directory "${INSTANCE_ETC_NAMED_DIRSPEC}";
-    dump-file "${DUMP_CACHE_FILESPEC}";
-    managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
-    max-rsa-exponent-size 4096;
-    pid-file "${INSTANCE_RUN_DIRSPEC}/named.pid";
+    pid-file "${INSTANCE_PID_FILESPEC}";
+
+    version "Funky DNS, eh?";
     server-id none;
+    dnssec-validation yes;
+
+OPTIONS_EOF
+
+touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC"
+
+cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
+    recursion no;
+    interface-interval 120;
+
+    managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
+    dump-file "${DUMP_CACHE_FILESPEC}";
+
+
+    max-rsa-exponent-size 4096;
     session-keyalg "hmac-sha256"; // could use hmac-sha512
     session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
     session-keyname "${DHCP_TO_BIND_KEYNAME}";
         statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
-    version "Funky DNS, eh?";
 
     // RNDC ACL
     allow-new-zones no;
@@ -258,8 +267,10 @@ options {
         zone-statistics yes;
 
 OPTIONS_EOF
-touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC";
+
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_LISTEN_ON_NAMED_CONF_FILESPEC";
+
+touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC"
 
 append_include_clause \
   "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" \
@@ -276,15 +287,25 @@ OPTIONS_EOF
 
 
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_BASTION_NAMED_CONF_FILESPEC"
-create_header "${INSTANCE_KEY_NAMED_CONF_FILESPEC}" root:bind 0640 "'key' clauses"
+
+create_header "${INSTANCE_KEY_NAMED_CONF_FILESPEC}" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "'key' clauses"
+
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_LOGGING_NAMED_CONF_FILESPEC"
-create_header "${INSTANCE_MANAGED_KEYS_NAMED_CONF_FILESPEC}" root:bind 0640 "'managed-keys' clause"
+
+create_header "${INSTANCE_MANAGED_KEYS_NAMED_CONF_FILESPEC}" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "'managed-keys' clause"
+
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_PRIMARY_NAMED_CONF_FILESPEC"
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_SERVER_NAMED_CONF_FILESPEC"
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_STATS_NAMED_CONF_FILESPEC"
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_TRUST_ANCHORS_NAMED_CONF_FILESPEC"
-create_header "${INSTANCE_VIEW_NAMED_CONF_FILESPEC}" root:bind 0640 "'view' clauses"
-create_header "${INSTANCE_ZONE_NAMED_CONF_FILESPEC}" root:bind 0640 "'zone' clauses"
+
+create_header "${INSTANCE_VIEW_NAMED_CONF_FILESPEC}" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "'view' clauses"
+
+create_header "${INSTANCE_ZONE_NAMED_CONF_FILESPEC}" \
+    "${USER_NAME}:$GROUP_NAME" 0640 "'zone' clauses"
 
 echo ""
 echo "Done."

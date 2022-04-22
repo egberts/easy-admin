@@ -18,7 +18,7 @@ case $ID in
     # apt install libtool-bin
     # apt install libcap-dev
     ;;
-  fedora|centos|redhat)
+  fedora|centos|redhat|rocky)
     dnf install bind-dnssec-doc
     dnf install bind-libs
     dnf install python3-bind
@@ -36,6 +36,9 @@ case $ID in
 
     # dnf install bind-chroot
     # dnf -y install bind-doc --setopt=install_weak_deps=False
+    ;;
+  arch)
+    pacman -S bind 
     ;;
 esac
 

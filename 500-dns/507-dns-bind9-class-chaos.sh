@@ -28,6 +28,7 @@ DB_ZONE_BIND_CHAOS_CLASS_FILENAME="db.ch.bind"
 ZONE_PRIMARY_BIND_FILENAME="pz.bind.ch"
 VIEW_CHAOS_FILENAME="view.chaos.ch"
 
+FILE_SETTING_PERFORM=true
 source ./maintainer-dns-isc.sh
 
 INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC="${INSTANCE_DB_PRIMARIES_DIRSPEC}/$DB_ZONE_BIND_CHAOS_CLASS_FILENAME"
@@ -37,11 +38,12 @@ INSTANCE_VIEW_CHAOS_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$VIEW_CHAOS_FILENAME
 # Are we making a build subdir or directly installing?
 if [ "${BUILDROOT:0:1}" != '/' ]; then
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-class-chaos${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  rm -rf "$FILE_SETTINGS_FILESPEC"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
-  mkdir -p "${BUILDROOT}${CHROOT_DIR}"
-  mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
-  mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
-  mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
+  mkdir "${BUILDROOT}${CHROOT_DIR}"
+  mkdir "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
+  mkdir "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
+  mkdir "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
 fi
 if [[ -z "$BUILDROOT" ]] || [[ "$BUILDROOT" == '/' ]]; then
   # SUDO_BIN=sudo
@@ -51,13 +53,12 @@ else
 fi
 echo
 
-flex_mkdir "$ETC_NAMED_DIRSPEC"
-flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_DB_PRIMARIES_DIRSPEC"
-flex_mkdir "$INSTANCE_DB_SECONDARIES_DIRSPEC"
-rm -rf "$FILE_SETTINGS_FILESPEC"
+flex_ckdir "$ETC_NAMED_DIRSPEC"
+flex_ckdir "$VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_DB_PRIMARIES_DIRSPEC"
+flex_ckdir "$INSTANCE_DB_SECONDARIES_DIRSPEC"
 
 #
 #  User Interface Querying
@@ -96,7 +97,7 @@ $TTL 3600
 version     CH  TXT "${BIND_VERSION}"
 authors     CH  TXT "${BIND_AUTHOR}"
 DB_CH_BIND_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
 
@@ -124,19 +125,20 @@ cat << PZ_BIND_CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
     zone "bind" CH {
         type master;
+        recursion no;
 
-                // Where the zone database file is locate at
+        // Where the zone database file is locate at
         file "${INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC}";
 
-                // this is a static resource record
+        // this is a static resource record
         allow-update { none; };
 
-                // this is a static resource record
+        // this is a static resource record
         allow-transfer { none; };
-    };
+        };
 
 PZ_BIND_CH_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
 
@@ -157,14 +159,15 @@ cat << NOTIFY_OPTIONS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # To be included from within the ${VIEW_NAMED_CONF_FILENAME} config file
 #
     view "chaos" CH {
+        recursion no;
 
         match-clients { any; };
 
 include "$INSTANCE_ZONE_BIND_CHAOS_FILESPEC";
 
-    };
+        };
 NOTIFY_OPTIONS_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
 

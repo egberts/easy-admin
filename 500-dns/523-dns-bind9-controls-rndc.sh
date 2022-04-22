@@ -104,11 +104,11 @@ else
   mkdir -p build
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-security${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
-  flex_mkdir "${ETC_NAMED_DIRSPEC}"
+  flex_ckdir "${ETC_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
-    flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+    flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
   fi
-  flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
+  flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
 fi
 
 INSTANCE_CONTROLS_RNDC_LOCALHOST_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CONTROLS_RNDC_LOCALHOST_CONF_FILENAME"

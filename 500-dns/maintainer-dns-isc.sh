@@ -13,11 +13,9 @@ BUILDROOT="${BUILDROOT:-build}"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 extracted_dirspec="$(dirname $(realpath $0))"
-set
 echo "PWD: $PWD"
 echo "CWD: $CWD"
 echo "extracted_disrspec: $extracted_dirspec"
-exit
 source ../easy-admin-installer.sh
 
 SYSD_BIND_TEMPLATE_SVCNAME="named"
@@ -76,6 +74,7 @@ case $ID in
     fi
     sysvinit_unitname="named"  # used to be 'bind', quit shifting around
     default_chroot_dirspec="/var/lib/named"
+    VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
     ;;
   fedora|centos|redhat)
     USER_NAME="named"
@@ -89,8 +88,10 @@ case $ID in
     DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     sysvinit_unitname="named"
+    systemd_unitname="bind9"
     default_chroot_dirspec="/var/named/chroot"
     SYSTEMD_NAMED_UNITNAME="named"
+    VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
     ;;
   arch)
     USER_NAME="named"
@@ -98,14 +99,16 @@ case $ID in
     ETC_SUB_DIRNAME="named"
     VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
-    DISTRO_HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
-    VAR_LIB_NAMED_DIRSPEC="$libdir/${VAR_LIB_NAMED_DIRNAME}"
+    VAR_LIB_NAMED_DIRSPEC="${VAR_DIRSPEC}/${VAR_LIB_NAMED_DIRNAME}"
+    DISTRO_HOME_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/$USER_NAME"
     DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     sysvinit_unitname="named"
+    systemd_unitname="named"
     default_chroot_dirspec="/var/named/chroot"
     SYSTEMD_NAMED_UNITNAME="named"
+    VAR_CACHE_NAMED_DIRSPEC="${VAR_LIB_DIRSPEC}/$VAR_SUB_DIRNAME"
     ;;
 esac
 
@@ -125,8 +128,6 @@ RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/keys"
 RNDC_CONF_FILESPEC="${RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
 RNDC_KEY_FILESPEC="${RNDC_KEY_DIRSPEC}/$RNDC_KEY_FILENAME"
-
-VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
 
 SYSTEMD_NAMED_SERVICE="${SYSTEMD_NAMED_UNITNAME}.$SYSTEMD_SERVICE_FILETYPE"
 SYSTEMD_NAMED_INSTANCE_SERVICE="${SYSTEMD_NAMED_UNITNAME}@.$SYSTEMD_SERVICE_FILETYPE"
@@ -265,8 +266,8 @@ fi
 named_sbin_dirspec="$(dirname "$named_bin")"
 tool_dirspec="$(dirname "$named_sbin_dirspec")"
 
-named_sbin_filespec="${named_sbin_dirspec}/named"
-named_rndc_sbin_filespec="${named_sbin_dirspec}/rndc"
+NAMED_SBIN_FILESPEC="${named_sbin_dirspec}/named"
+NAMED_RNDC_SBIN_FILESPEC="${named_sbin_dirspec}/rndc"
 named_checkconf_filespec="${named_sbin_dirspec}/named-checkconf"
 named_checkzone_filespec="${named_sbin_dirspec}/named-checkzone"
 named_compilezone_filespec="${named_sbin_dirspec}/named-compilezone"
@@ -325,6 +326,7 @@ DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 KEYS_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/keys"
 DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 
+INSTANCE_PID_DIRSPEC="${rundir}"
 INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}"
 INSTANCE_INIT_DEFAULT_FILENAME="${sysvinit_unitname}"
 INSTANCE_CONF_KEYS_DIRSPEC="${extended_sysconfdir}/keys"
@@ -334,6 +336,7 @@ INSTANCE_DB_PRIMARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/primaries"
 INSTANCE_DB_SECONDARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/secondaries"
 INSTANCE_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 if [ -n "$INSTANCE" ]; then
+  INSTANCE_PID_DIRSPEC="${VAR_RUN_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}"
   INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}${INSTANCE_SUBDIRPATH}"
   INSTANCE_INIT_DEFAULT_FILENAME="${sysvinit_unitname}-$INSTANCE"
 
@@ -345,6 +348,7 @@ if [ -n "$INSTANCE" ]; then
   INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 fi
 INSTANCE_INIT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$INSTANCE_INIT_DEFAULT_FILENAME"
+INSTANCE_PID_FILESPEC="${INSTANCE_PID_DIRSPEC}/named.pid"
 
 # /var/lib/bind[/instance]/dynamic
 # clause: 'options' 

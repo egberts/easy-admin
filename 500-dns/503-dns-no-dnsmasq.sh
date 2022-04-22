@@ -4,9 +4,13 @@
 
 echo "Disable dnsmasq service"
 echo
+
+FILE_SETTING_PERFORM=false
+
 source ./maintainer-dns-isc.sh
 
 echo "Checking for existance of /etc/dnsmasq.conf file..."
+echo
 if [ -f /etc/dnsmasq.conf ]; then
   echo "Disable the dnsmasq; those are used by tiny embedded systems"
   echo "Execute:"
