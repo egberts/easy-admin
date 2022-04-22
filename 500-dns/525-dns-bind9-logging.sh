@@ -20,28 +20,29 @@ CATEGORY_NAMED_CONF_FILENAME="logging-categories-named.conf"
 echo "Create logging channel/category configuration files for ISC Bind9 named daemon"
 echo
 
-echo "Checking against BUILDROOT=$BUILDROOT directory ..."
-FILE_SETTING_PERFORM=false   # we are not changing anything
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-logging-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 
 
 source ./maintainer-dns-isc.sh
 FILE_SETTING_PERFORM=true
+echo "Checking against BUILDROOT=$BUILDROOT directory ..."
 
 INSTANCE_LOGGING_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$LOGGING_NAMED_CONF_FILENAME"
 INSTANCE_CHANNEL_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CHANNEL_NAMED_CONF_FILENAME"
 INSTANCE_CATEGORY_NAMED_CONF_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$CATEGORY_NAMED_CONF_FILENAME"
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
+  FILE_SETTING_PERFORM=true
   # absolute (rootfs?)
   echo "Absolute build"
 else
+  FILE_SETTING_PERFORM=false   # we are not changing anything
   mkdir -p build
-  flex_ckdir -p build/etc
+  mkdir -p build/etc
   flex_ckdir "${ETC_NAMED_DIRSPEC}"
-  flex_ckdir -p build/var
-  flex_ckdir -p build/var/log
-  flex_ckdir "${log_dir}"
+  mkdir -p build/var
+  mkdir -p  build/var/log
+  mkdir -p "${log_dir}"
   if [ -n "$INSTANCE" ]; then
     flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
     flex_ckdir "${INSTANCE_LOG_DIRSPEC}"
@@ -53,8 +54,8 @@ fi
 filename="$(basename "$INSTANCE_LOGGING_NAMED_CONF_FILESPEC")"
 filepath="$(dirname "$INSTANCE_LOGGING_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/${filespec}"
-cat << RNDC_LOGGING_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}${filespec}"
+cat << RNDC_LOGGING_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -134,8 +135,8 @@ flex_chown "$USER_NAME:$GROUP_NAME" "$log_query_errors_filespec"
 filename="$(basename "$INSTANCE_CHANNEL_NAMED_CONF_FILESPEC")"
 filepath="$(dirname  "$INSTANCE_CHANNEL_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -156,12 +157,12 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
     channel default_log {
         file "${log_default_filespec}"
             versions $LOG_BACKUP_CNT
-            size $LOG_FILE_SIZE
-            suffix timestamp;
+            // suffix timestamp;  # avail in 9.12+
+            size ${LOG_FILE_SIZE};
         severity info;
         // severity debug 7;
         // severity dynamic;
-        print-time iso8601;
+        print-time true;  # iso8601 is avail after Bind 9.12+
         print-severity true;
         print-category true;
         };
@@ -317,7 +318,7 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 
 NAMED_CHANNEL_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 
@@ -325,8 +326,8 @@ echo
 filename="$(basename "$INSTANCE_CATEGORY_NAMED_CONF_FILESPEC")"
 filepath="$(dirname  "$INSTANCE_CATEGORY_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -357,7 +358,7 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 // then firstly, configure the new channel, and then edit the line below
 // to direct the category there instead of to syslog and default log:
 //
-    category zoneload { default_syslog; default_debug; default_log; };
+//category zoneload { default_syslog; default_debug; default_log; };
 //
 // Log messages relating to what we got back from authoritative servers during
 // recursion (if lame-servers and edns-disabled are obscuring other messages
@@ -449,7 +450,7 @@ cat << NAMED_CHANNEL_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/nul
 
 NAMED_CHANNEL_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 
@@ -467,8 +468,7 @@ if [ "$REPLY" != 'n' ]; then
   named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
 
 # shellcheck disable=SC2086
-  sudo $named_checkconf_filespec -c \
-    -i \
+  sudo $named_checkconf_filespec \
     -p \
     -x \
     $named_chroot_opt \
@@ -477,8 +477,7 @@ if [ "$REPLY" != 'n' ]; then
   if [ $retsts -ne 0 ]; then
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
 # shellcheck disable=SC2086
-    sudo $named_checkconf_filespec -c \
-      -i \
+    sudo $named_checkconf_filespec \
       -p \
       -x \
       $named_chroot_opt \
@@ -489,7 +488,7 @@ if [ "$REPLY" != 'n' ]; then
   if [ $retsts -ne 0 ]; then
     exit $retsts
   else
-    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_NAMED_CONF_FILESPEC"
+    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}$INSTANCE_NAMED_CONF_FILESPEC"
   fi
 fi
 echo

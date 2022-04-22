@@ -98,11 +98,14 @@ source ./maintainer-dns-isc.sh
 
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
+  FILE_SETTING_PERFORM=true
   # absolute (rootfs?)
   echo "Absolute build"
 else
+  FILE_SETTING_PERFORM=false
   mkdir -p build
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-security${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  rm -f "$FILE_SETTINGS_FILESPEC"
   mkdir build/etc
   flex_ckdir "${ETC_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
@@ -138,7 +141,7 @@ rndc-confgen -a \
     -k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
 flex_chmod 0640 "$INSTANCE_RNDC_KEY_FILESPEC"
-flex_chown "root:$GROUP_NAME" "$INSTANCE_RNDC_KEY_FILESPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_RNDC_KEY_FILESPEC"
 echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
 
 
@@ -174,7 +177,7 @@ RNDC_MASTER_CONF
 echo
 
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 
 filename="$CONTROLS_RNDC_LOCALHOST_CONF_FILENAME"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
@@ -212,7 +215,7 @@ controls {
 
 NAMED_KEY_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 # /etc/bind/controls-named.conf
@@ -238,7 +241,7 @@ include "${INSTANCE_CONTROLS_RNDC_LOCALHOST_CONF_FILESPEC}";
 NAMED_KEY_CONF
 
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 #
@@ -266,18 +269,18 @@ include "$INSTANCE_RNDC_KEY_FILESPEC";  # RNDC control key
 NAMED_KEY_CLAUSE_CONF
 
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 if [ "$WORLD_READABLE" -eq 1 ]; then
   flex_chmod go+rx-w "$INSTANCE_ETC_NAMED_DIRSPEC"
-  flex_chown root:${GROUP_NAME} "$INSTANCE_ETC_NAMED_DIRSPEC"
+  flex_chown ${USER_NAME}:${GROUP_NAME} "$INSTANCE_ETC_NAMED_DIRSPEC"
 
   flex_chmod go+r-wx "$INSTANCE_RNDC_CONF_FILESPEC"
-  flex_chown root:${GROUP_NAME} "$INSTANCE_RNDC_CONF_DIRSPEC"
+  flex_chown ${USER_NAME}:${GROUP_NAME} "$INSTANCE_RNDC_CONF_DIRSPEC"
 
   flex_chmod go+r-wx "$INSTANCE_ETC_NAMED_DIRSPEC/named.conf"
-  flex_chown root:${GROUP_NAME} "$INSTANCE_ETC_NAMED_DIRSPEC/named.conf"
+  flex_chown ${USER_NAME}:${GROUP_NAME} "$INSTANCE_ETC_NAMED_DIRSPEC/named.conf"
   # file-ownership are set by other logics
   # need to chase 'include' statements within named.conf here
   # problem is that in build/, there is no named.conf
@@ -294,7 +297,7 @@ if [ $UID -ne 0 ]; then
   echo "      named-checkconf needs CAP_SYS_CHROOT capability in non-root $USER"
   echo "      ISC Bind9 Issue #3119"
   echo "You can execute:"
-  echo "  $named_checkconf_filespec -i -p -c -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
+  echo "  $named_checkconf_filespec -p -x $named_chroot_opt $INSTANCE_NAMED_CONF_FILESPEC"
   read -rp "Do you want to sudo the previous command? (Y/n): " -eiY
   REPLY="$(echo "${REPLY:0:1}" | awk '{print tolower($1)}')"
 fi
@@ -303,8 +306,7 @@ if [ "$REPLY" != 'n' ]; then
   named_chroot_opt="-t ${BUILDROOT}${CHROOT_DIR}"
 
 # shellcheck disable=SC2086
-  sudo $named_checkconf_filespec -c \
-    -i \
+  sudo $named_checkconf_filespec \
     -p \
     -x \
     $named_chroot_opt \
@@ -313,8 +315,7 @@ if [ "$REPLY" != 'n' ]; then
   if [ $retsts -ne 0 ]; then
     echo "File $INSTANCE_NAMED_CONF_FILESPEC did not pass syntax."
 # shellcheck disable=SC2086
-    sudo $named_checkconf_filespec -c \
-      -i \
+    sudo $named_checkconf_filespec \
       -p \
       -x \
       "$named_chroot_opt" \

@@ -3,7 +3,7 @@
 # Title: Create a zone
 # Description:
 #
-DEFAULT_ZONE_NAME="egbert.net"
+DEFAULT_ZONE_NAME="example.test"
 
 echo "Create a zone database containing SSHFP records for ISC Bind9"
 echo
@@ -11,8 +11,10 @@ echo
 source ./maintainer-dns-isc.sh
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
+  FILE_SETTING_PERFORM=true
   echo "Absolute build"
 else
+  FILE_SETTING_PERFORM=true
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
@@ -20,10 +22,10 @@ else
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
 fi
 echo
-flex_mkdir "$ETC_NAMED_DIRSPEC"
-flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$ETC_NAMED_DIRSPEC"
+flex_ckdir "$VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
 
 
 # Ask the user for the zone name (in form of a domain name)
@@ -51,7 +53,7 @@ ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 ZONE_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${ZONE_CONF_FILENAME}"
 INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
-flex_mkdir "$INSTANCE_ZONE_CONF_DIRSPEC"
+flex_ckdir "$INSTANCE_ZONE_CONF_DIRSPEC"
 INSTANCE_ZONE_CONF_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${ZONE_CONF_FILENAME}"
 
 ZONE_DB_FILENAME="db.${ZONE_NAME}"
@@ -60,7 +62,7 @@ ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
 ZONE_DB_FILESPEC="${ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
 INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
-flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
+flex_ckdir "$INSTANCE_ZONE_DB_DIRSPEC"
 INSTANCE_ZONE_DB_FILESPEC="${INSTANCE_ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
 INSTANCE_ZONE_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
@@ -81,6 +83,11 @@ THIS_DOMAIN="$(hostname -d)"
 
 # - obtain requested domain's name server
 SSHFP_DOMAIN_NS="$(dig +short $REQUESTED_DOMAIN_NAME SOA | awk '{print $1}')"
+if [ -z "$SSHFP_DOMAIN_NS" ]; then
+  echo "Must have a working '$REQUESTED_DOMAIN_NAME' DNS server before adding SSHFP"
+  echo "Aborted."
+  exit 15
+fi
 if [ "${SSHFP_DOMAIN_NS: -1}" != '.' ]; then
   SSHFP_DOMAIN_NS="${SSHFP_DOMAIN_NS:0:-1}"
 fi
@@ -122,12 +129,12 @@ fi
 # Create the zone configuration extension file so other scripts
 # can pile on more statements and its value settings
 
-MASTER_DB_SSHFP="${INSTANCE_ZONE_DB_DIRSPEC}/db.sshfp.egbert.net"
+MASTER_DB_SSHFP="${INSTANCE_ZONE_DB_DIRSPEC}/db.sshfp.${REQUESTED_DOMAIN_NAME}"
 
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$MASTER_DB_SSHFP ..."
 ssh-keygen -r "$SSHFP_DOMAIN_NS" > "${BUILDROOT}${CHROOT_DIR}$MASTER_DB_SSHFP"
 
-flex_chown "root:$GROUP_NAME" "$MASTER_DB_SSHFP"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$MASTER_DB_SSHFP"
 flex_chmod "0640"      "$MASTER_DB_SSHFP"
 echo
 

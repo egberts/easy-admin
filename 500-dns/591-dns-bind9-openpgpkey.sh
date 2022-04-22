@@ -3,7 +3,7 @@
 # Title: Create an OPENPGPKEY resource record
 # Description:
 #
-DEFAULT_ZONE_NAME="egbert.net"
+DEFAULT_ZONE_NAME="example.test"
 
 echo "Create a zone database containing OPENPGPKEY records for ISC Bind9"
 echo
@@ -11,8 +11,10 @@ echo
 source ./maintainer-dns-isc.sh
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
+  FILE_SETTING_PERFORM=true
   echo "Absolute build"
 else
+  FILE_SETTING_PERFORM=false
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-zones-named${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p "$BUILDROOT"
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
@@ -20,10 +22,10 @@ else
   mkdir -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
 fi
 echo
-flex_mkdir "$ETC_NAMED_DIRSPEC"
-flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_ETC_NAMED_DIRSPEC"
-flex_mkdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$ETC_NAMED_DIRSPEC"
+flex_ckdir "$VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_ETC_NAMED_DIRSPEC"
+flex_ckdir "$INSTANCE_VAR_LIB_NAMED_DIRSPEC"
 
 
 # Ask the user for the zone name (in form of a domain name)
@@ -51,7 +53,7 @@ ZONE_CONF_FILENAME="${ZONE_TYPE_FILETYPE}.${ZONE_NAME}"
 ZONE_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 ZONE_CONF_FILESPEC="${ETC_NAMED_DIRSPEC}/${ZONE_CONF_FILENAME}"
 INSTANCE_ZONE_CONF_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}"
-flex_mkdir "$INSTANCE_ZONE_CONF_DIRSPEC"
+flex_ckdir "$INSTANCE_ZONE_CONF_DIRSPEC"
 INSTANCE_ZONE_CONF_FILESPEC="${INSTANCE_ZONE_CONF_DIRSPEC}/${ZONE_CONF_FILENAME}"
 
 ZONE_DB_FILENAME="db.${ZONE_NAME}"
@@ -60,7 +62,7 @@ ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
 ZONE_DB_FILESPEC="${ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
 INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
-flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
+flex_ckdir "$INSTANCE_ZONE_DB_DIRSPEC"
 INSTANCE_ZONE_DB_FILESPEC="${INSTANCE_ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
 INSTANCE_ZONE_KEYS_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
@@ -103,7 +105,7 @@ echo "Creating ${BUILDROOT}${CHROOT_DIR}$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC ..
 
 gpg --export-options export-dane --export "$EMAIL_ADDR" \
     2>/tmp/opengpgkey.cmd \
-    > "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC"
+    > "${BUILDROOT}${CHROOT_DIR}$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC"
 retsts=$?
 WARN_FOUND="$(grep -c -i "warning:" /tmp/opengpgkey.cmd)"
 if [ $retsts -ne 0 ] || [ $WARN_FOUND -ne 0 ]; then
@@ -112,7 +114,7 @@ if [ $retsts -ne 0 ] || [ $WARN_FOUND -ne 0 ]; then
   exit $retsts
 fi
 
-flex_chown "root:$GROUP_NAME" "$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC"
 flex_chmod "0640"      "$INSTANCE_ZONE_DB_OPENPGPKEY_FILESPEC"
 echo
 

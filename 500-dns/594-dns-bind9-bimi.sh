@@ -53,13 +53,14 @@ source ./maintainer-dns-isc.sh
 
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-dns-bimi${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
 if [ "${BUILDROOT:0:1}" != '/' ]; then
+  FILE_SETTING_METHOD=false
   mkdir -p build
-  flex_mkdir "$VAR_DIRSPEC"
-  flex_mkdir "$VAR_LIB_DIRSPEC"
+  flex_ckdir "$VAR_DIRSPEC"
+  flex_ckdir "$VAR_LIB_DIRSPEC"
 else
-  BUILDROOT=""
+  FILE_SETTING_METHOD=false
 fi
-flex_mkdir "$VAR_LIB_NAMED_DIRSPEC"
+flex_ckdir "$VAR_LIB_NAMED_DIRSPEC"
 
 if [ -n "$DEFAULT_DOMAIN_NAME" ]; then
   read_opts="-ei${DEFAULT_DOMAIN_NAME}"
@@ -97,10 +98,12 @@ CREATE_BIMI_RR=1
 
 if [ "$CREATE_BIMI_RR" -eq 1 ]; then
 
-  read -rp "Enter in URL of BIMI SVG image file: "
+  read -rp "Enter in URL of BIMI SVG image file: " -e
   BIMI_IMAGE_URL="$REPLY"
   pushd .
   cd /tmp
+  # file:/// does not work for 'wget'
+  # consider using 'curl'
   wget --no-cache \
           --no-cookie \
           --no-check-certificate \
@@ -118,11 +121,11 @@ if [ "$CREATE_BIMI_RR" -eq 1 ]; then
   ZONE_DB_FILENAME="db.${DOMAIN_NAME}"
 
   ZONE_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}"
-  flex_mkdir "$ZONE_DB_DIRSPEC"
+  flex_ckdir "$ZONE_DB_DIRSPEC"
   ZONE_DB_FILESPEC="${ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
   INSTANCE_ZONE_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
-  flex_mkdir "$INSTANCE_ZONE_DB_DIRSPEC"
+  flex_ckdir "$INSTANCE_ZONE_DB_DIRSPEC"
   INSTANCE_ZONE_DB_FILESPEC="${INSTANCE_ZONE_DB_DIRSPEC}/${ZONE_DB_FILENAME}"
 
   ZONE_DB_BIMI_FILENAME="db.bimi.${DOMAIN_NAME}"

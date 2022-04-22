@@ -2,6 +2,9 @@
 # File: 593-dns-bind-autoconfig.sh
 # Title:  Set up autoconfig for remote Mozilla-only email client (thunderbird)
 #
+# TODO:  Need to research 'autodiscover' and customize it
+#        This file shall remains un-executable, by file permission
+#
 # Description:
 #
 #   Assist remote mail clients (Apple Mail, Thunderbird, Outlook) in
@@ -59,22 +62,24 @@ HTDOCS_DIRSPEC="$HTDOCS_DIR"
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   # absolute (rootfs?)
+  FILE_SETTING_PERFORM=true
   echo "Absolute build"
 else
+  FILE_SETTING_PERFORM=false
   mkdir -p build
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-smtp-autoconfig${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   mkdir -p build/etc
   mkdir -p build/var
   mkdir -p build/var/lib
-  flex_mkdir "${ETC_NAMED_DIRSPEC}"
-  flex_mkdir "${VAR_LIB_NAMED_DIRSPEC}"
+  flex_ckdir "${ETC_NAMED_DIRSPEC}"
+  flex_ckdir "${VAR_LIB_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
-    flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
-    flex_mkdir "${INSTANCE_VAR_LIB_NAMED_DIRSPEC}"
+    flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+    flex_ckdir "${INSTANCE_VAR_LIB_NAMED_DIRSPEC}"
   fi
 fi
 
-DEFAULT_DOMAIN_NAME="egbert.net"
+DEFAULT_DOMAIN_NAME="example.test"
 OC_NAME="ACME Networks"
 OC_SHORTNAME="ACME"
 # THUNDERBIRD_VERSION="$(thunderbird --version)"
@@ -188,17 +193,17 @@ ZONE_NAME="$DOMAIN_NAME"
 ZONE_FQDN="${ZONE_NAME}."
 MX_ZONE_FQDN="$SMTP_DOMAINNAME"
 
-flex_mkdir "$INSTANCE_DB_PRIMARIES_DIRSPEC"
-flex_mkdir "$HTDOCS_DIRSPEC"
-flex_mkdir "${HTDOCS_DIRSPEC}/.well-known"
-flex_mkdir "${HTDOCS_DIRSPEC}/.well-known/autoconfig"
-flex_mkdir "${HTDOCS_DIRSPEC}/.well-known/autoconfig/mail"
-flex_mkdir "${HTDOCS_DIRSPEC}/support"
-flex_mkdir "${HTDOCS_DIRSPEC}/support/email"
-flex_mkdir "${HTDOCS_DIRSPEC}/support/email/config"
-flex_mkdir "${HTDOCS_DIRSPEC}/support/email/config/thunderbird"
-flex_mkdir "${HTDOCS_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird"
-flex_mkdir "${HTDOCS_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird/imap"
+flex_ckdir "$INSTANCE_DB_PRIMARIES_DIRSPEC"
+flex_ckdir "$HTDOCS_DIRSPEC"
+flex_ckdir "${HTDOCS_DIRSPEC}/.well-known"
+flex_ckdir "${HTDOCS_DIRSPEC}/.well-known/autoconfig"
+flex_ckdir "${HTDOCS_DIRSPEC}/.well-known/autoconfig/mail"
+flex_ckdir "${HTDOCS_DIRSPEC}/support"
+flex_ckdir "${HTDOCS_DIRSPEC}/support/email"
+flex_ckdir "${HTDOCS_DIRSPEC}/support/email/config"
+flex_ckdir "${HTDOCS_DIRSPEC}/support/email/config/thunderbird"
+flex_ckdir "${HTDOCS_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird"
+flex_ckdir "${HTDOCS_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird/imap"
 
 PRIMARY_DB_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/${ZONE_TYPE_NAME}"
 

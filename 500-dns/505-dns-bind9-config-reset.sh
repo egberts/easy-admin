@@ -191,7 +191,6 @@ options {
 
     version "Funky DNS, eh?";
     server-id none;
-    dnssec-validation yes;
 
 OPTIONS_EOF
 
@@ -253,7 +252,6 @@ cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CO
 
     dnssec-accept-expired no;
     dnssec-validation yes;
-    recursion no;
     transfer-format many-answers;
     allow-query { any; };
     allow-transfer { none; };

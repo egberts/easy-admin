@@ -9,27 +9,31 @@
 # References:
 #  * https://www.icdsoft.com/en/kb/view/1698_automatic_e_mail_configuration_autodiscover_autoconfig
 
+HAVE_IMAP=1
+HAVE_SUBMISSION=1
+HAVE_SMTP=1
 
 source ./maintainer-dns-isc.sh
 
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
   # absolute (rootfs?)
+  FILE_SETTING_PERFORM=true
   echo "Absolute build"
 else
-  mkdir -p build
+  FILE_SETTING_PERFORM=true
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind-autodiscovery-smtp-imap${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
+  mkdir -p build
   mkdir -p build/etc
   mkdir -p build/var
   mkdir -p build/var/lib
-  flex_mkdir "${ETC_NAMED_DIRSPEC}"
-  flex_mkdir "${VAR_LIB_NAMED_DIRSPEC}"
+  flex_ckdir "${ETC_NAMED_DIRSPEC}"
+  flex_ckdir "${VAR_LIB_NAMED_DIRSPEC}"
   if [ -n "$INSTANCE" ]; then
-    flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
-    flex_mkdir "${INSTANCE_VAR_LIB_NAMED_DIRSPEC}"
+    flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+    flex_ckdir "${INSTANCE_VAR_LIB_NAMED_DIRSPEC}"
   fi
 fi
-
 
 DOMAIN_NAME="egbert.net"
 OC_NAME="Egbert Networks"
@@ -47,20 +51,19 @@ ZONE_FQDN="${ZONE_NAME}."
 MX_ZONE_FQDN="mx1.${ZONE_FQDN}"
 
 VAR_LIB_WWW_DIRSPEC="${VAR_LIB_DIRSPEC}/www"
-flex_mkdir "$INSTANCE_DB_PRIMARIES_DIRSPEC"
-flex_mkdir "$VAR_LIB_WWW_DIRSPEC"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/.well-known"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/.well-known/autoconfig"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/.well-known/autoconfig/mail"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/support"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/support/email"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config/thunderbird"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird"
-flex_mkdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird/imap"
-exit
+flex_ckdir "$INSTANCE_DB_PRIMARIES_DIRSPEC"
+flex_ckdir "$VAR_LIB_WWW_DIRSPEC"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/.well-known"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/.well-known/autoconfig"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/.well-known/autoconfig/mail"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/support"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/support/email"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config/thunderbird"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird"
+flex_ckdir "${VAR_LIB_WWW_DIRSPEC}/support/email/config/thunderbird/imap-thunderbird/imap"
 
-filespec="/var/lib/bind/public/master/db.egbert.net_addons"
+filespec="${INSTANCE_DB_PRIMARIES_DIRSPEC}/db.${ZONE_NAME}_addons"
 filename="$(basename $filespec)"
 filepath="$(dirname $filespec)"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
@@ -68,7 +71,7 @@ cat << ZONE_DB_MAIN_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
 \$ORIGIN ${ZONE_FQDN}
 ;
 ;
-${ZONE_FQDN}        IN    TXT     "mailconf=https://egbert.net/.well-known/autoconfig/mail/config-v1.1.xml"
+${ZONE_FQDN}        IN    TXT     "mailconf=https://${DOMAIN_NAME}/.well-known/autoconfig/mail/config-v1.1.xml"
 
 www         IN  CNAME   ${ZONE_FQDN}
 autodiscover        IN  CNAME   ${ZONE_FQDN}
@@ -92,7 +95,7 @@ _submission SRV 1 1 587 ${MX_ZONE_FQDN}
 _submissions    SRV 1 1 465 ${MX_ZONE_FQDN}
 
 ZONE_DB_MAIN_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"
 echo
 
@@ -105,12 +108,13 @@ AUTOCONFIG_EMAIL_SUPPORT_FILESPEC="${VAR_LIB_WWW_DIRSPEC}/support/email/config/t
 
 AUTOCONFIG_TB_DOC_FILESPEC="${INSTANCE_VAR_LIB_WWW}/support/email/config/index.html"
 
-AUTOCONF_MAIL_FILESPEC=".well-known/autoconfig/mail/config-v1.1.xml"
-filespec="$AUTOCONF_MAIL_FILESPEC"
-filename="$(basename $filespec)"
-filepath="$(dirname $filespec)"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
-cat << ZONE_HTML_AC_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+AUTOCONF_MAIL_FILESPEC="${VAR_LIB_WWW_DIRSPEC}/.well-known/autoconfig/mail/config-v1.1.xml"
+rel_filespec="$AUTOCONF_MAIL_FILESPEC"
+filename="$(basename $rel_filespec)"
+filepath="$(dirname $rel_filespec)"
+
+echo "Creating ${BUILDROOT}${CHROOT_DIR}/$rel_filespec ..."
+cat << ZONE_HTML_AC_EOF | tee "${BUILDROOT}${CHROOT_DIR}/${rel_filespec}" > /dev/null
 <?xml version="1.0" encoding="UTF-8"?>
 
 <clientConfig version="1.1">
@@ -121,7 +125,7 @@ cat << ZONE_HTML_AC_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
 ZONE_HTML_AC_EOF
 
 if [ "$HAVE_IMAP" -ge 1 ]; then
-  cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+  cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/${rel_filespec}" > /dev/null
     <incomingServer type="imap">
       <hostname>${IMAP_DOMAIN_NAME}</hostname>
       <port>993</port>
@@ -141,7 +145,7 @@ ZONE_HTML_AC_EOF
 fi
 
 if [ "$HAVE_SUBMISSION" -ge 1 ]; then
-  cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+  cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/${rel_filespec}" > /dev/null
     <outgoingServer type="smtp">
       <hostname>${SMTP_DOMAIN_NAME}</hostname>
       <port>465</port>
@@ -153,7 +157,7 @@ ZONE_HTML_AC_EOF
 fi
 
 if [ "$HAVE_SMTP" -ge 1 ]; then
-  cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+  cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/${rel_filespec}" > /dev/null
     <outgoingServer type="smtp">
       <hostname>${SMTP_DOMAIN_NAME}</hostname>
       <port>587</port>
@@ -164,7 +168,7 @@ if [ "$HAVE_SMTP" -ge 1 ]; then
 ZONE_HTML_AC_EOF
 fi
 
-cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
+cat << ZONE_HTML_AC_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/${rel_filespec}" > /dev/null
     <documentation url="http://egbert.net/support/email/config/index.html">
       <descr lang="de">Allgemeine Beschreibung der Einstellungen</descr>
       <descr lang="en">Generic settings page</descr>
@@ -178,13 +182,13 @@ support/email/config/thunderbird/imap-thunderbird/imap/index.html
   </emailProvider>
 </clientConfig>
 ZONE_HTML_AC_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
-flex_chmod "0640"             "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$rel_filespec"
+flex_chmod "0640" "$rel_filespec"
 echo
 
 # Add 'autodiscover' subdomain to your domain
 
-AUTODISCOVER_DB_FILESPEC="/var/lib/bind[/instance]/master/db.autodiscover.$DOMAIN_NAME"
+AUTODISCOVER_DB_FILESPEC="${INSTANCE_DB_PRIMARIES_DIRSPEC}/db.autodiscover.$DOMAIN_NAME"
 filespec="$AUTODISCOVER_DB_FILESPEC"
 filename="$(basename $filespec)"
 filepath="$(dirname $filespec)"
@@ -195,12 +199,12 @@ cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/n
 \$ORIGIN $DOMAIN_NAME
 autodiscover    IN  CNAME   $DOMAIN_NAME
 AUTODISCOVER_DB_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"
 echo
 
 # APPEND the 'autodiscover' subdomain zone database to your domain zone database
-DOMAIN_DB_FILESPEC="/var/lib/bind[/instance]/master/db.$DOMAIN_NAME"
+DOMAIN_DB_FILESPEC="${INSTANCE_DB_PRIMARIES_DIRSPEC}/db.$DOMAIN_NAME"
 filespec="$DOMAIN_DB_FILESPEC"
 filename="$(basename $filespec)"
 filepath="$(dirname $filespec)"
@@ -211,7 +215,7 @@ cat << AUTODISCOVER_DB_EOF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/n
 \$INCLUDE \"${AUTODISCOVER_DB_FILESPEC}\"
 autodiscover    IN  CNAME   $DOMAIN_NAME
 AUTODISCOVER_DB_EOF
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod "0640"             "$filespec"
 echo
 

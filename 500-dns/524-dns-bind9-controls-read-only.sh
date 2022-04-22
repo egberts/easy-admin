@@ -39,34 +39,38 @@ INSTANCE_CONTROLS_READ_ONLY_NAMED_CONF_FILESPEC="${INSTANCE_RNDC_CONF_DIRSPEC}/$
 INSTANCE_RNDC_CONF_READ_ONLY_FILESPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/$RNDC_CONF_READ_ONLY_FILENAME"
 
 if [ "${BUILDROOT:0:1}" == '/' ]; then
+  FILE_SETTING_PERFORM=true
   # absolute (rootfs?)
   echo "Absolute build"
 else
+  FILE_SETTING_PERFORM=false
   mkdir -p build
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-rndc-read-only${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
-  mkdir -p build/etc
-  flex_mkdir "${ETC_NAMED_DIRSPEC}"
-  if [ -n "$INSTANCE" ]; then
-    flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
-  fi
-  flex_mkdir "${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
+  rm -f "$FILE_SETTINGS_FILESPEC"
+  mkdir build/etc
 fi
+
+flex_ckdir "${ETC_NAMED_DIRSPEC}"
+if [ -n "$INSTANCE" ]; then
+  flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}"
+fi
+flex_ckdir "${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
 
 # Generate RNDC keys
 # /etc/bind/key/rndc-readonly.key
 echo "Generating RNDC key ..."
 rndc-confgen -a \
-        -c "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC" \
+    -c "${BUILDROOT}${CHROOT_DIR}$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC" \
     -k "$RNDC_KEYNAME" \
-        -A "$HMAC_ALGORITHM"
+    -A "$HMAC_ALGORITHM"
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Error in rndc-congen: Errno $retsts"
   exit $retsts
 fi
-echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
+echo "Created ${BUILDROOT}${CHROOT_DIR}$INSTANCE_RNDC_KEY_FILESPEC"
 flex_chmod 0640 "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
-flex_chown "root:$GROUP_NAME" "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
 # Newly created 'rndc-readonly.key' can now be used by
 # 'rndc-readonly.conf' and included into 'keys-named.conf'
 
@@ -75,8 +79,8 @@ flex_chown "root:$GROUP_NAME" "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC"
 filename="$(basename "$INSTANCE_RNDC_CONF_READ_ONLY_FILESPEC")"
 filepath="$(dirname "$INSTANCE_RNDC_CONF_READ_ONLY_FILESPEC")"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/${filespec}"
-cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}${filespec}"
+cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -101,15 +105,15 @@ options {
 include "${INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC}";
 RNDC_MASTER_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 # Create the /etc/bind/controls-read-only-named.conf
 filename="$(basename "$INSTANCE_CONTROLS_READ_ONLY_NAMED_CONF_FILESPEC")"
 filepath="$(dirname  "$INSTANCE_CONTROLS_READ_ONLY_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -136,7 +140,7 @@ controls {
 NAMED_KEY_CONF
 
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 # Must check if file exist otherwise run named.conf init script
@@ -149,14 +153,14 @@ fi
 filename="$KEY_NAMED_CONF_FILENAME"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
-echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_KEY_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_KEY_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # read-only RNDC control key
 include "$INSTANCE_KEY_READ_ONLY_NAMED_CONF_FILESPEC";
 
 NAMED_KEY_CLAUSE_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 
 
@@ -165,14 +169,14 @@ echo
 filename="$(basename "$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC")"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
-echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_CONTROLS_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_CONTROLS_CLAUSE_CONF | tee -a "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # read-only RNDC control
 include "$INSTANCE_CONTROLS_READ_ONLY_NAMED_CONF_FILESPEC";
 
 NAMED_CONTROLS_CLAUSE_CONF
 flex_chmod 0640 "$filespec"
-flex_chown "root:$GROUP_NAME" "$filespec"
+flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 echo
 exit
 
@@ -220,7 +224,7 @@ if [ "$REPLY" != 'n' ]; then
   if [ $retsts -ne 0 ]; then
     exit $retsts
   else
-    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_NAMED_CONF_FILESPEC"
+    echo "Syntax-check passed for ${BUILDROOT}${CHROOT_DIR}$INSTANCE_NAMED_CONF_FILESPEC"
   fi
 fi
 echo

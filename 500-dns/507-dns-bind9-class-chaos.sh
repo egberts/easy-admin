@@ -104,7 +104,6 @@ echo
 
 # named zone configuration file for 'bind', CHAOS-class
 #   /etc/bind[/instance]/pz.chaos.bind (create)
-
 filespec="${INSTANCE_ZONE_PRIMARY_BIND_FILESPEC}"
 filename="$(basename "$filespec")"
 filepath="$(dirname "$filespec")"
@@ -125,7 +124,6 @@ cat << PZ_BIND_CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
     zone "bind" CH {
         type master;
-        recursion no;
 
         // Where the zone database file is locate at
         file "${INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC}";
