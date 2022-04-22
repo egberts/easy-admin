@@ -40,7 +40,7 @@ if [ "${BUILDROOT:0:1}" != '/' ]; then
   readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-class-chaos${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
   rm -rf "$FILE_SETTINGS_FILESPEC"
   echo "Building $FILE_SETTINGS_FILESPEC script ..."
-  mkdir "${BUILDROOT}${CHROOT_DIR}"
+  flex_ckdir "${BUILDROOT}${CHROOT_DIR}"
   mkdir "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
   mkdir "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
   mkdir "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_DIRSPEC"
@@ -142,8 +142,7 @@ flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
 
-
-#   /etc/bind/views-named.conf (append)
+#   append to /etc/bind/views-named.conf
 filespec="${INSTANCE_VIEW_CHAOS_FILESPEC}"
 filename="$(basename "$filespec")"
 filepath="$(dirname "$filespec")"
@@ -155,15 +154,22 @@ cat << NOTIFY_OPTIONS_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 # Title: Notify sub-options within 'options' clause
 # Generator: $(basename "$0")
 # Created on: $(date)
+# Description:
+#
+#   All 'CH' class queries goes into this CHAOS view.
 #
 # To be included from within the ${VIEW_NAMED_CONF_FILENAME} config file
 #
     view "chaos" CH {
+
+        # We are only responsible for our own view
         recursion no;
 
+        # anyone can ask for CHAOS-class RRs.
         match-clients { any; };
 
-include "$INSTANCE_ZONE_BIND_CHAOS_FILESPEC";
+        # Zone data file containing all CHAOS-class resource records
+include "${INSTANCE_ZONE_PRIMARY_BIND_FILESPEC}";
 
         };
 NOTIFY_OPTIONS_EOF
@@ -171,5 +177,8 @@ flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 flex_chmod 0640 "$filespec"
 echo
 
+#  Add CHAOS View
+echo "include \"${INSTANCE_VIEW_CHAOS_FILESPEC}\";" \
+    >> "${BUILDROOT}${CHROOT_DIR}$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
 echo "Done."
 

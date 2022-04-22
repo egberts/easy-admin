@@ -13,9 +13,7 @@ BUILDROOT="${BUILDROOT:-build}"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 extracted_dirspec="$(dirname $(realpath $0))"
-echo "PWD: $PWD"
-echo "CWD: $CWD"
-echo "extracted_disrspec: $extracted_dirspec"
+
 source ../easy-admin-installer.sh
 
 SYSD_BIND_TEMPLATE_SVCNAME="named"
@@ -67,11 +65,11 @@ case $ID in
       DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-/etc/$NAMED_CONF_FILENAME}"
     fi
     package_tarname="bind9"
-    if [ "$VERSION_ID" -ge 11 ]; then
-      systemd_unitname="bind9"  # leverage Debian's unit alias name
-    else
+    #if [ "$VERSION_ID" -ge 11 ]; then
+    #  systemd_unitname="bind9"  # leverage Debian's unit alias name
+    #else
       systemd_unitname="named"
-    fi
+    #fi
     sysvinit_unitname="named"  # used to be 'bind', quit shifting around
     default_chroot_dirspec="/var/lib/named"
     VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"

@@ -15,7 +15,6 @@
 echo "Create SysV and Systemd default file for ISC Bind9 named daemon"
 echo
 
-FILE_SETTING_PERFORM=true
 source ./maintainer-dns-isc.sh
 
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-service-defaults${INSTANCE_FILEPART}.sh"
@@ -24,6 +23,7 @@ readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-service-defaults${INSTA
 # where the final configuration settings goes into.
 ABSPATH="$(dirname "$BUILDROOT")"
 if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
+  FILE_SETTING_PERFORM=true
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
 
   echo "We are backing up old bind/named settings"
@@ -39,12 +39,12 @@ if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
     fi
   fi
 else
+  FILE_SETTING_PERFORM=false
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
-  # mkdir -p "${BUILDROOT}${CHROOT_DIR}$sysconfdir"
-  # flex_mkdir "$sysconfdir"
-  # flex_mkdir "$extended_sysconfdir"
-  # flex_mkdir "$INIT_DEFAULT_DIRSPEC"
+  mkdir "${BUILDROOT}/etc"
+  mkdir "${BUILDROOT}/etc/systemd"
+  mkdir "${BUILDROOT}/etc/systemd/system"
 
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
@@ -111,6 +111,8 @@ NAMED_CONF="-c ${NAMED_CONF_FILESPEC}"
 # file such as /etc/default/${sysvinit_unitname}-public.conf or
 # /etc/default/bind9-dmz.conf.
 EOF
+  flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_INIT_DEFAULT_FILESPEC"
+  flex_chmod 0644 "$INSTANCE_INIT_DEFAULT_FILESPEC"
 }
 
 

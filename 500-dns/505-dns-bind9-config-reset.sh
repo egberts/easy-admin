@@ -67,8 +67,9 @@ else
   mkdir "${BUILDROOT}${CHROOT_DIR}/etc"
   mkdir "${BUILDROOT}${CHROOT_DIR}/etc/systemd"
   mkdir "${BUILDROOT}${CHROOT_DIR}/etc/systemd/system"
+  mkdir "${BUILDROOT}${CHROOT_DIR}/var"
+  mkdir "${BUILDROOT}${CHROOT_DIR}/var/cache"
   mkdir "${BUILDROOT}${CHROOT_DIR}$DEFAULT_LIB_DIRSPEC"
-  mkdir "${BUILDROOT}${CHROOT_DIR}/var/lib"
 fi
 
 flex_ckdir "$extended_sysconfdir"
@@ -301,6 +302,7 @@ touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_SERVER_NAMED_CONF_FILESPEC"
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_STATS_NAMED_CONF_FILESPEC"
 touch "${BUILDROOT}${CHROOT_DIR}$INSTANCE_TRUST_ANCHORS_NAMED_CONF_FILESPEC"
 
+# views-named.conf holds multiple views
 create_header "${INSTANCE_VIEW_NAMED_CONF_FILESPEC}" \
     "${USER_NAME}:$GROUP_NAME" 0640 "'view' clauses"
 

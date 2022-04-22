@@ -18,7 +18,6 @@
 echo "Creating a new bind9@.service systemd unit file..."
 echo
 
-FILE_SETTING_PERFORM=true
 source ./maintainer-dns-isc.sh
 
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-systemd-unitfile${INSTANCE_NAMED_CONF_FILEPART_SUFFIX}.sh"
@@ -27,6 +26,7 @@ readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-bind9-systemd-unitfile${INSTA
 # where the final configuration settings goes into.
 ABSPATH="$(dirname "$BUILDROOT")"
 if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
+  FILE_SETTING_PERFORM=true
   echo "$BUILDROOT is an absolute path, we probably need root privilege"
   echo "We are backing up old bind/named settings"
   # Only the first copy is saved as the backup
@@ -41,6 +41,7 @@ if [ "$ABSPATH" != "." ] && [ "${ABSPATH:0:1}" != '/' ]; then
     fi
   fi
 else
+  FILE_SETTING_PERFORM=false
   # relative BUILDROOT directory path
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
