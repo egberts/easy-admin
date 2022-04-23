@@ -225,10 +225,6 @@ InaccessiblePaths=/root
 Environment=NAMED_OPTIONS="-c ${NAMED_CONF_FILESPEC}"
 Environment=RNDC_OPTIONS=""
 
-Environment=RNDC_BIN=/usr/sbin/rndc
-Environment=NAMED_BIN=/usr/sbin/named
-Environment=NAMED_CHECKCONF_BIN=/usr/sbin/named-checkconf
-
 EnvironmentFile=-${INIT_DEFAULT_FILESPEC}
 # instantiation-specific Bind environment file is absolutely required
 EnvironmentFile=${INSTANCE_INIT_DEFAULT_FILESPEC}
@@ -270,10 +266,10 @@ ConfigurationDirectoryMode=0750
 PrivateTmp=false
 
 RuntimeDirectory=${VAR_SUB_DIRNAME}/%I
-RuntimeDirectoryMode=0750
+RuntimeDirectoryMode=0755
 
 # Home directory (instantiation-excluded)
-WorkingDirectory=$DISTRO_HOME_DIRSPEC
+WorkingDirectory=$NAMED_HOME_DIRSPEC
 
 # systemd v251
 CacheDirectory=${VAR_SUB_DIRNAME}/%I
@@ -284,15 +280,15 @@ StateDirectory=${VAR_SUB_DIRNAME}/%I
 StateDirectoryMode=0750
 
 PIDFile=$INSTANCE_PID_FILESPEC
-ExecStartPre=\$NAMED_CHECKCONF_BIN -z \$NAMED_CONF
-ExecStart=\$NAMED_BIN -u $USER_NAME \$NAMED_CONF
+ExecStartPre=/usr/sbin/named-checkconf -z \$NAMED_CONF
+ExecStart=/usr/sbin/named -u $USER_NAME \$NAMED_CONF
 
 # rndc will dovetail any and all instantiations of
 # Bind9 'named' daemons into a single rndc.conf file
 # and use its '-s <server>' as a reference from
 # this rndc.conf config file.
-ExecReload=\$RNDC_BIN \$RNDC_OPTIONS reload
-ExecStop=\$RNDC_BIN \$RNDC_OPTIONS stop
+ExecReload=/usr/sbin/rndc \$RNDC_OPTIONS reload
+ExecStop=/usr/sbin/rndc \$RNDC_OPTIONS stop
 #ExecStop=/bin/sh -c /usr/sbin/rndc stop > /dev/null 2>&1 || /bin/kill -TERM $MAINPID
 
 # No need for 'KillMode=process' unless cgroups get disabled
@@ -393,10 +389,6 @@ InaccessiblePaths=/root
 Environment=NAMED_OPTIONS="-c $NAMED_CONF_FILESPEC"
 Environment=RNDC_OPTIONS=""
 
-Environment=RNDC_BIN="/usr/sbin/rndc"
-Environment=NAMED_BIN="/usr/sbin/named"
-Environment=NAMED_CHECKCONF_BIN="/usr/sbin/named-checkconf"
-
 # default bind9 (global) is optional
 EnvironmentFile=-/etc/default/${sysvinit_unitname}
 
@@ -433,10 +425,10 @@ PrivateTmp=false
 
 PermissionsStartOnly=True
 RuntimeDirectory=$VAR_SUB_DIRNAME
-RuntimeDirectoryMode=0750
+RuntimeDirectoryMode=0755
 
 # Home directory
-WorkingDirectory=$DISTRO_HOME_DIRSPEC
+WorkingDirectory=$NAMED_HOME_DIRSPEC
 
 # systemd v251
 CacheDirectory=$VAR_SUB_DIRNAME
@@ -447,18 +439,17 @@ StateDirectory=$VAR_SUB_DIRNAME
 StateDirectoryMode=0750
 
 PIDFile=$INSTANCE_PID_FILESPEC
-ExecStartPre=$NAMED_CHECKCONF_FILESPEC -z \$NAMED_CONF
-ExecStart=$NAMED_BIN_FILESPEC -f -u $USER_NAME \$NAMED_CONF
+ExecStartPre=/usr/sbin/named-checkconf -z \$NAMED_CONF
+ExecStart=/usr/sbin/named -u $USER_NAME \$NAMED_CONF
 
 # rndc will dovetail any and all instantiations of
 # Bind9 'named' daemons into a single rndc.conf file
 # and use its '-s <server>' as a reference from
 # this rndc.conf config file.
-ExecReload=$RNDC_BIN_FILESPEC \$RNDC_OPTIONS reload
-ExecStop=$RNDC_BIN_FILESPE \$RNDC_OPTIONS stop
+ExecReload=/usr/sbin/rndc \$RNDC_OPTIONS reload
+ExecStop=/usr/sbin/rndc \$RNDC_OPTIONS stop
 #ExecStop=/bin/sh -c /usr/sbin/rndc stop > /dev/null 2>&1 || /bin/kill -TERM $MAINPID
 
-# No need for 'KillMode=process' unless cgroups get disabled
 RestartSec=5s
 Restart=on-failure
 

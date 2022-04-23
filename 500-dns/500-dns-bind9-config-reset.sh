@@ -142,29 +142,6 @@ flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_NAMED_CONF_FILESPEC"
 flex_chmod 0640 "$INSTANCE_NAMED_CONF_FILESPEC"
 
 
-function create_header()
-{
-  FILESPEC=$1
-  owner=$2
-  perms=$3
-  title=$4
-  filename="$(basename "$FILESPEC")"
-  filepath="$(dirname "$FILESPEC")"
-  echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC ..."
-  cat << CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
-#
-# File: $filename
-# Path: $filepath
-# Title: $title
-# Generator: $(basename "$0")
-# Created on: $(date)
-
-CH_EOF
-  flex_chown "$owner" "$FILESPEC"
-  flex_chmod "$perms" "$FILESPEC"
-}
-
-
 function append_include_clause()
 {
   filespec="$1"
@@ -202,12 +179,11 @@ cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CO
     managed-keys-directory "${MANAGED_KEYS_DIRSPEC}";
     dump-file "${DUMP_CACHE_FILESPEC}";
 
-
     max-rsa-exponent-size 4096;
     session-keyalg "hmac-sha256"; // could use hmac-sha512
     session-keyfile "${SESSION_KEYFILE_DIRSPEC}/session.key";
     session-keyname "${DHCP_TO_BIND_KEYNAME}";
-        statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
+    statistics-file "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
 
     // RNDC ACL
     allow-new-zones no;
@@ -252,17 +228,16 @@ cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CO
     dnssec-accept-expired no;
     dnssec-validation yes;
     transfer-format many-answers;
-    allow-query { any; };
+    allow-query { none; };
     allow-transfer { none; };
-    allow-update {   # we edit zone file by using an editor, not 'rndc'
-        none;
-    };
-        forwarders { };
+    allow-update { none; };  # we edit zone file by using an editor, not 'rndc'
+    allow-notify { none; };
+    forwarders { };
 
     key-directory "${INSTANCE_KEYS_DB_DIRSPEC}";
     max-transfer-time-in 60;
     notify no;
-        zone-statistics yes;
+    zone-statistics yes;
 
 include "${INSTANCE_OPTIONS_EXT_NAMED_CONF_FILESPEC}";
     };

@@ -24,9 +24,9 @@ echo "Set up CHAOS class for ISC Bind9"
 echo
 
 # 'bind.version' et. al. goes under /var/lib/bind[/intance]/db.ch.bind
-DB_ZONE_BIND_CHAOS_CLASS_FILENAME="db.ch.bind"
-ZONE_PRIMARY_BIND_FILENAME="pz.bind.ch"
-VIEW_CHAOS_FILENAME="view.chaos.ch"
+DB_ZONE_BIND_CHAOS_CLASS_FILENAME="pz.bind.ch.db"
+ZONE_PRIMARY_BIND_FILENAME="zone-chaos-named.conf"
+VIEW_CHAOS_FILENAME="view-chaos-named.conf"
 
 source ./maintainer-dns-isc.sh
 
@@ -131,6 +131,8 @@ cat << PZ_BIND_CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
         // Where the zone database file is locate at
         file "${INSTANCE_DB_ZONE_BIND_CHAOS_CLASS_FILESPEC}";
 
+        allow-query { any; };
+
         // this is a static resource record
         allow-update { none; };
 
@@ -179,7 +181,8 @@ flex_chmod 0640 "$filespec"
 echo
 
 #  Add CHAOS View
-echo "include \"${INSTANCE_VIEW_CHAOS_FILESPEC}\";" \
-    >> "${BUILDROOT}${CHROOT_DIR}$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
+unique_add_line "$INSTANCE_VIEW_CHAOS_FILESPEC" \
+    "$INSTANCE_VIEW_NAMED_CONF_FILESPEC"
+
 echo "Done."
 

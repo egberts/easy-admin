@@ -505,7 +505,7 @@ function flex_chown()
   fi
 
   if [ "${2:0:1}" != "/" ]; then
-    echo "flex_chown: argument '$1' must be an absolute directory path; aborted."
+    echo "flex_chown: argument '$2' must be an absolute directory path; aborted."
     exit 9
   fi
 
@@ -567,7 +567,7 @@ function flex_chmod()
   fi
 
   if [ "${2:0:1}" != "/" ]; then
-    echo "flex_chmod: argument '$1' must be an absolute directory path; aborted."
+    echo "flex_chmod: argument '$2' must be an absolute directory path; aborted."
     exit 9
   fi
 

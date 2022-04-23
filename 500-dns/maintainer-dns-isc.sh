@@ -22,6 +22,25 @@ SYSD_BIND_ALT_SVCNAME="bind"
 
 source ../distro-os.sh
 
+
+function unique_add_line()
+{
+  include_name="$1"
+  filespec="$2"
+  flex_touch "$include_name"
+  grep -q -c "include \"$include_name\";" "${BUILDROOT}${CHROOT_DIR}$filespec"
+  retsts=$?
+  if [ $retsts -ge 1 ]; then
+    # not found
+    echo "; inserted by $(basename "$0")" >> "${BUILDROOT}${CHROOT_DIR}$filespec"
+    echo "include \"$include_name\";" >> "${BUILDROOT}${CHROOT_DIR}$filespec"
+    echo >> "${BUILDROOT}${CHROOT_DIR}$filespec"
+  fi
+  unset filespec
+  unset include_name
+}
+
+
 NAMED_CONF_FILEPART="named"
 NAMED_CONF_FILETYPE=".conf"
 NAMED_CONF_FILENAME="${NAMED_CONF_FILEPART}${NAMED_CONF_FILETYPE}"
@@ -79,8 +98,8 @@ case $ID in
     USER_NAME="named"
     GROUP_NAME="named"
     ETC_SUB_DIRNAME="named"
-    LOG_SUB_DIRNAME="named"
     VAR_SUB_DIRNAME="named"
+    LOG_SUB_DIRNAME="named"
     DISTRO_HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="/var/${VAR_LIB_NAMED_DIRNAME}"
@@ -88,7 +107,7 @@ case $ID in
     DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-${NAMED_CONF_DIRSPEC}/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     sysvinit_unitname="named"
-    systemd_unitname="bind9"
+    systemd_unitname="named"
     default_chroot_dirspec="/var/named/chroot"
     SYSTEMD_NAMED_UNITNAME="named"
     VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
@@ -99,16 +118,18 @@ case $ID in
     ETC_SUB_DIRNAME="named"
     VAR_SUB_DIRNAME="named"
     LOG_SUB_DIRNAME="named"
+    DISTRO_HOME_DIRSPEC="$localstatedir/$USER_NAME"
     VAR_LIB_NAMED_DIRNAME="${VAR_LIB_NAMED_DIRNAME:-${ETC_SUB_DIRNAME}}"
     VAR_LIB_NAMED_DIRSPEC="${VAR_DIRSPEC}/${VAR_LIB_NAMED_DIRNAME}"
+    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-${NAMED_CONF_DIRSPEC}/$NAMED_CONF_FILENAME}"
     DISTRO_HOME_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/$USER_NAME"
     NAMED_CONF_DIRSPEC="$ETC_DIRSPEC"
-    DEFAULT_NAMED_CONF_FILESPEC="${NAMED_CONF:-${NAMED_CONF_DIRSPEC}/$NAMED_CONF_FILENAME}"
     package_tarname="bind"
     sysvinit_unitname="named"
     systemd_unitname="named"
     default_chroot_dirspec="/var/named/chroot"
     SYSTEMD_NAMED_UNITNAME="named"
+    # ArchLinux does not use /var/cache, so dovetail it into /var/lib
     VAR_CACHE_NAMED_DIRSPEC="${VAR_LIB_DIRSPEC}/$VAR_SUB_DIRNAME"
     ;;
 esac
@@ -129,6 +150,7 @@ RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 RNDC_KEY_DIRSPEC="${ETC_NAMED_DIRSPEC}/keys"
 RNDC_CONF_FILESPEC="${RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
 RNDC_KEY_FILESPEC="${RNDC_KEY_DIRSPEC}/$RNDC_KEY_FILENAME"
+VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_DIRSPEC}/$VAR_SUB_DIRNAME"
 
 SYSTEMD_NAMED_SERVICE="${SYSTEMD_NAMED_UNITNAME}.$SYSTEMD_SERVICE_FILETYPE"
 SYSTEMD_NAMED_INSTANCE_SERVICE="${SYSTEMD_NAMED_UNITNAME}@.$SYSTEMD_SERVICE_FILETYPE"
@@ -153,7 +175,7 @@ if [ -n "$INSTANCE" ]; then
   INSTANCE_VAR_LIB_NAMED_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/$INSTANCE"
   INSTANCE_VAR_CACHE_NAMED_DIRSPEC="${VAR_CACHE_NAMED_DIRSPEC}/$INSTANCE"
   INSTANCE_LOG_DIRSPEC="/var/log/$LOG_SUB_DIRNAME/$INSTANCE"
-  INSTANCE_RNDC_CONF_DIRSPEC="${RNDC_CONF_DIRSPEC}/$INSTANCE"
+  INSTANCE_RNDC_CONF_DIRSPEC="${RNDC_CONF_DIRSPEC}"
   INSTANCE_RNDC_KEY_DIRSPEC="${INSTANCE_RNDC_CONF_DIRSPEC}/keys"
 
   INSTANCE_RNDC_CONF_FILESPEC="${INSTANCE_RNDC_CONF_DIRSPEC}/$RNDC_CONF_FILENAME"
@@ -336,10 +358,12 @@ INSTANCE_DYNAMIC_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/dynamic"
 INSTANCE_DB_PRIMARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/primaries"
 INSTANCE_DB_SECONDARIES_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/secondaries"
 INSTANCE_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
+INSTANCE_RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}"
 if [ -n "$INSTANCE" ]; then
   INSTANCE_PID_DIRSPEC="${VAR_RUN_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}"
   INSTANCE_NAMED_HOME_DIRSPEC="${NAMED_HOME_DIRSPEC}${INSTANCE_SUBDIRPATH}"
   INSTANCE_INIT_DEFAULT_FILENAME="${sysvinit_unitname}-$INSTANCE"
+  INSTANCE_RNDC_CONF_DIRSPEC="${ETC_NAMED_DIRSPEC}${INSTANCE_SUBDIRPATH}"
 
   INSTANCE_CONF_KEYS_DIRSPEC="${INSTANCE_ETC_NAMED_DIRSPEC}/keys"
   INSTANCE_KEYS_DB_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/keys"
@@ -454,4 +478,27 @@ PUBLIC_PRIMARY_NS_AML="aml_trusted_downstream_primary_nameserver"
 
 # private primary/master nameserver AML (used only in bastion setup)
 PRIVATE_PRIMARY_NS_AML="aml_trusted_homelan_primary_nameserver"
+
+
+function create_header()
+{
+  FILESPEC=$1
+  owner=$2
+  perms=$3
+  title=$4
+  filename="$(basename "$FILESPEC")"
+  filepath="$(dirname "$FILESPEC")"
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC ..."
+  cat << CH_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
+#
+# File: $filename
+# Path: $filepath
+# Title: $title
+# Generator: $(basename "$0")
+# Created on: $(date)
+
+CH_EOF
+  flex_chown "$owner" "$FILESPEC"
+  flex_chmod "$perms" "$FILESPEC"
+}
 
