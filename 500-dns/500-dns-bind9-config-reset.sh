@@ -243,7 +243,6 @@ cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CO
     edns-udp-size 1232;
     max-udp-size 1232;
 
-
 include "${INSTANCE_OPTIONS_EXT_NAMED_CONF_FILESPEC}";
     };
 OPTIONS_EOF
