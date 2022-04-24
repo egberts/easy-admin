@@ -1,0 +1,266 @@
+
+########################################################3
+# VIEW
+# Settings that goes into the extension part of its view configuration file
+#  RNDC-related
+#    allow-new-zones  [ Opt View ]  # 9.8
+#  Cache-related
+#    additional-from-cache  [ Opt View ]
+#    attach-cache  [ Opt View ]  # 9.7
+#    max-cache-size  [ Opt View ]  # 9.3.0
+#    max-cache-ttl  [ Opt View ]  # 9.0.0
+#    max-ncache-ttl  [ Opt View ]  # 8.2
+#    min-cache-ttl  [ Opt View ]  # 9.14
+#    min-ncache-ttl  [ Opt View ]  # 9.14
+#    prefetch  [ Opt View ]  # 9.10
+#  EDNS(0)
+#    answer-cookie  [ Opt ]  # 9.14
+#    cookie-algorithm  [ Opt ]  # 9.11.0
+#    cookie-secret  [ Opt ]  # 9.11.0
+#    edns  [ Server ]  # 9.3
+#    edns-udp-size  [ Opt Server View ]  # 9.3
+#    edns-version  [ Server ]  # 9.11
+#    nocookie-udp-size  [ View ]  # 9.11
+#  Notify-related - inbound
+#    allow-notify  [ Opt View Zone ]  # 9.1
+#  Notify-related - outbound
+#    also-notify  [ Opt View Zone ]  # 8.2
+#    notify  [ Opt View Zone ]  # 8.1
+#    notify-delay  [ View ]  # 9.5.0
+#    notify-source  [ Opt View Zone ]  # 9.1
+#    notify-source-v6  [ Opt View Zone ]  # 9.1
+#    notify-to-soa  [ View ]  # 9.5
+#    startup-notify-rate  [ Opt ]  # 9.11.0
+#  Query-related
+#    allow-query  [ Opt View Zone ]  # 8.1
+#    allow-query-on  [ Opt View ]  # 9.5
+#    allow-query-cache  [ Opt View ]  # 9.4
+#    allow-query-cache-on  [ Opt View Zone ]  # 9.5
+#    deny-answer-addresses  [ Opt View ]  # 9.7.0
+#    deny-answer-aliases  [ Opt View ]  # 9.7.0
+#    *CISecurity says not to use 'query-source[-v6]'
+#        query-source  [ Opt View ]  # 8.1
+#        query-source-v6  [ Opt View ]  # 9.4
+#    querylog  [ Opt ]  # 9.3
+#  Recursion-related
+#    allow-recursion  [ Opt View ]
+#    allow-recursion-on  [ Opt View ]  # 9.5
+#    match-recursive-only   [ View ]  # 9.3.0
+#    max-recursion-depth  [ View ]  # 9.9
+#    max-recursion-queries  [ View ] # 9.9
+#    recursion  [ Opt View ]  # 8.1
+#    recursive-clients  [ Opt ]  # 9.0.0
+#  Transfer-related
+#    allow-transfer  [ Opt View Zone ]  # 8.1
+#    alt-transfer-source ( ipv4 | * ) [ port ( | * )] [ Opt View Zone ]
+#    alt-transfer-source-v6 ( ipv6 | * ) [ port ( | * ) ] [ Opt View Zone ]
+#    dialup dialup_options  [ Opt View Zone ]  # 8.2
+#    ixfr-from-differences  [ Opt View ]  # 9.5.0
+#    masterfile-format  [ Opt View Zone ]  # 9.4.0
+#    masterfile-style  [ Opt View Zone ]  # 9.11.0
+#    max-ixfr-ratio  [ Opt View Zone ]  # 9.6
+#    max-transfer-idle-in minutes  [ Opt View Zone ]  # 9.0
+#    max-transfer-idle-out minutes  [ Opt View Zone ]  # 9.0
+#    max-transfer-time-in minutes  [ Opt View Zone ]  # 8.1
+#    max-transfer-time-out minutes  [ Opt View Zone ]  # 9.0
+#    provide-ixfr   [ Opt View Server ]  # 9.0
+#    request-ixfr  [ Opt View Server Zone ]  # 9.1
+#    serial-query-rate  [ Opt ]  # 9.2
+#    transfer-format  [ Opt View Server ]  # 8.1
+#    transfer-mesasge-size [ Opt ]  # 9.11
+#    transfer-source  [ Opt View Server Zone ]  # 8.2
+#    transfer-source-v6  [ Opt View Zone ]  # 9.0.0
+#    transfers  [ Server ]  # 8.2
+#    transfers-in  [ Opt ]  # 8.1
+#    transfers-out  [ Opt ]  # 8.1
+#    transfers-per-ns  [ Opt ]  # 8.1
+#    use-alt-transfer-source  [ Opt View Zone ]  # 9.3.0
+#  Update-relatd
+#    allow-update { address_match_element ... } [ Opt View Zone ]  # 8.2
+#    allow-update-forwarding { address_match_list } [ Opt View Zone ]
+#    serial-update-method  [ Opt View Zone ]  # 9.9
+#    min-retry-time  [ Opt View Zone ]  # 9.1
+#    max-retry-time  [ Opt View Zone ]  # 9.1
+#    max-refresh-time  [ Opt View Zone ]  # 9.1
+#    min-refresh-time  [ Opt View Zone ]  # 9.1
+#
+#  DNSSEC-related
+#    auto-dnssec  [ Opt View Zone ]  # 9.79.11- obsoleted
+#    check-dup-records  [ Opt View Zone ]  # 9.7
+#    disable-algorithms  [ Opt View ]  # 9.3.0
+#    disable-ds-digest  [ Opt View ]  # 9.11.0
+#    dnssec-accept-expired  [ Opt View ]  # 9.4
+#    dnssec-dnskey-kskonly  [ Opt View Zone ]  # 9.7.0
+#    dnssec-loadkeys-interval  [ Opt View Zone ]  # 9.9.0
+#    dnssec-must-be-secure  [ Opt View ]  # 9.3.0
+#    dnssec-policy  [ Opt Zone ]  # 9.17.0
+#    dnssec-secure-to-insecure  [ Opt View Zone ]  # 9.7.0
+#    dnssec-update-mode  [ Opt View Zone ]  # 9.9.0
+#    dnssec-validation  [ Opt View Zone ]  # 9.4.0
+#    inline-signing  [ Opt View Zone ]  # 9.9.0
+#    lifetime  [ keys ]  # 9.17.0
+#    max-zone-ttl  [ View ]  # 9.10.0
+#    nta-lifetime  [ View ]  # 9.11.0
+#    nta-recheck duration  [ View ]  # 9.11.0
+#    sig-signing-nodes  [ Opt View Zone ]  # 9.5
+#    sig-signing-signatures  [ Opt View Zone ]  # 9.5
+#    sig-signing-type  [ Opt View Zone ]  # 9.5
+#    sig-validity-interval  [ Opt View Zone ]  # 9.0
+#    trust-anchor-telemetry  [ Opt View ]  # 9.10.5
+#    trust-anchors  [ View ]  # 9.6
+#    trusted-keys  [ View ]  # 9.6
+#    update-check-ksk  [ Opt View Zone ]  # 9.4.0
+#    validate-except  [ Opt View ]  # 9.14
+#
+#  Daemon-related
+#    automatic-interface-scan  [ Opt ] # 9.10.3
+#    catalog-zones
+#    coresize  [ Opt ]  # 8.1
+#    datasize  [ Opt ]  # 8.1
+#    directory  [ Opt ]  # 4.8
+#    dual-stack-servers  [ Opt View ]  # 9.3.0
+#    dump-file  [ Opt ]  # 9.6.3
+#    empty-contact  [ Opt View ]  # 9.4.0
+#    empty-server string  [ Opt View ]  # 9.4.0
+#    files  [ Opt ]  # 8.1
+#    flush-zones-on-shutdown  [ Opt ]  # 9.3.0
+#    interface-interval  [ Opt ]  # 8.2
+#    listen-on  [ Opt ]  # 8.1
+#    listen-on-v6 [ Opt ]  # 9.2
+#    lmdb-mapsize  [ Opt View ]  # 9.12.0
+#    lock-file  [ Opt ]  # 9.11.0
+#    managed-keys-directory  [ Opt ]  # 9.8.0
+#    match-mapped-addresses  [ Opt ]  # 9.2
+#    memstatistics  [ Opt ]  # 9.5.0
+#    memstatistics-file  [ Opt ]  # 8.1
+#    key  [ Server ]  # 9.2
+#    key-directory  [ Opt View Zone ]  # 9.3.0
+#    pid-file  [ Opt ]  # 8.1
+#    port  [ Opt Masters ]  # 9.1
+#    plugin  [ View ]  # 9.14
+#    querylog  [ Opt ]  # 9.3.0
+#    random-device  [ Opt ]  # 9.3.0
+#    recursing-file  [ Opt ]  # 9.5.0
+#    reserved-sockets  [ Opt ]  # 9.5.0
+#    server netprefix   [ View ]  # 9.6
+#    secroots-file  [ Opt ]  # 9.8.0
+#    session-keyfle  [ Opt ]  # 9.7.0
+#    stacksize  [ Opt ]  # 8.1
+#    statistics-file  [ Opt ]  # 8.1
+#    tcp-listen-queue  [ Opt ]  # 9.3
+#    tcp-only  [ Server ]  # 9.11.0
+#
+#  Zone
+#    delegation-only  [ Zone ]  # 9.3.0
+#    disable-empty-zones hostname  [ Opt View ]  # 4.9.2
+#    file  [ Zone ]  # 8.2
+#    in-ivew  [ Zone ]  # 9.10
+#    journal  [ Zone ]  # 9.3.0
+#    max-journal-size  [ Opt Zone View ]  # 9.3.0
+#    master  [ Zone ]  # 9.0
+#    server-addresses  [ Zone ]  # 9.8.0
+#    server-names  [ Zone ]  # 9.8.0
+#    update-policy  [ Zone ]  # 9.0.0
+#
+#  CHAOS
+#    version  [ Opt ]  # 8.2
+#    hostname  [ Opt ]  # 8.3
+#    server-id  [ Opt ]  # 9.3.0
+#
+#  Zone data file
+#    check-integrity  [ View Zone ]  # 9.4
+#    check-mx  [ Opt View Zone ]  # 9.4
+#    check-mx-cname  [ Opt View Zone ]  # 9.4
+#    check-names  [ Opt View Zone ]  # 8.1
+#    check-sibling  [ Opt View Zone ]  # 8.1
+#    check-spf  [ Opt View Zone ]  # 9.6
+#    check-srv-cname  [ Opt View Zone ]  # 9.4
+#    check-wildcard  [ Opt View Zone ]  # 9.4
+#    new-zones-directory  [ Opt View ]  # 9.12
+#
+#  Dynamic zone-related
+#    catalog-zones { zone name ... } [ Opt View ]  # 9.11
+#    empty-zones-enable
+#    dlz string { }
+#    dnsrps-enable  [ Opt View ]  # 9.12
+#    dyndb string quote { }
+#    zone-statistics   [ Opt View Zone ]  # 9.3
+#
+#  IP protocol-related
+#    avoid-v4-udp-ports  [ Opt ]  # 9.3
+#    blackhole  [ Opt ]  # 8.1
+#    use-v4-udp-ports  [ Opt ]  # 9.5
+#
+#  IPv6 protocol-related
+#    avoid-v6-udp-ports { port_list } [ Opt ]  # 9.3
+#    dns64 netprefix { }  [ Opt View ]  # 9.8.0
+#    dns64-contact string { }  [ Opt View ]  # 9.8.0
+#    use-v6-udp-ports  [ Opt ]  # 9.5
+#    v6-bias  [ Opt View ]  # 9.6
+#
+#  UDP/TCP protocol-related
+#    max-udp-size  [ View ]  # 9.4
+#    padding  [ Server ]  # 9.12.0
+#    response-padding  [ Opt View ]  # 9.12.0
+#    tcp-advertised-timeout  [ Opt ]  # 9.12
+#    tcp-clients  [ Opt ]  # 9.0
+#    tcp-idle-timeout  [ Opt ]  # 9.12
+#    tcp-initial-timeout  [ Opt ]  # 9.12
+#    tcp-keepalive  [ Server ]  # 9.12
+#    tcp-keepalive-timeout  [ Opt ]  # 9.12
+#    try-tcp-refresh  [ Opt View Zone ]  # 9.5.0
+#
+#  DNS protocol-related
+#    bogus  [ Server ]  # 8.1
+#    dnstap { }  [ Opt View ]  # 9.11.0
+#    forward  [ Opt View Zone ]  # 8.1
+#    forwarders  [ Opt View Zone ]  # 9.2
+#    keep-response-order  [ Opt ]  # 9.11.0
+#    max-clients-per-query  [ Opt View ] # 9.4
+#    max-records  [ View ]   # 9.6
+#    max-refresh-time seconds  [ Opt View Zone ]  # 9.1
+#    max-stale-ttl duration  [ View ]  # 9.12
+#    message-compression  [ View ]  # 9.11
+#    minimal-any   [ Opt View ]  # 9.2
+#    multi-master ( yes | no )  [ Opt View Zone ]  # 9.3
+#    no-case-compress  [ Opt View ]  # 9.10
+#    nxdomain-redirect  [ View ]  # 9.11
+#    preferred-glue   [ Opt View ]  # 8.3
+#    qname-minimization  [ Opt View ]  # 9.14
+#    request-expire  [ Opt View Server Zone ]  # 9.11
+#    request-nsid  [ Opt View Server ]  # 9.5
+#    require-server-cookie ( yes | no ) [ Opt View Server ]  # 9.11
+#    resolver-nonbackoff-tries  [ View ]  # 9.12
+#    resolver-query-timeout  [ View ]  # 9.8
+#    resolver-retry-interval  [ View ]  # 9.12
+#    response-policy  [ Opt View ]  # 9.8
+#    root-delegation-only  [ Opt View ]  # 9.3.0
+#    root-key-sentinel  [ Opt View ]  # 9.13.0
+#    rrset-order  [ Opt View ]  # 8.2
+#    send-cookie  [ View ]  # 9.11
+#    servfail-ttl  [ Opt View ]  # 9.11.0
+#    session-keyalg  [ Opt ]  # 9.7.0
+#    session-keyname  [ Opt ]  # 9.7.0
+#    stale-answer-enable  [ Opt View ]  # 9.12
+#    stale-answer-ttl duration  [ Opt View ]  # 9.12
+#    stale-cache-enable  [ Opt View ]  # 9.12
+#    stale-cache-ttl duration  [ Opt View ]  # 9.12
+#    synth-from-dnssec  [ Opt View ]  # 9.12
+#    zero-no-soa-ttl  [ Opt View Zone ]  # 9.4.0
+#    zero-no-soa-ttl-cache  [ Opt View ]  # 9.4.0
+#
+#  Filtering/QoS/RateLimiting
+#    clients-per-query  [ Opt View ]  # 9.5
+#    fetch-quota-params  [ Opt View ] # 9.11
+#    fetches-per-server  [ ( drop | fail ) ] [ Opt View ] # 9.11
+#    fetches-per-zone  [ ( drop | fail ) ] [ Opt View ] # 9.11
+#    heartbeat-interval  [ Opt ]  # 8.2
+#    lame-ttl duration  [ Opt View ]  # 8.2
+#    lmdb-mapsize sizeval # ( # 9.6)
+#    match-clients { address_match_list }  [ View ]  # 9.3.0
+#    match-destinations { address_match_list }  [ View ]  # 9.3.0
+#    max-rsa-exponent-size  [ Opt ]  # 9.10
+#    notify-rate  [ Opt ]  # 9.11.0
+#    rate-limit  [ View ]  # 9.7.0
+#    sortlist  [ Opt View ]  # 8.2
+
