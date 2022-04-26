@@ -698,10 +698,14 @@ function flex_chcon()
             "${1}" "${BUILDROOT}$destdir_filespec"
     else
       # We do no error checking for non-root users, if they errored, they errored.
-      selinuxenabled
+      selinuxenabled_bin="$(which selinuxenabled >/dev/null 2>&1)"
       retsts=$?
-      if [ "$retsts" -ne 0 ]; then
-        chcon "system_u:object_r:${1}:s0" "${BUILDROOT}$destdir_filespec"
+      if [ $retsts -eq 0 ]; then
+        selinuxenabled
+        retsts=$?
+        if [ "$retsts" -ne 0 ]; then
+          chcon "system_u:object_r:${1}:s0" "${BUILDROOT}$destdir_filespec"
+        fi
       fi
     fi
   fi
