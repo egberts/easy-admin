@@ -1,0 +1,10 @@
+Linux: 2.49+
+Distro: any
+
+To disable initfs and remove initramfs,
+
+Need to configure kernel to 'Y' and not module:
+
+    DRM
+        CONFIG_DRM_BOCHS=y
+

@@ -1,0 +1,13 @@
+
+
+In the 'linux' bootparams in /boot/grub/grub.conf ...
+
+Flip the kernel to 640x480 using
+
+    gfxmode text
+
+and remove the following
+
+    quiet
+    splash
+    vt.handoff=7

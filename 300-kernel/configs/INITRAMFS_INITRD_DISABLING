@@ -1,0 +1,30 @@
+Linux: 4.0+
+Linux: 5.0+
+Distro: any
+
+To disable initfs and remove initramfs,
+
+Need to configure kernel to 'Y' and not module:
+
+    MDADM
+        CONFIG_MD=y
+        CONFIG_BLK_DEV_MD=y
+      if any RAID:
+        CONFIG_MD_AUTODETECT
+        CONFIG_MD_LINEAR
+        CONFIG_MD_RAID0
+        CONFIG_MD_RAID1
+        CONFIG_MD_RAID10
+        CONFIG_MD_RAID456
+    LVM
+        CONFIG_MD
+        CONFIG_BLK_DEV_DM
+        CONFIG_DM_CRYPT
+        CONFIG_DM_SNAPSHOT
+        CONFIG_DM_THIN_PROVISIONING
+        CONFIG_DM_CACHE
+        CONFIG_DM_MIRROR
+        CONFIG_DM_ZERO
+        CONFIG_DM_DELAY
+        CONFIG_BLK_DEV_RAM
+        CONFIG_MAGIC_SYSRQ

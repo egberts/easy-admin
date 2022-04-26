@@ -1,0 +1,5 @@
+
+Linux: any
+Distro: any
+
+To cut down on an extra linux image file, turn off DEBUG_INFO

@@ -1,0 +1,23 @@
+Linux: any
+Distro:  Debian
+
+
+Kernel fails to compilation due to missing 'debian-uefi-certs.pem file'.
+
+Turn off
+
+   SYSTEM_TRUSTED_KEYRING
+   MODULE_SIG_KEY
+   SYSTEM_DATA_VERIFICATION
+   KEXEC_BZIMAGE_VERIFY_SIG
+   KEXEC_VERIFY_SIG
+   SIGNED_PE_FILE_VERIFICATION
+   REQUIRED_SIGNED_REGDB
+
+Alternatively, you can provide the PEM key
+
+    gpg --locate-key torvald@kernel.org gregkh@kernel.org
+
+And read the following
+
+   https://www.kernel.org/doc/html/v4.19/admin-guide/module-signing.html

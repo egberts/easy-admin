@@ -1,0 +1,15 @@
+Linux: 4.29+
+Linux: 5.15+
+Distro: any
+
+Intel reports End-of-Life for Microcode Update (MCU) on the following:
+
+   i5-3470 CPU
+
+since June 2020.
+
+This means that SRDBS mitigation at CPU microcode level will not be provided
+as reported by
+
+ https://github.com/speed47/spectre-meltdown-checker
+
