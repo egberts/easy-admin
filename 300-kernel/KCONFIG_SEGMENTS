@@ -1,0 +1,36 @@
+Linux: 2.49+
+Distro: any
+
+
+To do a series of simple flipping of a single config while updating any and all config dependencies:
+
+Single Option approach
+----
+```bash
+./scripts/config --set-val CONFIG_OPTION y
+./scripts/config --enable CONFIG_BRIDGE
+./scripts/config --enable CONFIG_MODULES
+./scripts/config --disable CONFIG_X25
+./scripts/config --module CONFIG_NFT
+make oldconfig
+(updates dependencies; may prompt with new dependencies, but old deps silently goes away)
+```
+
+Multiple-File Merge approach
+---
+If you have several small snippets of `.config-*` files that you want to selectively merge into the main `.config` file, execute:
+
+```bash
+# Merge IP fragment CONFIG_ settings into the main .config file
+./scripts/kconfig/merge_config.sh .config .config-fragment
+# Merge  Notebook HW-specific CONFIG_ settings into main .config file
+./scripts/kconfig/merge_config.sh .config .config-notebook-toshiba
+
+# Auto-add/auto-remove CONFIG_ dependencies
+make oldconfig
+```
+
+References
+====
+* https://www.kernel.org/doc/html/latest/kbuild/kconfig.html#nconfig-mode
+* [https://stackoverflow.com/questions/27090431/linux-kconfig-command-line-interface/70728869#70728869](https://stackoverflow.com/a/70728869/4379130)
