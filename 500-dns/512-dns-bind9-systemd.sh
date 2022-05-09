@@ -131,7 +131,8 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 # File: ${FILENAME}
 # Path: ${FILEPATH}
-# Title: ISC Bind9 named daemon systemd unit
+# Title: ISC Bind9 named daemon systemd service unit
+# Systemd version: v247
 # Creator: $(basename "$0")
 # Created on: $(date)
 # Description:
@@ -157,7 +158,7 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 #
 [Unit]
-Description=ISC BIND9 Domain Name Server for %I
+Description=ISC BIND9 Nameserver for '%I' instance
 Documentation=https://github.com/egberts/systemd-bind9
 Documentation=https://bind9.readthedocs.io/
 Documentation=man:named(8)
@@ -176,58 +177,70 @@ Before=nss-lookup.target
 # AssertPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}/%I
 # AssertPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}/%I
 
-# ConditionPathExists=/run/bind
-# ConditionPathIsDirectory=/run/bind
+# ArchLinux
+# AssertPathExists=/var/named/%I
+# AssertPathIsDirectory=/var/named/%I
+# AssertPathIsReadWrite=/var/named/%I
 
-# ConditionPathExists=/run/bind/%I
-# ConditionPathIsDirectory=/run/bind/%I
-# ConditionPathIsReadWrite=/run/bind/%I
+# We rely on /etc/tmpfiles.d/ for our /run/named needs
+# systemd v247 has not perfected /run/named/XXXX yet
+# maintainer puts one in /usr/lib/tmpfiles.d/named.conf
+# we override one from /etc/tmpefiles.d/named.conf
+ConditionPathExists=${VAR_RUN_NAMED_DIRSPEC}
+ConditionPathIsDirectory=${VAR_RUN_NAMED_DIRSPEC}
+ConditionPathExists=${VAR_RUN_NAMED_DIRSPEC}/%I
+ConditionPathIsDirectory=${VAR_RUN_NAMED_DIRSPEC}/%I
+ConditionPathIsReadWrite=${VAR_RUN_NAMED_DIRSPEC}/%I
 
-# ConditionPathExists=/var/cache/bind
-# ConditionPathIsDirectory=/var/cache/bind
+# ConditionPathExists=${VAR_CACHE_NAMED_DIRSPEC}
+# ConditionPathIsDirectory=${VAR_CACHE_NAMED_DIRSPEC}
 
-# ConditionPathExists=/var/cache/bind/%I
-# ConditionPathIsDirectory=/var/cache/bind/%I
-# ConditionPathIsReadWrite=/var/cache/bind/%I
+# ConditionPathExists=${VAR_CACHE_NAMED_DIRSPEC}/%I
+# ConditionPathIsDirectory=${VAR_CACHE_NAMED_DIRSPE}/%I
+# ConditionPathIsReadWrite=${VAR_CACHE_NAMED_DIRSPE}/%I
 
-ConditionPathExists=/var/lib/bind
-ConditionPathIsDirectory=/var/lib/bind
+# ConditionPathExists=${VAR_LIB_NAMED_DIRSPEC}
+# ConditionPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}
 
-ConditionPathExists=/var/lib/bind/%I
-ConditionPathIsDirectory=/var/lib/bind/%I
-ConditionPathIsReadWrite=/var/lib/bind/%I
-ReadWritePaths=/var/lib/bind/%I
+# ConditionPathExists=${VAR_LIB_NAMED_DIRSPEC}/%I
+# ConditionPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}/%I
+# ConditionPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}/%I
+# ReadWritePaths=${VAR_LIB_NAMED_DIRSPEC}/%I
 
-ConditionPathExists=/var/log/named/%I
-ConditionPathIsDirectory=/var/log/named/%I
-ConditionPathIsReadWrite=/var/log/named/%I
-ReadWritePaths=/var/log/named/%I
+ConditionPathExists=${VAR_LOG_NAMED_DIRSPEC}/%I
+ConditionPathIsDirectory=${VAR_LOG_NAMED_DIRSPEC}/%I
+ConditionPathIsReadWrite=${VAR_LOG_NAMED_DIRSPEC}/%I
+ReadWritePaths=${VAR_LOG_NAMED_DIRSPEC}/%I
 
-# ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/
-# ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/*
-# ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/*/*
-# ReadWritePaths=+${INSTANCE_LOG_NAMED_DIRSPEC}/
+# ReadOnlyPaths=+${ETC_NAMED_DIRSPEC}/%I/
+# ReadOnlyPaths=+${ETC_NAMED_DIRSPEC}/%I/*
+# ReadOnlyPaths=+${ETC_NAMED_DIRSPEC}/%I/*/*
+# ReadWritePaths=+${LOG_NAMED_DIRSPEC}/%I/
 # ReadWritePaths=+${VAR_CACHE_NAMED_DIRSPEC}/%I
 # ReadWritePaths=+${VAR_LIB_NAMED_DIRSPEC}/%I
 
 [Service]
-Type=forking
+Type=simple
+
+Environment=
+# Environment=SYSTEMD_LOG_LEVEL=debug
 
 # resources
-###LimitNPROC=10
 DeviceAllow=/dev/random r
 DeviceAllow=/dev/urandom r
 InaccessiblePaths=/home
 InaccessiblePaths=/opt
 InaccessiblePaths=/root
 
-# global bind9 is optional
-Environment=NAMED_OPTIONS="-c ${NAMED_CONF_FILESPEC}"
-Environment=RNDC_OPTIONS=""
+# Define defaults settings that can be overwritten by
+# SysV /etc/default/bind9-%I environment setting files.
+Environment=NAMED_CONF="${NAMED_CONF_DIRSPEC}/%I/named.conf"
+Environment=NAMED_OPTIONS="-c ${NAMED_CONF_DIRSPEC}/%I/named.conf"
+Environment=RNDC_OPTIONS="-s %I"
 
 EnvironmentFile=-${INIT_DEFAULT_FILESPEC}
 # instantiation-specific Bind environment file is absolutely required
-EnvironmentFile=${INSTANCE_INIT_DEFAULT_FILESPEC}
+EnvironmentFile=${INIT_DEFAULT_FILESPEC}-%I
 
 # Far much easier to peel away additional capabilities after
 # getting a bare-minimum cap-set working
@@ -258,15 +271,18 @@ UMask=0007
 LogsDirectory=${LOG_SUB_DIRNAME}/%I
 LogsDirectoryMode=0750
 
+# DHCP dhclient sticks some public-facing IP info in this directory
 ConfigurationDirectory=+${INSTANCE_ETC_NAMED_DIRSPEC}/%I
-ConfigurationDirectoryMode=0750
+ConfigurationDirectoryMode=0755
 
-# **
 # Tmpfiles
 PrivateTmp=false
 
-RuntimeDirectory=${VAR_SUB_DIRNAME}/%I
-RuntimeDirectoryMode=0755
+
+# We rely on systemd-tmpfiles to create the /run
+# systemd v247 has not perfected the art of /run/named/XXXX subdirs yet
+#  RuntimeDirectory=${VAR_SUB_DIRNAME}/%I
+#  RuntimeDirectoryMode=0755
 
 # Home directory (instantiation-excluded)
 WorkingDirectory=$NAMED_HOME_DIRSPEC
@@ -279,9 +295,10 @@ CacheDirectoryMode=0750
 StateDirectory=${VAR_SUB_DIRNAME}/%I
 StateDirectoryMode=0750
 
-PIDFile=$INSTANCE_PID_FILESPEC
-ExecStartPre=/usr/sbin/named-checkconf -z \$NAMED_CONF
-ExecStart=/usr/sbin/named -u $USER_NAME \$NAMED_CONF
+# Let named handle the PIDFile=
+###PIDFile=$INSTANCE_PID_FILESPEC
+ExecStartPre=/usr/sbin/named-checkconf -jz \$NAMED_CONF
+ExecStart=/usr/sbin/named -f -u $USER_NAME -c \$NAMED_CONF
 
 # rndc will dovetail any and all instantiations of
 # Bind9 'named' daemons into a single rndc.conf file
@@ -438,7 +455,7 @@ CacheDirectoryMode=0750
 StateDirectory=$VAR_SUB_DIRNAME
 StateDirectoryMode=0750
 
-PIDFile=$INSTANCE_PID_FILESPEC
+###PIDFile=$INSTANCE_PID_FILESPEC
 ExecStartPre=/usr/sbin/named-checkconf -z \$NAMED_CONF
 ExecStart=/usr/sbin/named -u $USER_NAME \$NAMED_CONF
 
