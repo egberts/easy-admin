@@ -64,11 +64,11 @@ if [ "${BUILDROOT:0:1}" == '/' ]; then
 else
   rm -rf "$BUILDROOT"
   mkdir -v "$BUILDROOT"  # no flex_mkdir, this is an intermediate-build tmp directory
-  mkdir -v "${BUILDROOT}${CHROOT_DIR}/etc"
-  mkdir -v "${BUILDROOT}${CHROOT_DIR}/etc/systemd"
-  mkdir -v "${BUILDROOT}${CHROOT_DIR}/etc/systemd/system"
-  mkdir -v "${BUILDROOT}${CHROOT_DIR}/var"
-  mkdir -v "${BUILDROOT}${CHROOT_DIR}/var/cache"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}$ETC_DIRSPEC"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}$ETC_SYSTEMD_DIRSPEC"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}$ETC_SYSTEMD_SYSTEM_DIRSPEC"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}$VAR_DIRSPEC"
+  mkdir -v "${BUILDROOT}${CHROOT_DIR}$VAR_CACHE_DIRSPEC"
   mkdir -v "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_NAMED_DIRSPEC"
 fi
 

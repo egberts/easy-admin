@@ -23,15 +23,6 @@ VAR_LIB_DIRSPEC="${VAR_DIRSPEC}/lib"
 # shellcheck disable=SC2034
 USR_LIB_DIRSPEC="${USR_DIRSPEC}/lib"
 
-# systemd
-# systemd service filetype
-# shellcheck disable=SC2034
-SYSTEMD_SERVICE_FILETYPE="service"
-# shellcheck disable=SC2034
-ETC_SYSTEMD_DIRSPEC="/etc/systemd"
-# shellcheck disable=SC2034
-ETC_SYSTEMD_SYSTEM_DIRSPEC="/etc/systemd/system"
-
 source /etc/os-release
 
 # Probably should have 'source distro-package-specific' scripting go here
@@ -86,4 +77,16 @@ sbindir="${sbindir:-"${exec_prefix}/sbin"}"
 rundir="${rundir:-"${localstatedir}/run"}"
 
 # Package maintainer-specific
+
+
+# hesistatingly inserting systemd right here
+# systemd really should be a conditional subnet
+# systemd
+# systemd service filetype
+# shellcheck disable=SC2034
+SYSTEMD_SERVICE_FILETYPE="service"
+# shellcheck disable=SC2034
+ETC_SYSTEMD_DIRSPEC="${ETC_DIRSPEC}/systemd"
+# shellcheck disable=SC2034
+ETC_SYSTEMD_SYSTEM_DIRSPEC="${ETC_SYSTEMD_DIRSPEC}/system"
 
