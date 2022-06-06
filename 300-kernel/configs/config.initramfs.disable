@@ -1,0 +1,56 @@
+#
+# File:     config.initramd.disable
+# Title:    To disable initfs and remove initramfs,
+# Kernel:   4.0+, 5.0+
+# Distro:   any
+# Function: lean overhead
+# Target:   any
+# Based on: any
+# Description:
+#   A kernel without any module supports.
+#
+# Module support
+CONFIG_MODULES=n
+
+# Block support
+CONFIG_MDADM=y
+CONFIG_MD=y
+CONFIG_BLK_DEV_MD=y
+
+# if any RAID:
+CONFIG_MD_AUTODETECT=y
+CONFIG_MD_LINEAR=y
+CONFIG_MD_RAID0=y
+CONFIG_MD_RAID1=y
+CONFIG_MD_RAID10=y
+CONFIG_MD_RAID456=y
+
+# if any LVM
+CONFIG_MD=y
+CONFIG_BLK_DEV_DM=y
+CONFIG_DM_CRYPT=y
+CONFIG_DM_SNAPSHOT=y
+CONFIG_DM_THIN_PROVISIONING=y
+CONFIG_DM_CACHE=y
+CONFIG_DM_MIRROR=y
+CONFIG_DM_ZERO=y
+CONFIG_DM_DELAY=y
+CONFIG_BLK_DEV_RAM=y
+
+# Kernel
+CONFIG_MAGIC_SYSRQ=y
+Linux: 2.49+
+Distro: any
+
+# DRM
+CONFIG_DRM_BOCHS=y
+
+# Turn off support for signed modules
+SYSTEM_TRUSTED_KEYRING=n
+MODULE_SIG_KEY=n
+SYSTEM_DATA_VERIFICATION=n
+KEXEC_BZIMAGE_VERIFY_SIG=n
+KEXEC_VERIFY_SIG=n
+SIGNED_PE_FILE_VERIFICATION=n
+REQUIRED_SIGNED_REGDB=n
+
