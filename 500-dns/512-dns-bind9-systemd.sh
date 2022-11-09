@@ -85,7 +85,8 @@ fi
 flex_chmod 0755 "$TEMPLATE_SYSD_DROPIN_DIRSPEC"
 flex_chown "root:root" "$TEMPLATE_SYSD_DROPIN_DIRSPEC"
 
-if [ "$systemd_unitname" == "bind" ]; then
+if [ "$systemd_unitname" == "bind" ] \
+   || [ "$systemd_unitname" == "named" ]; then
   # Dont edit the bind.service directly, modify it
   # Stick in 'conflicts' with our new named@.service dropin subdir
 
@@ -107,7 +108,7 @@ if [ "$systemd_unitname" == "bind" ]; then
 #
 
 [Unit]
-Conflicts=bind.service
+Conflicts=${systemd_unitname}.service
 
 BIND_EOF
   flex_chown "root:root" "$FILESPEC"
@@ -130,7 +131,7 @@ echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
 cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 # File: ${FILENAME}
-# Path: ${FILEPATH}
+# Path: ${ETC_SYSTEMD_SYSTEM_DIRSPEC}
 # Title: ISC Bind9 named daemon systemd unit
 # Creator: $(basename "$0")
 # Created on: $(date)
@@ -144,12 +145,12 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #   named setup without additional but intensive 
 #   changes.
 #
-#   NAMED_OPTIONS string must be defined in /etc/default/bind
+#   NAMED_OPTIONS string must be defined in ${INSTANCE_INIT_DEFAULT_FILESPEC}
 #     Useful examples:
 #        NAMED_OPTIONS="-p 53 -s"  # open port 53/udp and write stats
 #        NAMED_OPTIONS="-d 63"   # turn on various debug bit flags
 #
-#   RNDC_OPTIONS string must be defined in /etc/default/bind
+#   RNDC_OPTIONS string must be defined in ${INSTANCE_INIT_DEFAULT_FILESPEC}
 #     Default example: RNDC_OPTIONS="-p 953 -s 127.0.0.1"
 #
 # References:
@@ -164,67 +165,61 @@ Documentation=man:named(8)
 After=network.target
 Wants=nss-lookup.target
 Before=nss-lookup.target
-# AssertFileIsExecutable=/usr/sbin/named
-# AssertFileIsExecutable=/usr/sbin/rndc
-# AssertPathIsDirectory=${INSTANCE_SYSCONFDIR}/%I
-# AssertFileIsExecutable=${named_sbin_filespec}
-# AssertFileIsExecutable=/usr/sbin/rndc
-# AssertPathExists=${VAR_CACHE_NAMED_DIRSPEC}/%I
-# AssertPathIsDirectory=${VAR_CACHE_NAMED_DIRSPEC}/%I
-# AssertPathIsReadWrite=${VAR_CACHE_NAMED_DIRSPEC}/%I
-# AssertPathExists=${VAR_LIB_NAMED_DIRSPEC}/%I
-# AssertPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}/%I
-# AssertPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}/%I
 
-# ConditionPathExists=/run/bind
-# ConditionPathIsDirectory=/run/bind
+# /var/cache/[named|bind]
+ConditionPathExists=${VAR_CACHE_NAMED_DIRSPEC}
+ConditionPathIsDirectory=${VAR_CACHE_NAMED_DIRSPEC}
 
-# ConditionPathExists=/run/bind/%I
-# ConditionPathIsDirectory=/run/bind/%I
-# ConditionPathIsReadWrite=/run/bind/%I
+ConditionPathExists=${VAR_CACHE_NAMED_DIRSPEC}/%I
+ConditionPathIsDirectory=${VAR_CACHE_NAMED_DIRSPEC}/%I
+ConditionPathIsReadWrite=${VAR_CACHE_NAMED_DIRSPEC}/%I
 
-# ConditionPathExists=/var/cache/bind
-# ConditionPathIsDirectory=/var/cache/bind
+ConditionPathExists=${VAR_LIB_NAMED_DIRSPEC}
+ConditionPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}
+ConditionPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}
 
-# ConditionPathExists=/var/cache/bind/%I
-# ConditionPathIsDirectory=/var/cache/bind/%I
-# ConditionPathIsReadWrite=/var/cache/bind/%I
+ConditionPathExists=${VAR_LIB_NAMED_DIRSPEC}/%I
+ConditionPathIsDirectory=${VAR_LIB_NAMED_DIRSPEC}/%I
+ConditionPathIsReadWrite=${VAR_LIB_NAMED_DIRSPEC}/%I
 
-ConditionPathExists=/var/lib/bind
-ConditionPathIsDirectory=/var/lib/bind
+ConditionPathExists=${log_dir}
+ConditionPathIsDirectory=${log_dir}
 
-ConditionPathExists=/var/lib/bind/%I
-ConditionPathIsDirectory=/var/lib/bind/%I
-ConditionPathIsReadWrite=/var/lib/bind/%I
-ReadWritePaths=/var/lib/bind/%I
+ConditionPathExists=${log_dir}/%I
+ConditionPathIsDirectory=${log_dir}/%I
+ConditionPathIsReadWrite=${log_dir}/%I
 
-ConditionPathExists=/var/log/named/%I
-ConditionPathIsDirectory=/var/log/named/%I
-ConditionPathIsReadWrite=/var/log/named/%I
-ReadWritePaths=/var/log/named/%I
+# [/var]/run/[named|bind]
+ConditionPathExists=${PID_DIRSPEC}
+ConditionPathIsDirectory=${PID_DIRSPEC}
 
-# ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/
-# ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/*
-# ReadOnlyPaths=+${INSTANCE_ETC_NAMED_DIRSPEC}/*/*
-# ReadWritePaths=+${INSTANCE_LOG_NAMED_DIRSPEC}/
-# ReadWritePaths=+${VAR_CACHE_NAMED_DIRSPEC}/%I
-# ReadWritePaths=+${VAR_LIB_NAMED_DIRSPEC}/%I
+# [/var]/run/[named|bind]
+ConditionPathExists=${INSTANCE_PID_DIRSPEC}
+ConditionPathIsDirectory=${INSTANCE_PID_DIRSPEC}
+ConditionPathIsReadWrite=${INSTANCE_PID_DIRSPEC}
+
 
 [Service]
-Type=forking
+Type=simple
 
 # resources
-###LimitNPROC=10
 DeviceAllow=/dev/random r
 DeviceAllow=/dev/urandom r
 InaccessiblePaths=/home
 InaccessiblePaths=/opt
 InaccessiblePaths=/root
 
-# global bind9 is optional
-Environment=NAMED_OPTIONS="-c ${NAMED_CONF_FILESPEC}"
-Environment=RNDC_OPTIONS=""
+Environment=
+EnvironmentFile=
 
+# uncomment line for debug output during named startup
+#Environment=SYSTEMD_LOG_LEVEL=debug
+
+Environment=NAMED_CONF="${INSTANCE_NAMED_CONF_FILESPEC}"
+Environment=NAMED_OPTIONS="-c ${INSTANCE_NAMED_CONF_FILESPEC}"
+Environment=RNDC_OPTIONS="-s %I -c ${INSTANCE_RNDC_CONF_FILESPEC}"
+
+# /etc/default/[named|bind] is optional
 EnvironmentFile=-${INIT_DEFAULT_FILESPEC}
 # instantiation-specific Bind environment file is absolutely required
 EnvironmentFile=${INSTANCE_INIT_DEFAULT_FILESPEC}
@@ -232,8 +227,11 @@ EnvironmentFile=${INSTANCE_INIT_DEFAULT_FILESPEC}
 # Far much easier to peel away additional capabilities after
 # getting a bare-minimum cap-set working
 # h.reindl at thelounge.net:
-CapabilityBoundingSet=CAP_CHOWN CAP_SETGID CAP_SETUID CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_KILL CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_NET_RAW CAP_IPC_LOCK CAP_SYS_CHROOT
+CapabilityBoundingSet=CAP_SETGID CAP_SETUID CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_KILL CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_SYS_CHROOT
+
 AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+SystemCallFilter=~@clock
 
 # User/Group
 # If you set 'DynamicUser=true', MANY subdirectories will be created
@@ -248,13 +246,28 @@ Group=${GROUP_NAME}
 
 # File Security settings
 NoNewPrivileges=true
-ProtectHome=true
+ProtectHome=false
+ProtectSystem=strict
 ProtectKernelModules=true
 ProtectKernelTunables=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectProc=invisible
 ProtectControlGroups=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+RestrictAddressFamilies=~AF_PACKET
+RestrictNamespaces=true
+RestrictRealtime=true
 
+# uncomment if using CHROOT
 #RootDirectory=/$CHROOT_DIR
-UMask=0007
+
+# any files generated by 'named' will not be available to 'named' group
+UMask=0077
+
 LogsDirectory=${LOG_SUB_DIRNAME}/%I
 LogsDirectoryMode=0750
 
@@ -279,9 +292,9 @@ CacheDirectoryMode=0750
 StateDirectory=${VAR_SUB_DIRNAME}/%I
 StateDirectoryMode=0750
 
-PIDFile=$INSTANCE_PID_FILESPEC
-ExecStartPre=/usr/sbin/named-checkconf -z \$NAMED_CONF
-ExecStart=/usr/sbin/named -u $USER_NAME \$NAMED_CONF
+#### PIDFile=$INSTANCE_PID_FILESPEC   # this needs work with 'Type='
+ExecStartPre=/usr/sbin/named-checkconf -jz \$NAMED_CONF
+ExecStart=/usr/sbin/named -f -u $USER_NAME -c \$NAMED_CONF \$NAMED_OPTIONS
 
 # rndc will dovetail any and all instantiations of
 # Bind9 'named' daemons into a single rndc.conf file
@@ -303,16 +316,7 @@ WantedBy=multi-user.target
 #   various Linux distros and ISC bind9-users
 # CapabilityBoundingSet=CAP_SYS_RESOURCE
 # IgnoreSIGPIPE=false
-# LockPersonality=yes
 # PermissionsStartOnly=True
-# PrivateDevices=true
-# PrivateMounts=yes
-# ProtectKernelLogs=yes
-# ProtectSystem=strict
-# ReadWritePaths=/run/named /var/run/named
-# ReadWritePaths=/var/cache/bind
-# RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
-# RestrictRealtime=yes
 # RestartPreventExitStatus=255
 # SystemCallArchitectures=native
 # Type=notify
@@ -332,7 +336,7 @@ echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
 cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 #
 # File: $FILENAME
-# Path: $FILEPATH
+# Path: $ETC_SYSTEMD_SYSTEM_DIRSPEC
 # Title: ISC Bind9 named unit service file
 # Creator: $(basename "$0")
 # Created on: $(date)
@@ -340,7 +344,7 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
 # NAMED_OPTIONS string must be defined in /etc/default/bind
 #    NAMED_OPTIONS cannot replace '-u' or '-c' option of
 #    named(8) for its hard-coded in this file as:
-#        '-u bind -c /etc/bind/named.conf'
+#        '-u bind -c /etc/${ETC_SUB_DIRNAME}/named.conf'
 #    Useful examples:
 #        NAMED_OPTIONS="-p 53 -s"  # open port 53/udp and write stats
 #        NAMED_OPTIONS="-d 63"   # turn on various debug bit flags
@@ -362,18 +366,20 @@ After=network.target
 Wants=nss-lookup.target
 Before=nss-lookup.target
 
-# ConditionPathExists=$VAR_NAMED_DIRSPEC
-# ConditionPathIsDirectory=$VAR_NAMED_DIRSPEC
-# ConditionPathIsReadWrite=$VAR_NAMED_DIRSPEC
+# /etc/{named|bind}
+ConditionPathExists=$ETC_NAMED_DIRSPEC
+ConditionPathIsDirectory=$ETC_NAMED_DIRSPEC
+ConditionPathIsReadWrite=$ETC_NAMED_DIRSPEC
 
-# ConditionPathExists=$VAR_CACHE_NAMED_DIRSPEC
-# ConditionPathIsDirectory=$VAR_CACHE_NAMED_DIRSPEC
-# ConditionPathIsReadWrite=$VAR_CACHE_NAMED_DIRSPEC
+# /var/cache/{named|bind}
+ConditionPathExists=$VAR_CACHE_NAMED_DIRSPEC
+ConditionPathIsDirectory=$VAR_CACHE_NAMED_DIRSPEC
+ConditionPathIsReadWrite=$VAR_CACHE_NAMED_DIRSPEC
 
-# ConditionPathExists=$VAR_LIB_NAMED_DIRSPEC
+# /var/lib/{named|bind}
+ConditionPathExists=$VAR_LIB_NAMED_DIRSPEC
 ConditionPathIsDirectory=$VAR_LIB_NAMED_DIRSPEC
 ConditionPathIsReadWrite=$VAR_LIB_NAMED_DIRSPEC
-#ReadWritePaths=$VAR_LIB_NAMED_DIRSPEC
 
 [Service]
 Type=forking
@@ -427,7 +433,7 @@ PermissionsStartOnly=True
 RuntimeDirectory=$VAR_SUB_DIRNAME
 RuntimeDirectoryMode=0755
 
-# Home directory
+# Home directory (derived from pw_dir/getpwd(5); instantiation-excluded)
 WorkingDirectory=$NAMED_HOME_DIRSPEC
 
 # systemd v251
@@ -462,20 +468,13 @@ WantedBy=multi-user.target
 # CapabilityBoundingSet=CAP_SYS_RESOURCE
 # IgnoreSIGPIPE=false
 # LockPersonality=yes
-# PrivateDevices=true
-# PrivateMounts=yes
 # ProtectControlGroups=true
-# ProtectHome=true
 # ProtectKernelLogs=yes
 # ProtectKernelModules=true
 # ProtectKernelTunables=true
-# ProtectSystem=strict
-# ReadWritePaths=/run/named /var/run/named
-# ReadWritePaths=/var/cache/bind
 # RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 # RestrictRealtime=yes
 # RestartPreventExitStatus=255
-# RootDirectory=/$CHROOT_DIR
 # SystemCallArchitectures=native
 # Type=notify
 
@@ -483,6 +482,129 @@ BIND_EOF
 flex_chown "root:root" "$FILESPEC"
 flex_chmod "0644"      "$FILESPEC"
 echo "Created $BUILDROOT$CHROOT_DIR$FILESPEC"
+
+
+# Create the /etc/default/[named|bind] file
+echo
+FILENAME="$BIND_INIT_DEFAULT_FILENAME"
+FILEPATH="$INIT_DEFAULT_DIRSPEC"
+FILESPEC="$INIT_DEFAULT_FILESPEC"
+
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
+cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
+#
+# File: $FILENAME
+# Path: $FILEPATH
+# Title: SysV init.rc startup setting for general (non-instance) usage
+# Creator: $(basename "$0")
+# Created on: $(date)
+#
+#   NAMED_CONF - Full filepath specification to 'named.conf'
+#
+#   NAMED_OPTIONS - passthru CLI options for 'named' daemon
+#                    cannot use -c option (use NAMED_PORT)
+#
+#   RNDC_OPTIONS - passthru CLI options for 'rndc' utility
+#                    cannot use -p option (edit rndc.conf instead)
+#
+#   RESOLVCONF - Do a one-shot resolv.conf setup. 'yes' or 'no'
+#           Only used in SysV/s6/OpenRC/ConMan; Ignored by systemd.
+#
+# default settings for startup options  of '$systemd_unitname'
+# is located in ${ETC_SYSTEMD_SYSTEM_DIRSPEC}/${SYSTEMD_NAMED_SERVICE}
+# and its defaults are:
+#
+#   NAMED_CONF="${NAMED_CONF_FILESPEC}"
+#   NAMED_OPTIONS="-c ${NAMED_CONF_FILESPEC}"
+#   RNDC_OPTIONS="-c ${RNDC_CONF_FILESPEC}"
+#
+
+
+# the "rndc.conf" should have all its server, key, port, and IP address defined
+RNDC_OPTIONS="-c ${RNDC_CONF_FILESPEC}"
+
+NAMED_CONF="${NAMED_CONF_FILESPEC}"
+
+# Do not use '-f' or '-g' option in NAMED_OPTIONS
+# systemd 'Type=simple' hardcoded this '-f'
+### NAMED_OPTIONS="-L/tmp/mydns.out -c ${NAMED_CONF_FILESPEC}"
+### NAMED_OPTIONS="-4 -c ${NAMED_CONF_FILESPEC}"
+NAMED_OPTIONS="-c ${NAMED_CONF_FILESPEC}"
+
+# There may be other settings in a unit-instance-specific default
+# file such as /etc/default/named-public.conf or
+# /etc/default/bind9-dmz.conf.
+
+# run resolvconf?  (legacy sysV initrd)
+RESOLVCONF=no
+
+BIND_EOF
+flex_chown "root:root" "$FILESPEC"
+flex_chmod "0644"      "$FILESPEC"
+echo "Created $BUILDROOT$CHROOT_DIR$FILESPEC"
+
+
+if [ -n "$INSTANCE" ]; then
+  # Create the /etc/default/[named|bind]/instance file
+  echo
+  FILENAME="$INSTANCE_INIT_DEFAULT_FILENAME"
+  FILEPATH="$INIT_DEFAULT_DIRSPEC"
+  FILESPEC="$INSTANCE_INIT_DEFAULT_FILESPEC"
+
+  echo "Creating ${BUILDROOT}${CHROOT_DIR}$FILESPEC..."
+  cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" > /dev/null
+#
+# File: $FILENAME
+# Path: $FILEPATH
+# Title: SysV init.rc startup setting for "$INSTANCE"-specific instance
+# Creator: $(basename "$0")
+# Created on: $(date)
+#
+#   NAMED_CONF - Full filepath specification to 'named.conf'
+#
+#   NAMED_OPTIONS - passthru CLI options for 'named' daemon
+#                    cannot use -c option (use NAMED_PORT)
+#
+#   RNDC_OPTIONS - passthru CLI options for 'rndc' utility
+#                    cannot use -p option (edit rndc.conf instead)
+#
+#   RESOLVCONF - Do a one-shot resolv.conf setup. 'yes' or 'no'
+#           Only used in SysV/s6/OpenRC/ConMan; Ignored by systemd.
+#
+# default settings for startup options  of '$systemd_unitname'
+# is located in ${ETC_SYSTEMD_SYSTEM_DIRSPEC}/${INSTANCE_SYSTEMD_NAMED_SERVICE}
+# and its defaults are:
+#
+#   NAMED_CONF="${INSTANCE_NAMED_CONF_FILESPEC}"
+#   NAMED_OPTIONS="-c ${INSTANCE_NAMED_CONF_FILESPEC}"
+#   RNDC_OPTIONS="-c ${INSTANCE_RNDC_CONF_FILESPEC}"
+#
+
+
+# the "rndc.conf" should have all its server, key, port, and IP address defined
+RNDC_OPTIONS="-c ${INSTANCE_RNDC_CONF_FILESPEC}"
+
+NAMED_CONF="${INSTANCE_NAMED_CONF_FILESPEC}"
+
+# Do not use '-f' or '-g' option in NAMED_OPTIONS
+# systemd 'Type=simple' hardcoded this '-f'
+### NAMED_OPTIONS="-L/tmp/mydns.out -c ${INSTANCE_NAMED_CONF_FILESPEC}"
+### NAMED_OPTIONS="-4 -c ${INSTANCE_NAMED_CONF_FILESPEC}"
+NAMED_OPTIONS="-c ${INSTANCE_NAMED_CONF_FILESPEC}"
+
+# There may be other settings in a unit-instance-specific default
+# file such as /etc/default/named-public.conf or
+# /etc/default/bind9-dmz.conf.
+
+# run resolvconf?  (legacy sysV initrd)
+RESOLVCONF=no
+
+BIND_EOF
+  flex_chown "root:root" "$FILESPEC"
+  flex_chmod "0644"      "$FILESPEC"
+  echo "Created $BUILDROOT$CHROOT_DIR$FILESPEC"
+fi
+
 
 echo
 echo "Done."

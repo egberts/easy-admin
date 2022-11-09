@@ -1,6 +1,6 @@
 # easy-admin
 These scripts are for easy system administration for a
-simple bare minimum server.  These got started within Debian, but soon expanded to include CentOS, Fedora, Redhat, and ArchLinux.  
+simple bare minimum server.  These got started within Debian, but soon expanded to include CentOS, Fedora, Redhat, and ArchLinux.  Gentoo and RockyOS is next on my list.
 
 Scripts that would only help white-lab managers; and also to help us bare-metal configurators, test jockeys, cloud virtualizers, network grokkers, and home-bounded computer scientists.
 

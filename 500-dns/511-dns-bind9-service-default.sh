@@ -42,9 +42,9 @@ else
   FILE_SETTING_PERFORM=false
   echo "Creating subdirectories to $BUILDROOT ..."
   mkdir -p "$BUILDROOT"
-  mkdir -p "${BUILDROOT}/etc"
-  mkdir -p "${BUILDROOT}/etc/systemd"
-  mkdir -p "${BUILDROOT}/etc/systemd/system"
+  mkdir -p "${BUILDROOT}$ETC_DIRSPEC"
+  mkdir -p "${BUILDROOT}$ETC_SYSTEMD_DIRSPEC"
+  mkdir -p "${BUILDROOT}$ETC_SYSTEMD_SYSTEM_DIRSPEC"
 
   echo "Creating file permission script in $FILE_SETTINGS_FILESPEC ..."
   echo "#!/bin/bash" > "$FILE_SETTINGS_FILESPEC"
