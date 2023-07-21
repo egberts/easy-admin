@@ -75,9 +75,10 @@ d  /run/named          0750 ${USER_NAME} ${GROUP_NAME}  - -
 # in a separate /etc/tmpfiles.d/var-run-named-<instance>.conf file.
 #
 # Might have instantiation-specific settings like:
-d  /run/named/public    2770 root bind  - -
-d  /run/named/internal  2770 root bind  - -
-d  /run/named/root  2770 root bind  - -
+d  /run/named/public    750 bind bind  - -
+d  /run/named/internal  750 bind bind  - -
+d  /run/named/root  750 bind
+bind  - -
 
 BIND_EOF
 flex_chown "root:root" "$FILESPEC"
