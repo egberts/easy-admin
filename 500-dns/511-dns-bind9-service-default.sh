@@ -97,7 +97,7 @@ RESOLVCONF=no
 #
 RNDC_BIN="/usr/sbin/rndc"
 NAMED_BIN="/usr/sbin/named"
-NAMED_CHECKCONF_BIN="/usr/sbin/named-checkconf"
+NAMED_CHECKCONF_BIN="/usr/bin/named-checkconf"
 
 # the "rndc.conf" should have all its server, key, port, and IP address defined
 RNDC_OPTIONS="-c ${INSTANCE_RNDC_CONF_FILESPEC}"
