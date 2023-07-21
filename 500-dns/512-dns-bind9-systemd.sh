@@ -286,7 +286,7 @@ RuntimeDirectory=${VAR_SUB_DIRNAME}/%I
 RuntimeDirectoryMode=0755
 
 # Home directory (instantiation-excluded)
-WorkingDirectory=$NAMED_HOME_DIRSPEC
+WorkingDirectory=$NAMED_HOME_DIRSPEC/%I
 
 # systemd v251
 CacheDirectory=${VAR_SUB_DIRNAME}/%I
