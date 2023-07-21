@@ -275,7 +275,7 @@ UMask=0077
 LogsDirectory=${LOG_SUB_DIRNAME}/%I
 LogsDirectoryMode=0750
 
-ConfigurationDirectory=+${INSTANCE_ETC_NAMED_DIRSPEC}/%I
+ConfigurationDirectory=+${ETC_NAMED_DIRSPEC}/%I
 ConfigurationDirectoryMode=0750
 
 # **
