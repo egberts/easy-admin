@@ -386,7 +386,7 @@ ConditionPathIsDirectory=$VAR_LIB_NAMED_DIRSPEC
 ConditionPathIsReadWrite=$VAR_LIB_NAMED_DIRSPEC
 
 [Service]
-Type=forking
+Type=simple
 
 # resources
 ###LimitNPROC=10
