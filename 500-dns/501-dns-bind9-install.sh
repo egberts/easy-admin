@@ -8,7 +8,7 @@ echo
 source ../distro-os.sh
 
 case $ID in
-  debian|devuan)
+  debian|devuan|ubuntu)
     apt install bind9 bind9-dnsutils bind9-doc
     echo "Installing named-checkconf Bind9 syntax checker tool..."
     apt install bind9-utils
