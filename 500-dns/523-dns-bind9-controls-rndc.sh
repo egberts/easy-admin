@@ -19,7 +19,7 @@
 #   Three roles of full-admin-privileged usage of 'rndc' tool:
 #
 #     * system administrator
-#     * power end-users using their own copy of an RNDC key
+#     * power end-users using their own copy of an RNDC keyg
 #     * auto-evoked by other daemons/scripts
 #
 # NOTE: named.conf provides ways for end-user/sysadmin to
@@ -137,19 +137,19 @@ HMAC_ALGORITHM="hmac-sha512"
 # Generate RNDC keys
 echo "Generating RNDC key ..."
 rndc-confgen -a \
-        -c "${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC" \
+        -c "${BUILDROOT}${CHROOT_DIR}$INSTANCE_RNDC_KEY_FILESPEC" \
     -k "$RNDC_KEYNAME" \
         -A "$HMAC_ALGORITHM"
 flex_chmod 0640 "$INSTANCE_RNDC_KEY_FILESPEC"
 flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_RNDC_KEY_FILESPEC"
-echo "Created ${BUILDROOT}${CHROOT_DIR}/$INSTANCE_RNDC_KEY_FILESPEC"
+echo "Created ${BUILDROOT}${CHROOT_DIR}$INSTANCE_RNDC_KEY_FILESPEC"
 
 
 filename="$RNDC_CONF_FILENAME"
 filepath="$INSTANCE_RNDC_CONF_DIRSPEC"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/${filespec}"
-cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}/${filespec}" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}${filespec}"
+cat << RNDC_MASTER_CONF | tee "${BUILDROOT}${CHROOT_DIR}${filespec}" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -182,8 +182,8 @@ flex_chown "${USER_NAME}:$GROUP_NAME" "$filespec"
 filename="$CONTROLS_RNDC_LOCALHOST_CONF_FILENAME"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -222,8 +222,8 @@ echo
 filename="$(basename "$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC")"
 filepath="$(dirname "$INSTANCE_CONTROLS_NAMED_CONF_FILESPEC")"
 filespec="${filepath}/$filename"
-echo "Creating ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Creating ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_KEY_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: ${filename}
 # Path: ${filepath}
@@ -254,8 +254,8 @@ fi
 filename="$KEY_NAMED_CONF_FILENAME"
 filepath="$INSTANCE_ETC_NAMED_DIRSPEC"
 filespec="${filepath}/$filename"
-echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}/$filespec ..."
-cat << NAMED_KEY_CLAUSE_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$filespec" > /dev/null
+echo "Appending $KEY_NAME to ${BUILDROOT}${CHROOT_DIR}$filespec ..."
+cat << NAMED_KEY_CLAUSE_CONF | tee "${BUILDROOT}${CHROOT_DIR}$filespec" > /dev/null
 #
 # File: $filename
 # Path: $filepath
