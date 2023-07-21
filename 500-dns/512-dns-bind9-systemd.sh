@@ -194,9 +194,9 @@ ConditionPathExists=${PID_DIRSPEC}
 ConditionPathIsDirectory=${PID_DIRSPEC}
 
 # [/var]/run/[named|bind]
-ConditionPathExists=${INSTANCE_PID_DIRSPEC}
-ConditionPathIsDirectory=${INSTANCE_PID_DIRSPEC}
-ConditionPathIsReadWrite=${INSTANCE_PID_DIRSPEC}
+ConditionPathExists=${PID_DIRSPEC}/%I
+ConditionPathIsDirectory=${PID_DIRSPEC}/%I
+ConditionPathIsReadWrite=${PID_DIRSPEC}/%I
 
 
 [Service]
