@@ -30,7 +30,7 @@ source /etc/os-release
 
 # libdir and $HOME are two separate grouping (that Fedora, et. al. merged)
 case $ID in
-  debian|devuan)
+  debian|devuan|ubuntu)
     DISTRO_PREFIX="/usr"
     DISTRO_EXEC_PREFIX="/usr"
     DISTRO_LOCALSTATEDIR=""
