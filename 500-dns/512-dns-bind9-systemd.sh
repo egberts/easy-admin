@@ -226,7 +226,7 @@ Environment=RNDC_OPTIONS="-s %I -c "${RNDC_CONF_DIRSPEC}/%I/${RNDC_CONF_FILENAME
 # /etc/default/[named|bind] is optional
 EnvironmentFile=-${INIT_DEFAULT_FILESPEC}
 # instantiation-specific Bind environment file is absolutely required
-EnvironmentFile=${INSTANCE_INIT_DEFAULT_FILESPEC}
+EnvironmentFile=${INIT_DEFAULT_FILESPEC}-%I
 
 # Far much easier to peel away additional capabilities after
 # getting a bare-minimum cap-set working
