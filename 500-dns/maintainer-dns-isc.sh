@@ -218,7 +218,8 @@ DEFAULT_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 # and enable restricting these administrators to just updates of DNS zones.
 #
 if [ -z "$NAMED_HOME_DIRSPEC" ]; then
-  NAMED_HOME_DIRSPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $6}')"
+#  NAMED_HOME_DIRSPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $6}')"
+  NAMED_HOME_DIRSPEC="/var/cache/bind"
 fi
 
 # Furthermore, Zone DB directory is now being split into many subdirectories
