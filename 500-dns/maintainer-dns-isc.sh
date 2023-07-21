@@ -32,7 +32,7 @@ function unique_add_line()
   retsts=$?
   if [ $retsts -ge 1 ]; then
     # not found
-    echo "; inserted by $(basename "$0")" >> "${BUILDROOT}${CHROOT_DIR}$filespec"
+    echo "# inserted by $(basename "$0")" >> "${BUILDROOT}${CHROOT_DIR}$filespec"
     echo "include \"$include_name\";" >> "${BUILDROOT}${CHROOT_DIR}$filespec"
     echo >> "${BUILDROOT}${CHROOT_DIR}$filespec"
   fi
