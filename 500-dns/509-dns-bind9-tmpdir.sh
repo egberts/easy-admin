@@ -69,15 +69,15 @@ cat << BIND_EOF | tee "${BUILDROOT}${CHROOT_DIR}$FILESPEC" >/dev/null
 #
 
 #Type Path             Mode User         Group        Age Argument
-d  /run/named          0750 ${USER_NAME} ${GROUP_NAME}  - -
+d  /run/named/bind          0750 ${USER_NAME} ${GROUP_NAME}  - -
 
 # We can then create a separate subdirectories for instantiation
 # in a separate /etc/tmpfiles.d/var-run-named-<instance>.conf file.
 #
 # Might have instantiation-specific settings like:
-d  /run/named/public    2770 root bind  - -
-d  /run/named/internal  2770 root bind  - -
-d  /run/named/root  2770 root bind  - -
+d  /run/named/bind/public    2770 root bind  - -
+d  /run/named/bind/internal  2770 root bind  - -
+d  /run/named/bind/root  2770 root bind  - -
 
 BIND_EOF
 flex_chown "root:root" "$FILESPEC"
