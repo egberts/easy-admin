@@ -293,7 +293,7 @@ StateDirectory=${VAR_SUB_DIRNAME}/%I
 StateDirectoryMode=0750
 
 #### PIDFile=$INSTANCE_PID_FILESPEC   # this needs work with 'Type='
-ExecStartPre=/usr/bin/named-checkconf -jz \$NAMED_CONF
+ExecStartPre=/usr/sbin/named-checkconf -jz \$NAMED_CONF
 ExecStart=/usr/sbin/named -f -u $USER_NAME -c \$NAMED_CONF \$NAMED_OPTIONS
 
 # rndc will dovetail any and all instantiations of
