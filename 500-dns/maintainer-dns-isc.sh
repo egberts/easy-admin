@@ -69,7 +69,7 @@ INSTANCE_NAMED_CONF_FILENAME="${NAMED_CONF_FILENAME}"
 INSTANCE_RNDC_CONF_FILENAME="${RNDC_CONF_FILENAME}"
 
 case $ID in
-  debian|devuan)
+  debian|devuan|ubuntu)
     USER_NAME="bind"
     GROUP_NAME="bind"
     ETC_SUB_DIRNAME="bind"
