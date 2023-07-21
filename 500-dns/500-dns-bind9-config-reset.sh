@@ -162,7 +162,7 @@ create_header "$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" \
 
 cat << OPTIONS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$INSTANCE_OPTIONS_NAMED_CONF_FILESPEC" > /dev/null
 options {
-    directory "${INSTANCE_ETC_NAMED_DIRSPEC}";
+    directory "INSTANCE_VAR_CACHE_NAMED_DIRSPEC";
     pid-file "${INSTANCE_PID_FILESPEC}";
 
     version "Funky DNS, eh?";
