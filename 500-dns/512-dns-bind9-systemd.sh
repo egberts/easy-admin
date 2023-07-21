@@ -220,8 +220,8 @@ EnvironmentFile=
 #Environment=RNDC_OPTIONS="-s %I -c ${INSTANCE_RNDC_CONF_FILESPEC}"
 
 Environment=NAMED_CONF="${NAMED_CONF_DIRSPEC}/%I/${NAMED_CONF_FILENAME}"
-Environment=NAMED_OPTIONS="-c "${NAMED_CONF_DIRSPEC}/%I/${NAMED_CONF_FILENAME}"
-Environment=RNDC_OPTIONS="-s %I -c "${RNDC_CONF_DIRSPEC}/%I/${RNDC_CONF_FILENAME}"
+Environment=NAMED_OPTIONS="-c ${NAMED_CONF_DIRSPEC}/%I/${NAMED_CONF_FILENAME}"
+Environment=RNDC_OPTIONS="-s %I -c ${RNDC_CONF_DIRSPEC}/%I/${RNDC_CONF_FILENAME}"
 
 # /etc/default/[named|bind] is optional
 EnvironmentFile=-${INIT_DEFAULT_FILESPEC}
