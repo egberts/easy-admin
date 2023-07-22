@@ -7,34 +7,34 @@
 #   All within the /etc/bind[/instance] directory
 #
 #   /named.conf
-#     + acl-named.conf
-#       + acl-public-outward-dynamic-interface-named.conf (if dynamic public IP)
-#       + acl-public-bastion-interior-interface-named.conf  (bastion-only)
-#       + acl-internal-bastion-interior-interface-named.conf  (bastion-only)
-#       + acl-internal-outward-interface-named.conf
+#     + acls-named.conf
+#       - acl-public-outward-dynamic-interface-named.conf (if dynamic public IP)
+#       - acl-public-bastion-interior-interface-named.conf  (bastion-only)
+#       - acl-internal-bastion-interior-interface-named.conf  (bastion-only)
+#       - acl-internal-outward-interface-named.conf
 #     + controls-named.conf
-#     + options-named.conf
-#       + options-public-facing-dynamic-interfaces-named.conf (if dynamic IP)
-#       + options-bastion-named.conf
-#     + key-clauses-named.conf
-#       + key-primary-to-secondaries-transfer.conf
-#       + key-primary-dynamic-ip-ddns-ddclient.conf
-#       + key-hidden-master-to-public-master.conf
+#     + keys-named.conf
+#       - key-primary-to-secondaries-transfer.conf
+#       - key-primary-dynamic-ip-ddns-ddclient.conf
+#       - key-hidden-master-to-public-master.conf
 #     + logging-named.conf
 #     + managed-keys-named.conf
-#     + masters-named.conf
-#     + server-clauses-named.conf
-#     + statistics-channels-named.conf
+#     + options-named.conf
+#       - options-public-facing-dynamic-interfaces-named.conf (if dynamic IP)
+#       - options-bastion-named.conf
+#     + primariess-named.conf
+#     + servers-named.conf
+#     + statistics-named.conf
 #     + trust-anchors-named.conf
-#     + view-clauses-named.conf
-#       + view-zone-clauses-named.conf
-#         + zone-example.invalid-named.conf
-#         + zone-example.org-named.conf
-#         + zone-example.net-named.conf
-#     + zone-clauses-named.conf (if no view clause)
-#       + zone-example.invalid-named.conf (if no view clause)
-#       + zone-example.org-named.conf (if no view clause)
-#       + zone-example.net-named.conf (if no view clause)
+#     + views-named.conf
+#       - view-zone-clauses-named.conf
+#         - zone-example.invalid-named.conf
+#         - zone-example.org-named.conf
+#         - zone-example.net-named.conf
+#     + zones-named.conf (if no view clause)
+#       - zone-example.invalid-named.conf (if no view clause)
+#       - zone-example.org-named.conf (if no view clause)
+#       - zone-example.net-named.conf (if no view clause)
 #
 echo "Resetting build area to empty."
 echo
@@ -129,16 +129,16 @@ cat << NAMED_CONF_EOF | tee "${BUILDROOT}${CHROOT_DIR}$INSTANCE_NAMED_CONF_FILES
 
 include "${INSTANCE_ACL_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_CONTROLS_NAMED_CONF_FILESPEC}";
-include "${INSTANCE_OPTIONS_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_LOGGING_NAMED_CONF_FILESPEC}";
+include "${INSTANCE_KEY_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_MANAGED_KEYS_NAMED_CONF_FILESPEC}";
+include "${INSTANCE_OPTIONS_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_PRIMARY_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_SERVER_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_STATS_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_TRUST_ANCHORS_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_VIEW_NAMED_CONF_FILESPEC}";
 include "${INSTANCE_ZONE_NAMED_CONF_FILESPEC}";
-include "${INSTANCE_KEY_NAMED_CONF_FILESPEC}";
 
 NAMED_CONF_EOF
 flex_chown "${USER_NAME}:$GROUP_NAME" "$INSTANCE_NAMED_CONF_FILESPEC"
