@@ -72,6 +72,7 @@ else
   mkdir -v "${BUILDROOT}${CHROOT_DIR}$VAR_CACHE_NAMED_DIRSPEC"
   mkdir -v "${BUILDROOT}${CHROOT_DIR}$INSTANCE_VAR_CACHE_NAMED_DIRSPEC"
   mkdir -v -p "${BUILDROOT}${CHROOT_DIR}$VAR_LIB_NAMED_DIRSPEC"
+  mkdir -v -p "${BUILDROOT}${CHROOT_DIR}${log_dir}/$INSTANCE"
 fi
 
 flex_ckdir "$extended_sysconfdir"
