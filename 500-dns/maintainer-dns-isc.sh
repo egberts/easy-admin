@@ -389,6 +389,7 @@ if [ -n "$INSTANCE" ]; then
   INSTANCE_DATA_DIRSPEC="${INSTANCE_VAR_LIB_NAMED_DIRSPEC}/data"
 fi
 INSTANCE_INIT_DEFAULT_FILESPEC="$INIT_DEFAULT_DIRSPEC/$INSTANCE_INIT_DEFAULT_FILENAME"
+# program this in to work with apparmor on ubuntu "sed -i 's/run\/named\/named.pid/run\/named\/{,\*\*\/}named.pid/g' /etc/apparmor.d/usr.sbin.named"
 INSTANCE_PID_FILESPEC="${INSTANCE_PID_DIRSPEC}/named.pid"
 
 # /var/lib/bind[/instance]/dynamic
