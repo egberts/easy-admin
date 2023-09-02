@@ -239,7 +239,7 @@ echo ""
 echo "Refreshing GnuPG keys ..."
 gpg --refresh >/dev/null 2>&1
 retsts=$?
-if [ "$retsts" -ne 0 ]; then
+if [ "$retsts" -ne 0 -a "$retsts" -ne 2 ]; then
   echo "Error refreshing GPG keyfile. Errcode: $retsts"
   exit $retsts
 fi

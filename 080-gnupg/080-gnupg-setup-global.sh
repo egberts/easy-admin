@@ -60,7 +60,8 @@ fi
 
 # Override file permission settings
 sudo chmod 0755 "$ETC_GNUPG_GPGCONF_CONF_DIRPATH"
-sudo chown root:root "$ETC_GNUPG_GPGCONF_CONF_DIRPATH"
+ROOT_GROUP="`id -g -n root`"
+sudo chown root:${ROOT_GROUP} "$ETC_GNUPG_GPGCONF_CONF_DIRPATH"
 
 # Drop some settings into /etc/gnupg/gpgconf.conf
 echo ""
@@ -129,6 +130,9 @@ cat << GPG_EOF | sudo tee -p "$ETC_GNUPG_GPGCONF_CONF_FILESPEC" >/dev/null 2>&1
 * gpg-agent min-passphrase-len [no-change] 10
 * gpg-agent min-passphrase-nonalpha [change] 0
 
+* keyserver <fill-in-key-server>
+keyserver 127.0.0.1
+
 
 GPG_EOF
 retsts=$?
@@ -137,6 +141,20 @@ if [ "$retsts" -ne 0 ]; then
   exit $retsts
 fi
 echo "File $ETC_GNUPG_GPGCONF_CONF_FILESPEC created."
+echo 
+echo "Changing file permission for ${ETC_GNUPG_GPGCONF_CONF_FILESPEC} ..."
+sudo chmod 0644 "${ETC_GNUPG_GPGCONF_CONF_FILESPEC}"
+retsts=$?
+if [ "$retsts" -ne 0 ]; then
+  echo "Error changing file permission on $ETC_GNUPG_GPGCONF_CONF_FILESPEC. Errcode: $retsts"
+  exit $retsts
+fi
+sudo chown root:${ROOT_GROUP} "${ETC_GNUPG_GPGCONF_CONF_FILESPEC}"
+retsts=$?
+if [ "$retsts" -ne 0 ]; then
+  echo "Error changing owner:group on $ETC_GNUPG_GPGCONF_CONF_FILESPEC. Errcode: $retsts"
+  exit $retsts
+fi
 echo ""
 echo "Done."
 exit 0
