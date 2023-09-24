@@ -13,6 +13,21 @@ function install_redhat_class_repo()
   sudo dnf install gh
 }
 
+function install_debian_class_repo()
+{
+    set
+    exit
+    sudo apt update
+    if [ ${VERSION_ID} -lt 12 ]; then
+        curl -fsSL \
+            https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+          | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+          | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    fi
+    sudo apt install gh
+}
+
 case $ID in
   'redhat')
     install_redhat_class_repo
@@ -24,13 +39,7 @@ case $ID in
     install_redhat_class_repo
     ;;
   'debian')
-    curl -fsSL \
-        https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-      | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-      | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    sudo apt update
-    sudo apt install gh
+    install_debian_class_repo
     ;;
   *)
     echo "Unknown OS type: '$ID'; aborted."
