@@ -77,9 +77,9 @@ DOT_GNUPG_DIRNAME=".gnupg"
 DOT_GNUPG_DIRPATH="$HOME/$DOT_GNUPG_DIRNAME"
 if [ ! -d "$DOT_GNUPG_DIRPATH" ]; then
   echo "Creating $DOT_GNUPG_DIRPATH directory..."
+  mkdir "$DOT_GNUPG_DIRPATH"
   chmod 0700 "$DOT_GNUPG_DIRPATH"
   chown "${USER_NAME}:${GROUP_NAME}" "$DOT_GNUPG_DIRPATH"
-  mkdir "$DOT_GNUPG_DIRPATH"
 fi
 
 # Check permission or bail
@@ -91,20 +91,19 @@ fi
 
 GPG_CONF_FILENAME="gpg.conf"
 GPG_CONF_FILESPEC="$DOT_GNUPG_DIRPATH/$GPG_CONF_FILENAME"
-if [ -f "$GPG_CONF_FILESPEC" ]; then
+if [ ! -f "$GPG_CONF_FILESPEC" ]; then
+  echo "File $GPG_CONF_FILESPEC is missing.; creating ..."
   touch "$GPG_CONF_FILESPEC"
-  chmod 0600 "$GPG_CONF_FILESPEC"
-  chown "${USER_NAME}:${GROUP_NAME}" "$GPG_CONF_FILESPEC"
   GPG_CONF_APPEND="-a"
-  echo "Appending to $GPG_CONF_FILESPEC config file..."
 else
-  echo "File $GPG_CONF_FILESPEC is missing, creating..."
+  echo "Appending to $GPG_CONF_FILESPEC config file..."
 fi
 
 # Check permission or bail
 if [ "$(stat -c %a "$GPG_CONF_FILESPEC")" != "600" ]; then
   echo "File permission of $GPG_CONF_FILESPEC file was not SAFE; adjusted."
   chmod 0600 "$GPG_CONF_FILESPEC"
+  chown "${USER_NAME}:${GROUP_NAME}" "$GPG_CONF_FILESPEC"
 fi
 
 # Drop some settings into ~/.gnupg/gpg-agent.conf
@@ -153,8 +152,6 @@ GPG_AGENT_CONF_FILESPEC="$DOT_GNUPG_DIRPATH/$GPG_AGENT_CONF_FILENAME"
 if [ ! -f "$GPG_AGENT_CONF_FILESPEC" ]; then
   echo "File $GPG_AGENT_CONF_FILESPEC is missing, creating..."
   touch "$GPG_AGENT_CONF_FILESPEC"
-  chmod 0600 "$GPG_AGENT_CONF_FILESPEC"
-  chown "${USER_NAME}:${GROUP_NAME}" "$GPG_AGENT_CONF_FILESPEC"
 
   # Drop some settings into ~/.gnupg/gpg-agent.conf
   echo "Creating $GPG_AGENT_CONF_FILESPEC config file..."
@@ -232,7 +229,10 @@ GPG_AGENT_EOF
     exit $retsts
   fi
   echo "File $GPG_AGENT_CONF_FILESPEC created."
+  chmod 0600 "$GPG_AGENT_CONF_FILESPEC"
+  chown "${USER_NAME}:${GROUP_NAME}" "$GPG_AGENT_CONF_FILESPEC"
 fi
+exit 1
 
 # Refresh any existing keys
 echo ""
