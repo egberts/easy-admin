@@ -16,7 +16,7 @@ fi
 # Extract 'Defaults logfile=' from /etc/sudoers and /etc/sudoers.d/*
 # use 'sudo -n -l' to get ALL config settings
 # use 'sudo' to do this from within root user
-SETTINGS="`sudo -i sudo -n -l | grep logfile`"
+SETTINGS="$(sudo -i sudo -n -l | grep logfile)"
 
 # if settings is empty, we got a major SUDO problem
 if [ -z "$SETTINGS" ]; then
@@ -40,7 +40,7 @@ else
 fi
 
 # Check file permission of filespec in 'logfile=<filespec>'
-if [ "$(stat -c %a "$SUDO_LOG_FILESPEC")" != "600" ]; then
+if [ "$(stat -c %a "${SUDO_LOG_FILESPEC}")" != "600" ]; then
   echo "File permission of $SUDO_LOG_FILESPEC file is not SAFE!"
   ls -lat "$SUDO_LOG_FILESPEC"
   echo "Changing file to 0600 mode ..."
@@ -48,12 +48,12 @@ if [ "$(stat -c %a "$SUDO_LOG_FILESPEC")" != "600" ]; then
 fi
 
 # Check file ownership of filespec in 'logfile=<filespec>'
-SUDO_LOGFILE_UID="`stat --print=%u \"${SUDO_LOG_FILESPEC}\"`"
+SUDO_LOGFILE_UID="$(stat --print=%u "${SUDO_LOG_FILESPEC}")"
 if [ "$SUDO_LOGFILE_UID" != "0" ]; then
   echo "WARNING: logfile $SUDO_LOG_FILESPEC not user-owned by root; aborted."
   exit 11
 fi
-SUDO_LOGFILE_GID="`stat --print=%g \"${SUDO_LOG_FILESPEC}\"`"
+SUDO_LOGFILE_GID="$(stat --print=%g "${SUDO_LOG_FILESPEC}")"
 if [ "$SUDO_LOGFILE_GID" != "0" ]; then
   echo "WARNING: logfile $SUDO_LOG_FILESPEC not group-owned by root; aborted."
   exit 11
