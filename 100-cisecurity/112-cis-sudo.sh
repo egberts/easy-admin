@@ -3,6 +3,9 @@
 # Title: Ensure that sudo is deployed and configured
 #
 
+echo "Passively check if 'use_pty' exist in /etc/sudoers"
+echo
+
 sudo apt install sudo
 
 # Check for 'use_pty', must exist to PASS
@@ -16,5 +19,7 @@ if [ $RETSTS -ne 0 ] || \
 else
   echo "In /etc/sudoers, 'Defaults use_ptr' exists."
 fi
+echo
+
 echo "Done."
 exit 0
