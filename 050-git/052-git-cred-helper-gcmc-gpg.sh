@@ -7,7 +7,7 @@
 
 sudo apt install gpg-agent
 
-cat << EOF | tee /etc/profile.d/gpg-agent
+cat << EOF | tee /etc/profile.d/gpg-agent >/dev/null
 #
 # File: gpg-agent
 # Path: /etc/profile.d
