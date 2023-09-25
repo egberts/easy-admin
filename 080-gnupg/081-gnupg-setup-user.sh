@@ -23,7 +23,7 @@ GPG_AGENT_DEFAULT_CACHE_TTL=1800
 
 DROPIN_FILENAME="gpg-agent.bash"
 
-echo "GNU Pretty Good Privacy (gpg) setup for maintianers of packages."
+echo "GNU Pretty Good Privacy (gpg) setup for maintainers of packages."
 echo ""
 
 GPG_BIN="$(whereis -b gpg|awk -F: '{print $2}'|awk '{print $1}')"
@@ -33,6 +33,7 @@ if [ -z "$GPG_BIN" ]; then
   # gpgconf, makes it easier to view GPG settings and make any safer changes
   sudo apt install gnupg2 gnupg-utils gpgconf
 fi
+
 MIGRATE="migrate-pubring-from-classic-gpg"
 MIGRATE_BIN="$(whereis -b $MIGRATE|awk -F: '{print $2}'|awk '{print $1}')"
 if [ -z "$MIGRATE_BIN" ]; then
@@ -232,14 +233,13 @@ GPG_AGENT_EOF
   chmod 0600 "$GPG_AGENT_CONF_FILESPEC"
   chown "${USER_NAME}:${GROUP_NAME}" "$GPG_AGENT_CONF_FILESPEC"
 fi
-exit 1
 
 # Refresh any existing keys
 echo ""
 echo "Refreshing GnuPG keys ..."
 gpg --refresh >/dev/null 2>&1
 retsts=$?
-if [ "$retsts" -ne 0 -a "$retsts" -ne 2 ]; then
+if [ "$retsts" -ne 0 ] && [ "$retsts" -ne 2 ]; then
   echo "Error refreshing GPG keyfile. Errcode: $retsts"
   exit $retsts
 fi
@@ -295,17 +295,18 @@ fi
 DROPIN_FILEPATH="$DROPIN_DIRPATH"
 DROPIN_FILESPEC="$DROPIN_FILEPATH/$DROPIN_FILENAME"
 
+DATE_TXT="$(date)"
+CREATOR_TXT="$(basename "$0")"
 echo "Creating $DROPIN_FILESPEC ..."
 touch "$DROPIN_FILESPEC"
 chmod a+rx "$DROPIN_FILESPEC"
-exit
 cat << DROPIN_EOF | sudo tee "$DROPIN_FILESPEC" >/dev/null 2>&1
 #
 # File: $DROPIN_FILENAME
 # Path: $DROPIN_FILEPATH
 # Title: .bashrc for GPG
-# Creator: $(basename "$0")
-# Date: $(date)
+# Creator: ${CREATOR_TXT}
+# Date: ${DATE_TXT}
 #
 
 # Kill off any lingering ssh-agent for this user
@@ -321,6 +322,7 @@ ssh-add -l > /dev/null || ssh-add
 
 DROPIN_EOF
 echo ""
+
 echo "Done."
 exit 0
 
