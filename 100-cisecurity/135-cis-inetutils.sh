@@ -40,5 +40,6 @@ if [ "$fptd_active" != 'inactive' ]; then
   fi
 fi
 
-pacman -R inetutils
+echo "WARNING: You should remove 'inetutils' package yourself."
+# pacman -R inetutils
 echo "Done."
