@@ -14,7 +14,7 @@ echo
 
 NAMED_BIN="$(whereis named | awk '{print $2}')"
 if [ -z "$NAMED_BIN" ]; then
-  echo "File $NAMED_BIN not found;"
+  echo "named binary file not found;"
   echo "ISC Bind9 package maybe not installed?"
   echo "Aborted."
   exit 1
