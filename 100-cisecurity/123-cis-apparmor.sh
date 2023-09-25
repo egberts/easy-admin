@@ -3,23 +3,48 @@
 # Title: Ensure that apparmor is running
 #
 
+echo "Ensure that apparmor is running ..."
+
 BUILDROOT=${BUILDROOT:-/tmp}
 
 echo "Checking if apparmor packages are installed..."
 dpkg --status apparmor >/dev/null
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
-  apt install apparmor
+  echo "apparmor is not installed."
+  echo "Attempting installation of apparmor ..."
+  sudo apt install apparmor
+  RETSTS=$?
+  if [ $RETSTS -ne 0 ]; then
+    echo "ERROR: unable to install apparmor; errno $RETSTS"
+    exit $RETSTS
+  fi
+else
+  echo "apparmor package is installed"
 fi
+
+# Check if utilities for apparmor is installed as well
 dpkg --status apparmor-utils >/dev/null
 RETSTS=$?
 if [ $RETSTS -ne 0 ]; then
-  apt install apparmor-utils
+  echo "apparmor-utils is not installed."
+  echo "Attempting installation of apparmor-utils ..."
+  sudo apt install apparmor-utils
+  RETSTS=$?
+  if [ $RETSTS -ne 0 ]; then
+    echo "ERROR: unable to install apparmor-utils; errno $RETSTS"
+    exit $RETSTS
+  fi
+else
+  echo "apparmor-utils package is installed"
 fi
 
 echo "Reading /boot/grub/grub.cfg for any missing options..."
-APPARMOR_IN_CMDLINE="$(grep '^\s*linux' /boot/grub/grub.cfg | grep -v 'apparmor=1')"
-SECAPPARMOR_IN_CMDLINE="$(grep '^\s*linux' /boot/grub/grub.cfg | grep -v 'security=apparmor')"
+
+# /boot access may be privilege, sudo this
+
+APPARMOR_IN_CMDLINE="$(sudo grep '^\s*linux' /boot/grub/grub.cfg | grep -v 'apparmor=1')"
+SECAPPARMOR_IN_CMDLINE="$(sudo grep '^\s*linux' /boot/grub/grub.cfg | grep -v 'security=apparmor')"
 
 if [ -n "$APPARMOR_IN_CMDLINE" ] || \
    [ -n "$SECAPPARMOR_IN_CMDLINE" ]; then
