@@ -7,6 +7,13 @@ chroot_dir="${chroot_dir:-}"
 buildroot_param="${BUILDROOT:-build}"
 BUILDROOT="${buildroot_param}${chroot_dir}"
 
+echo "To disable USB storage access support; enter in 'continue' and press ENTER: "
+read -r CONTINUE
+if [ "$CONTINUE" != "continue" ]; then
+  echo "Aborted."
+  exit 255
+fi
+
 usbs_filename="usb_storage.conf"
 usbs_dirpath="/etc/modprobe.d"
 usbs_filespec="${BUILDROOT}${usbs_dirpath}/$usbs_filename"
@@ -24,6 +31,7 @@ fi
 if [ ! -d "${BUILDROOT}/$usbs_dirpath" ]; then
   mkdir -p "${BUILDROOT}/$usbs_dirpath"
 fi
+
 echo "Writing $usbs_filespec..."
 sudo touch "$usbs_filespec"
 sudo chown root:root "$usbs_filespec"
