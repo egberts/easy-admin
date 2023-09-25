@@ -1,10 +1,11 @@
 #!/bin/bash
 # File: 049-git-github-cli-install.sh
-# Title: Install repository for Microsoft Github CLI tools
+# Title: Install repository for Microsoft GitHub CLI tools
 
-echo "Install repository to Microsoft Github CLI tool"
+echo "Install repository to Microsoft GitHub CLI tool"
 
 source /etc/os-release
+
 
 function install_redhat_class_repo()
 {
@@ -13,10 +14,9 @@ function install_redhat_class_repo()
   sudo dnf install gh
 }
 
+
 function install_debian_class_repo()
 {
-    set
-    exit
     sudo apt update
     if [ ${VERSION_ID} -lt 12 ]; then
         curl -fsSL \
