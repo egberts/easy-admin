@@ -3,6 +3,9 @@
 # Title: Ensure that sudo has its own log file
 #
 
+echo "Actively check that a logfile exist just for sudo ..."
+echo
+
 # Check for 'use_pty', must exist to PASS
 LOGFILE_SEEN="$(sudo grep -Ei '^\s*Defaults\s+logfile=\S+' /etc/sudoers /etc/sudoers.d/*)"
 
@@ -58,6 +61,7 @@ if [ "$SUDO_LOGFILE_GID" != "0" ]; then
   echo "WARNING: logfile $SUDO_LOG_FILESPEC not group-owned by root; aborted."
   exit 11
 fi
+echo
 
 echo "PASS: Done."
 exit 0
