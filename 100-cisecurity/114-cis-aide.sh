@@ -9,7 +9,7 @@ if [ "$RETSTS" -ne 0 ]; then
   echo "AIDE package is not installed."
   echo "Aborted."
   exit 254
-  sudo apt install aide aide-common
+  # sudo apt install aide aide-common
 fi
 
 echo "Initializing AIDE database..."
