@@ -24,20 +24,24 @@ sctp_filename="protocol-sctp-no.conf"
 sctp_filepath="/etc/modprobe.d"
 sctp_filespec="$sctp_filepath/$sctp_filename"
 
-# Check if ACTUAL modules.d directory exists
 if [ ! -d "$sctp_filepath" ]; then
-
-  # Create that directory later via outputted script
-  flex_mkdir "$sctp_filepath"
-  flex_chmod 0755 "$sctp_filepath"
-  flex_chown root:root "$sctp_filepath"
+  echo "INFO: No module support found in  $sctp_filepath; aborted"
+  exit 1
 fi
 
-echo "Writing $sctp_filespec..."
+# build area
+# Flex-create that build directory (later via script)
+flex_ckdir "/etc"
+flex_ckdir "$sctp_filepath"
+
+flex_chmod 0755 "$sctp_filepath"
+flex_chown root:root "$sctp_filepath"
+
+echo "Writing ${BUILDROOT}${CHROOT_DIR}$sctp_filespec..."
 flex_touch "$sctp_filespec"
 flex_chown root:root "$sctp_filespec"
 flex_chmod 0644      "$sctp_filespec"
-cat << PROTOCOL_SCTP_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$sctp_filespec"
+cat << PROTOCOL_SCTP_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/$sctp_filespec" >/dev/null 2>&1
 #
 # File: $sctp_filename
 # Path: $sctp_filepath
@@ -50,6 +54,12 @@ cat << PROTOCOL_SCTP_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$sctp_filespec"
 #
 install $sctp_module /bin/true
 PROTOCOL_SCTP_EOF
+RETSTS=$?
+if [ $RETSTS -ne 0 ]; then
+  echo "ERROR: Unable to create $sctp_filespec; errno $RETSTS; aborted."
+  exit $RETSTS
+fi
+
 echo ""
 
 echo "Done."

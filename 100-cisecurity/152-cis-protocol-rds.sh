@@ -22,19 +22,24 @@ rds_filename="protocol-rds-no.conf"
 rds_filepath="/etc/modprobe.d"
 rds_filespec="$rds_filepath/$rds_filename"
 
-# check if ACTUAL modules.d directory exists
 if [ ! -d "$rds_filepath" ]; then
-  # create that directory later on
-  flex_mkdir "$rds_filepath"
-  flex_chown root:root "$rds_filepath"
-  flex_chmod 0755      "$rds_filepath"
+  echo "INFO: No module support found in  $rds_filepath; aborted"
+  exit 1
 fi
 
-echo "Writing $rds_filespec..."
+# build area
+# Flex-create that build directory (later via script)
+flex_ckdir "/etc"
+flex_ckdir "$rds_filepath"
+
+flex_chown root:root "$rds_filepath"
+flex_chmod 0755      "$rds_filepath"
+
+echo "Writing ${BUILDROOT}${CHROOT_DIR}$rds_filespec..."
 flex_touch "$rds_filespec"
 flex_chown root:root "$rds_filespec"
 flex_chmod 0644      "$rds_filespec"
-cat << PROTOCOL_RDS_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$rds_filespec"
+cat << PROTOCOL_RDS_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/$rds_filespec" >/dev/null 2>&1
 #
 # File: $rds_filename
 # Path: $rds_filepath
@@ -47,6 +52,12 @@ cat << PROTOCOL_RDS_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$rds_filespec"
 #
 install $rds_module /bin/true
 PROTOCOL_RDS_EOF
+RETSTS=$?
+if [ $RETSTS -ne 0 ]; then
+  echo "ERROR: Unable to create $rds_filespec; errno $RETSTS; aborted."
+  exit $RETSTS
+fi
+
 echo ""
 
 echo "Done."
