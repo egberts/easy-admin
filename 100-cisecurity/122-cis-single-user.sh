@@ -15,8 +15,10 @@
 #   https://help.ubuntu.com/community/Grub2/Passwords
 
 BUILDROOT=${BUILDROOT:-/tmp}
-echo "Ensure that root is disabled"
-echo ""
+echo "Ensure that that single-user bootup mode is password-protected."
+echo
+echo "Check that root is disabled"
+echo 
 echo "Reading /etc/shadow..."
 ROOT_PWD="$(sudo grep -E '^root:[*\!]+:' /etc/shadow)"
 RETSTS=$?
