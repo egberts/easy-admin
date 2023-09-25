@@ -13,6 +13,12 @@ if [ -z "$SYSTEMCTL_BIN" ]; then
 fi
 
 # checking if we need to prompt for 'disabling DHCP server'...
+echo "Type in 'continue' to disable DHCP Server service: "
+read -r ANYTHING
+if [ "$ANYTHING" != "continue" ]; then
+  echo "Aborted."
+  exit 2
+fi
 
 
 echo "Checking if DHCP server is running..."
