@@ -24,19 +24,24 @@ dccp_filename="protocol-dccp-no.conf"
 dccp_filepath="/etc/modprobe.d"
 dccp_filespec="$dccp_filepath/$dccp_filename"
 
-# check ACTUAL modules.d directory
 if [ ! -d "$dccp_filepath" ]; then
-  # Flex create that directory (later via script)
-  flex_mkdir "$dccp_filepath"
-  flex_chown root:root "$dccp_filepath"
-  flex_chmod 0755 "$dccp_filepath"
+  echo "INFO: No module support found in  $dccp_filepath; aborted"
+  exit 1
 fi
 
-echo "Writing $dccp_filespec..."
+# build area
+# Flex-create that build directory (later via script)
+flex_ckdir "/etc"
+flex_ckdir "$dccp_filepath"
+
+flex_chown root:root "$dccp_filepath"
+flex_chmod 0755 "$dccp_filepath"
+
+echo "Writing ${BUILDROOT}${CHROOT_DIR}$dccp_filespec..."
 flex_touch "$dccp_filespec"
 flex_chown root:root "$dccp_filespec"
 flex_chmod 0644      "$dccp_filespec"
-cat << PROTOCOL_DCCP_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dccp_filespec"
+cat << PROTOCOL_DCCP_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}$dccp_filespec" >/dev/null 2>&1
 #
 # File: $dccp_filename
 # Path: $dccp_filepath
@@ -49,6 +54,11 @@ cat << PROTOCOL_DCCP_EOF | tee "${BUILDROOT}${CHROOT_DIR}$dccp_filespec"
 #
 install $dccp_module /bin/true
 PROTOCOL_DCCP_EOF
+RETSTS=$?
+if [ $RETSTS -ne 0 ]; then
+  echo "ERROR: Unable to create $dccp_filespec; errno $RETSTS; aborted."
+  exit $RETSTS
+fi
 echo ""
 
 echo "Done."
