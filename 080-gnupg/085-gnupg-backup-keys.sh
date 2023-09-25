@@ -25,12 +25,13 @@ if [ "$PGP_KEYS_COUNT" -eq 0 ]; then
   exit 9
 fi
 
-echo ""
+echo
 echo "There are $PGP_KEYS_COUNT keys found:"
 for this_key in $KEY_FINGERPRINTS; do
   gpg --list-key "$this_key"
 done
-echo ""
+echo
+
 echo "Passphrase is prompted TWICE for each key found in your GPG trustdb:"
 echo "   1. To print the key's secret on paper"
 echo "   2. To print the key's revocation on paper."
@@ -50,7 +51,6 @@ fi
 
 mkdir $TMPDIR
 chmod 0700 $TMPDIR
-
 
 # Obviously there are more than one parent key.
 for this_key in $KEY_FINGERPRINTS; do
@@ -79,7 +79,7 @@ for this_key in $KEY_FINGERPRINTS; do
   # Get revocation certificate on paper for insertion into a physical safe.
   # Good for when you lose your password
   # Make a paper-based GPG revocation key for insertion into a physical safe
-  echo ""
+  echo
   echo "Creating a paper key for revocation (in case you lost your passphrase)"
   gpg --output "$REVOCATION_KEY_FILESPEC" --gen-revoke "$this_key"
 
@@ -98,7 +98,7 @@ if [ -n "$LPQ_BIN" ]; then
 else
   echo "All files created inside $TMPDIR directory."
 fi
+echo
 
-echo ""
 echo "Done."
 exit 0
