@@ -4,12 +4,13 @@
 #
 #
 
-echo "GNU Pretty Good Privacy (gpg) setup for maintianers of packages."
+echo "GNU Pretty Good Privacy (gpg) setup for maintainers of packages."
 echo ""
 
 if [ "$UID" -ne 0 ]; then
   echo "This is a non-root user; May prompt for sudo password"
 fi
+
 GPG_BIN="$(whereis -b gpg|awk -F: '{print $2}'|awk '{print $1}')"
 if [ -z "$GPG_BIN" ]; then
   echo "GNU PGP is not installed"
@@ -17,6 +18,7 @@ if [ -z "$GPG_BIN" ]; then
   # gpgconf, makes it easier to view GPG settings and make any safer changes
   sudo apt install gnupg2 gnupg-utils gpgconf
 fi
+
 MIGRATE="migrate-pubring-from-classic-gpg"
 MIGRATE_BIN="$(whereis -b $MIGRATE|awk -F: '{print $2}'|awk '{print $1}')"
 if [ -z "$MIGRATE_BIN" ]; then
@@ -47,7 +49,6 @@ if [ "$MIN_GPG_VERSION" != "$PASSED_MIN_GPG_VERSION" ]; then
   exit 2
 fi
 echo "Passed minimum GPG $MIN_GPG_VERSION version check."
-
 
 ETC_GNUPG_GPGCONF_CONF_FILENAME="gpgconf.conf"
 ETC_GNUPG_GPGCONF_CONF_DIRPATH="/etc/gnupg"
@@ -141,7 +142,8 @@ if [ "$retsts" -ne 0 ]; then
   exit $retsts
 fi
 echo "File $ETC_GNUPG_GPGCONF_CONF_FILESPEC created."
-echo 
+echo
+
 echo "Changing file permission for ${ETC_GNUPG_GPGCONF_CONF_FILESPEC} ..."
 sudo chmod 0644 "${ETC_GNUPG_GPGCONF_CONF_FILESPEC}"
 retsts=$?
@@ -149,6 +151,7 @@ if [ "$retsts" -ne 0 ]; then
   echo "Error changing file permission on $ETC_GNUPG_GPGCONF_CONF_FILESPEC. Errcode: $retsts"
   exit $retsts
 fi
+
 sudo chown root:${ROOT_GROUP} "${ETC_GNUPG_GPGCONF_CONF_FILESPEC}"
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
@@ -156,6 +159,6 @@ if [ "$retsts" -ne 0 ]; then
   exit $retsts
 fi
 echo ""
+
 echo "Done."
 exit 0
-
