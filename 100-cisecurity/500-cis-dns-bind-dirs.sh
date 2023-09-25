@@ -47,7 +47,6 @@ RETSTS=$?
 [[ ${RETSTS} -eq 0 ]] || {
     echo "Incorrect options provided"
     cmd_show_syntax_usage
-    exit ${RETSTS}
 }
 
 CHROOT_DIR="${CHROOT_DIR:-}"
@@ -76,7 +75,6 @@ while true; do
         ;;
     -h|--help)
         cmd_show_syntax_usage
-        break
         ;;
     --)
         shift
@@ -231,7 +229,7 @@ else
 fi
 
 if [ -z "$NAMED_SHELL_FILESPEC" ]; then
-  NAMED_SHELL_FILESPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $7}')"
+  NAMED_SHELL_FILESPEC="$(grep "$USER_NAME" /etc/passwd | awk -F: '{print $7}')"
 fi
 
 # Data?  It's where statistics, memstatistics, dump, and secdata go into
@@ -249,7 +247,7 @@ DEFAULT_DATA_DIRSPEC="${VAR_LIB_NAMED_DIRSPEC}/data"
 # and restrict these administrators to just updates of zones.
 #
 if [ -z "$NAMED_HOME_DIRSPEC" ]; then
-  NAMED_HOME_DIRSPEC="$(grep $USER_NAME /etc/passwd | awk -F: '{print $6}')"
+  NAMED_HOME_DIRSPEC="$(grep "$USER_NAME" /etc/passwd | awk -F: '{print $6}')"
 fi
 
 # Furthermore, Zone DB directory is now being split into many subdirectories
@@ -285,7 +283,8 @@ if [ ${#named_bins_a[@]} -ge 2 ]; then
 
   # Quick and see if systemctl cat named.service can clue us to which binary
   systemd_named_bin="$(systemctl cat "${systemd_unitname}.service" | grep "ExecStart="|awk -F= '{print $2}' | awk '{print $1}')"
-  if [ $? -eq 0 ] && [ -n "$systemd_named_bin" ]; then
+  RETSTS=$?
+  if [ $RETSTS -eq 0 ] && [ -n "$systemd_named_bin" ]; then
     default_named_bin="$systemd_named_bin"
     echo "Choosing systemd-default: $systemd_named_bin"
   else
@@ -317,9 +316,12 @@ if [ ${#named_bins_a[@]} -ge 2 ]; then
     fi
   done
   # echo "'named' selected: ${named_bin}"
-else
+elif [ ! -z "${named_bins_a[0]}" ]; then
   named_bin="${named_bins_a[0]}"
   echo "Only one 'named' found: $(echo ${named_bins_a[*]} | xargs)"
+else
+  echo "ERROR: No named binary found; aborted."
+  exit 9
 fi
 echo "Using 'named' binary in: $named_bin"
 
