@@ -13,7 +13,13 @@
 #   Made NOT an executable due to lack of security review
 
 
-cd /tmp
+cd /var/tmp || {
+  RETSTS=$?
+  if [ $RETSTS -ne 0 ]; then
+    echo "ERROR: No /var/tmp directory available; aborted"
+    exit $RETSTS
+  fi
+}
 
 # Download Github Core
 wget https://github.com/microsoft/Git-Credential-Manager-Core/releases/download/v2.0.498/gcmcore-linux_amd64.2.0.498.54650.deb
