@@ -3,7 +3,7 @@
 #
 
 pushd .
-cd /tmp
+cd /var/tmp
 mkdir fonts-ibm-plex
 
 echo "Downloading 600MB IBM Plex fonts ..."
