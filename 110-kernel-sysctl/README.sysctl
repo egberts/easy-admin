@@ -11,3 +11,10 @@ My personal preference would be for local system settings to go into
 /etc/sysctl.d/local.conf but as long as you follow the rules for the names
 of the file, anything will work. See sysctl.conf(8) man page for details
 of the format.
+
+
+DUPLICATES
+You can check for duplicate settings in /etc/sysctl and /etc/sysctl.d/*
+
+   cat * | grep -v "^#" | sort -u | less
+ 
