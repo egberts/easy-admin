@@ -1,9 +1,11 @@
 #!/bin/bash
 # File: 020-repos-debian-11.sh
 # Title:  Install everything related to Debian 11
+# Description:
+#   TBD
 #
 # Privilege required: sudo root
-# OS: Debian 11
+# OS: Debian
 # Kernel: Linux
 #
 # Files impacted:
@@ -20,25 +22,38 @@
 # Environment Variables:
 #   BUILDROOT - set to '/' to actually install directly into your filesystem
 #
-# Prerequisites:
-#   bind9-dnsutils (/usr/bin/dig)
-#   coreutils (tee, chown, chmod, touch)
+# Prerequisites (package name):
+#   apt (apt)
+#   awk (mawk)
+#   cat (coreutils)
+#   chown (coreutils)
+#   chmod (coreutils)
+#   curl (curl)
+#   dd (coreutils)
 #   dig (bind9-dnsutils)
-#   findutils (xargs)???
+#   dnf (dnf)
+#   dpkg (dpkg)
+#   git (git)
 #   grep (grep)
 #   grub (grub)
-#   gawk (awk)
+#   head (coreutils)
 #   ipcalc-ng
-#   iproute2 (/sbin/ip)
+#   ip (iproute2)
 #   lsb-release (lsb_release)
+#   mkdir (coreutils)
 #   mount (mount)
 #   nmcli (nmcli)
 #   nslookup (bind9-dnsutils)
 #   sed (sed)
+#   sort (coreutils)
 #   sudo (sudo)
 #   systemctl (systemd) - optional
-#   util-linux (whereis)
-#   wireguard-tools
+#   tee (coreutils)
+#   touch (coreutils)
+#   wget (wget)
+#   whereis (util-linux)
+#   wg (wireguard-tools)
+#   xargs (findutils)
 #
 # Detailed Design
 #

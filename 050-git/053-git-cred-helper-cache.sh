@@ -12,7 +12,7 @@
 #  modify - none
 #  delete - none
 #
-# Prerequisites:
+# Package Prerequisites (binaries):
 #   apt (apt)
 #   coreutils (tee)
 #   dpkg (dpkg)

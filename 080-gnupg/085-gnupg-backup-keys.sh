@@ -1,7 +1,53 @@
 #!/bin/bash
-# File: 081-gnupg-backup-keys.sh
-# Title: Backup on paper, all your GPG  keys
+# File: 085-gnupg-backup-keys.sh
+# Title: Backup on paper, all your GPG keys
+# Description:
+#   GNU Pretty Good Privacy setup for maintainers of packages.
+#   Backsup keys for GNU Pretty Good Privacy
 #
+# Privilege required: sudo root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - none
+#  create - ~/.gnupg
+#           ~/.gnupg/gpg.conf
+#           ~/.gnupg/gpg-agent.conf
+#           ~/.bashrc.d/plugins/gpg-agent.bash
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Package Prerequisites (binaries):
+#   awk (mawk)
+#   chmod (coreutils)
+#   chown (coreutils)
+#   gpg (gpg)
+#   grep (grep)
+#   lpr (cups-bsd)
+#   mkdir (coreutils)
+#   paperkey (paperkey)
+#   rm (coreutils)
+#   wc (coreutils)
+#   whereis (coreutils)
+#
+
+# apt (apt)
+
+#   cat (coreutils)
+
+
+#   head (coreutils)
+#   id  (coreutils)
+#   migrate-pubring-from-classic-gpg (gnupg-utils)
+
+#   sort (coreutils)
+#   stat (coreutils)
+#   sudo (sudo)
+#   tee (coreutils)
 
 
 TMPDIR="/tmp/gnupg"
@@ -100,5 +146,4 @@ else
 fi
 echo
 
-echo "Done."
-exit 0
+echo "$0: done."

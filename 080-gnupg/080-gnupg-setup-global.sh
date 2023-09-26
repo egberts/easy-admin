@@ -1,7 +1,31 @@
 #!/bin/bash
 # File: 080-gnupg-setup-global.sh
-# Title: GNU Pretty Good Privacy setup for host-wide global settings
+# Title: GNUPG setup for host-wide global settings
+# Description:
+#   Sets up the host-wide global settings for GNU Pretty Good Privacy
 #
+# Privilege required: sudo root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - none
+#  create - /etc/gnupg/gnupg.conf
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Package Prerequisites (binaries):
+#   apt (apt)
+#   coreutils (cat, chmod, chown, head, mkdir, sort, tee)
+#   gpg (gpg)
+#   gpgconf (gpgconf)
+#   gnupg-utils (migrate-pubring-from-classic-gpg)
+#   mawk (awk)
+#   sudo (sudo)
+#   util-linux (whereis)
 #
 
 echo "GNU Pretty Good Privacy (gpg) setup for maintainers of packages."
@@ -61,8 +85,8 @@ fi
 
 # Override file permission settings
 sudo chmod 0755 "$ETC_GNUPG_GPGCONF_CONF_DIRPATH"
-ROOT_GROUP="`id -g -n root`"
-sudo chown root:${ROOT_GROUP} "$ETC_GNUPG_GPGCONF_CONF_DIRPATH"
+ROOT_GROUP="$(id -g -n root)"
+sudo chown "root:${ROOT_GROUP}" "$ETC_GNUPG_GPGCONF_CONF_DIRPATH"
 
 # Drop some settings into /etc/gnupg/gpgconf.conf
 echo ""
@@ -152,7 +176,7 @@ if [ "$retsts" -ne 0 ]; then
   exit $retsts
 fi
 
-sudo chown root:${ROOT_GROUP} "${ETC_GNUPG_GPGCONF_CONF_FILESPEC}"
+sudo chown "root:${ROOT_GROUP}" "${ETC_GNUPG_GPGCONF_CONF_FILESPEC}"
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
   echo "Error changing owner:group on $ETC_GNUPG_GPGCONF_CONF_FILESPEC. Errcode: $retsts"
@@ -161,4 +185,3 @@ fi
 echo ""
 
 echo "Done."
-exit 0

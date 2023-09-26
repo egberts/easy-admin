@@ -25,7 +25,7 @@
 # Environment Variables:
 #   BUILDROOT - set to '/' to actually install directly into your filesystem
 #
-# Prerequisites:
+# Package Prerequisites (binaries):
 #   apt (apt)
 #   dpkg (dpkg)
 #   wget (wget)

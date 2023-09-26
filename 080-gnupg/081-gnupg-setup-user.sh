@@ -1,11 +1,43 @@
 #!/bin/bash
 # File: 080-gnupg-setup.sh
 # Title: GNU Pretty Good Privacy setup for maintainers of packages.
+# Description:
+#   GNU Pretty Good Privacy setup for maintainers of packages.
+#   Sets up the user-wide global settings for GNU Pretty Good Privacy
 #
-# Design
-#   install gnupg2 package, if needed
-# watchgnupg
+# Privilege required: sudo root
+# OS: Debian
+# Kernel: Linux
 #
+# Files impacted:
+#  read   - none
+#  create - ~/.gnupg
+#           ~/.gnupg/gpg.conf
+#           ~/.gnupg/gpg-agent.conf
+#           ~/.bashrc.d/plugins/gpg-agent.bash
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Package Prerequisites (binaries):
+#   apt (apt)
+#   awk (mawk)
+#   cat (coreutils)
+#   chmod (coreutils)
+#   chown (coreutils)
+#   gpg (gpg)
+#   grep (grep)
+#   head (coreutils)
+#   id  (coreutils)
+#   migrate-pubring-from-classic-gpg (gnupg-utils)
+#   mkdir (coreutils)
+#   sort (coreutils)
+#   stat (coreutils)
+#   sudo (sudo)
+#   tee (coreutils)
+#   whereis (coreutils)
 
 # Set the maximum time a cache entry used for SSH keys is valid to n seconds.
 # After this time a cache entry will be expired even if it has been accessed

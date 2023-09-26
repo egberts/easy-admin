@@ -15,7 +15,7 @@
 # Environment Variables:
 #   none
 #
-# Prerequisites:
+# Package Prerequisites (binaries):
 #   gh (gh)
 #   git (git)
 #
