@@ -6,9 +6,11 @@
 # Description
 #   Install everything except the Linux kernel
 #
+# Privilege required: root
+#
 # Files impacted:
 #  read   - /usr/bin/pacman
-#  create - various packages
+#  create - (various installed files)
 #  modify - none
 #  delete - none
 #

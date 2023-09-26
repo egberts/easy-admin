@@ -1,19 +1,40 @@
 #
 # File: 020-repos-centos-8-4.sh
+# Title: Install everything related to CentOS
 #
-# Reference:
+# Privilege required: sudo root
+# OS: CentOS
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - /etc/alternatives/python
+#  create - (various installed files)
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Prerequisites:
+#   coreutils (ln, rm)
+#   dnf
+#   sudo (sudo)
+#
+# References:
 #   - https://www.dedoimedo.com/computers/centos-8-perfect-desktop.html
-
-if [ 0 -ne 0 ]; then
-sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-
-sudo dnf install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
-
-sudo dnf install https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
-
 #
-sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-dnf install gh
+echo "Installing essential things for CentOS 8.4"
+echo
+if [ 0 -ne 0 ]; then
+  sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+  sudo dnf install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
+
+  sudo dnf install https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
+
+  #
+  sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+  sudo dnf install gh
 fi
 
 # Replace python symlink with python3 in /etc/alternatives
@@ -42,5 +63,6 @@ if [ -f /usr/bin/python ]; then
 else
   sudo ln -s /etc/alternatives/python /usr/bin/python
 fi
-echo ""
+echo
+
 echo "Done."

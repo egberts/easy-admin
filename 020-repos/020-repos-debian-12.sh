@@ -1,13 +1,29 @@
 #!/bin/bash
+# File: 020-repos-debian-12.sh
+# Title: Install everything Debian 12 except the Linux kernel
+# Description:
+#   Install everything related to CentOS
 #
+# Privilege required: sudo root
 # OS: Debian 12
-# Kernel: 6.1.0
+# Kernel: Linux
 #
-# Everything except the Linux kernel
-
+# Files impacted:
+#  read   - /var/lib/dpkg
+#  create - /var/lib/dpkg/*, various directories/files
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Prerequisites:
+#   apt
+#   sudo (sudo)
+#
+echo "Installing essential th ings for Debiian 12"
 echo "Kernel 6.1.0 requires some more packages"
-
-
+echo
 sudo apt -y install dh-exec             # debian bug in 'autoremove'
 sudo apt -y install dh-python
 sudo apt -y install libssl-dev
@@ -53,3 +69,6 @@ sudo apt -y install dvipng
 
 # server-specific
 sudo apt -y install chrony
+echo
+
+echo "Done."

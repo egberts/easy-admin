@@ -1,8 +1,21 @@
 #!/bin/bash
 # File: 025-repo-debian-testing.sh
 # Title: How to install "SOME" testing package while staying @ stable
-# OS: Debian 11
-# Description:
+#
+# Privilege required: root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - /etc/apt/apt.conf.d/99default_release
+#  create - (various installed directories/files)
+#  modify - none
+#  delete - none
+#
+# Prerequisites:
+#   coreutils (chmod, chown, tee)
+#   sudo (sudo)
+#
 #
 
 echo "Configuring APT to allow some testing package while staying @ stable"
@@ -35,6 +48,7 @@ if [ $retsts -ne 0 ]; then
   echo "Aborted."
   exit $retsts
 fi
+
 chmod 0644 ${apt_conf_filespec}
 retsts=$?
 if [ $retsts -ne 0 ]; then
@@ -42,6 +56,7 @@ if [ $retsts -ne 0 ]; then
   echo "Aborted."
   exit $retsts
 fi
+
 chown root:root ${apt_conf_filespec}
 retsts=$?
 if [ $retsts -ne 0 ]; then
@@ -50,6 +65,7 @@ if [ $retsts -ne 0 ]; then
   exit $retsts
 fi
 echo
+
 apt update
 echo
 echo "now you can execute:"
@@ -60,4 +76,5 @@ echo "And then be able to do an system-wide update only at 'stable'"
 echo
 echo "   apt upgrade  # only stable package gets upgrade"
 echo
+
 echo "Done."

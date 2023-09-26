@@ -1,12 +1,29 @@
 #!/bin/bash
+# File: 020-repos-debian-11.sh
+# Title: Everything except the Linux kernel
+# Description:
+#   Install everything related to CentOS
 #
-# OS: Debian 11
-# Kernel: 5.10.46
+# Privilege required: sudo root
+# OS: CentOS
+# Kernel: Linux
 #
-# Everything except the Linux kernel
+# Files impacted:
+#  read   - /var/lib/dpkg
+#  create - /var/lib/dpkg/*, various directories/files
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Prerequisites:
+#   apt
+#   sudo (sudo)
+#
 
 echo "Kernel 5.10.46 requires some more packages"
-
+echo
 
 sudo apt -y install dh-exec             # debian bug in 'autoremove'
 sudo apt -y install dh-python
@@ -53,3 +70,6 @@ sudo apt -y install dvipng
 
 # server-specific
 sudo apt -y install chrony
+echo
+
+echo "Done."
