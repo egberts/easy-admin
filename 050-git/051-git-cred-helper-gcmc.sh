@@ -1,5 +1,5 @@
 #!/bin/bash
-# File: 051-github-gcmc.sh
+# File: 051-git-cred-helper-gcmc.sh
 # Title: Github Core credential helper for persistent authentication via Core
 # Description:
 #   Github Core can provide authentication for a 
@@ -8,10 +8,28 @@
 #
 #   A better alternative is to use 052-github-auth-gpg.sh
 #
+# Privilege required: sudo root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - /var/tmp
+#  create -
+#  modify - none
+#  delete - none
+#
 # Note:
 #   This is a bizarre use of Microsoft DotNet for GUI-less hosts.
 #   Made NOT an executable due to lack of security review
-
+#
+# Environment Variables:
+#   BUILDROOT - set to '/' to actually install directly into your filesystem
+#
+# Prerequisites:
+#   apt (apt)
+#   dpkg (dpkg)
+#   wget (wget)
+#
 
 cd /var/tmp || {
   RETSTS=$?

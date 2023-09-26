@@ -1,7 +1,29 @@
 #!/bin/bash
 # File: 049-git-github-cli-install.sh
 # Title: Install repository for Microsoft GitHub CLI tools
-
+#
+# Privilege required: sudo root
+# OS: Debian 11
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - /usr/bin/apt
+#           /usr/bin/dnf
+#           /etc/os-release
+#  create - none
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   none
+#
+# Prerequisites:
+#   apt (apt)
+#   coreutils (chown, chmod, dd, tee)
+#   curl (curl)
+#   dnf (dnf)
+#   sudo (sudo)
+#
 echo "Install repository to Microsoft GitHub CLI tool"
 
 source /etc/os-release
@@ -28,6 +50,7 @@ function install_debian_class_repo()
     sudo apt install gh
 }
 
+
 case $ID in
   'redhat')
     install_redhat_class_repo
@@ -45,6 +68,6 @@ case $ID in
     echo "Unknown OS type: '$ID'; aborted."
     exit 1
 esac
-echo ""
+echo
 
 echo "Done."
