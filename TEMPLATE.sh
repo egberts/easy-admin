@@ -25,10 +25,12 @@
 # Prerequisites (package name):
 #   apt (apt)
 #   awk (mawk)
+#   basename (coreutils)
 #   cat (coreutils)
 #   chown (coreutils)
 #   chmod (coreutils)
 #   curl (curl)
+#   date (coreutils)
 #   dd (coreutils)
 #   dig (bind9-dnsutils)
 #   dnf (dnf)
@@ -48,6 +50,7 @@
 #   rm (coreutils)
 #   sed (sed)
 #   sort (coreutils)
+#   stat (coreutils)
 #   sudo (sudo)
 #   systemctl (systemd) - optional
 #   tee (coreutils)
