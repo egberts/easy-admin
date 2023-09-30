@@ -51,7 +51,7 @@ function check_option
   # We are really catching any 'exec' after any 'noexec' styled avoidance
   # fstab can do that; mtab, not so much (but do checks anyway)
   opt_list="$(echo "${mtab_mp_options[$idx]}" | sed 's/[()]//g' | tr , "\n" | xargs)"
-  opt_found=0
+  local opt_found=0
   for this_opt in $opt_list; do
     if [ "$this_opt" == "$2" ]; then
       opt_found=1
@@ -61,9 +61,9 @@ function check_option
     fi
   done
   if [ "$opt_found" -eq 0 ]; then
-    echo "  Missing '$2' in $req_mount_dirpath"
+    echo "  Using '$1' options, missing '$2' in $req_mount_dirpath"
     ((err_missing_options+=1))
-    bad_options+=(noexec)
+    # bad_options+=(noexec)
   fi
 }
 
@@ -87,10 +87,10 @@ req_mount_present=(no no no no no no no)
 
 function check_options()
 {
-  dirpath="$1"
-  options="$2"
+  local dirpath="$1"
+  local options="$2"
 
-  opt_idx=0
+  local opt_idx=0
   while [ $opt_idx -lt ${#REQ_MOUNT_OPTIONS[@]} ]; do
 
     # if given dirpath equals required dirpath
@@ -109,7 +109,7 @@ function check_options()
 echo "Reading file system (/etc/fstab) table file ..."
 if [ -f /etc/fstab ]; then
 
-  partitions_exist_error=0
+  # partitions_exist_error=0
 
   # Read in all uncommented lines from /etc/fstab
   fstab_lines=("$(grep -E '^\s*(~#)*\s*[/a-zA-Z\=\_\-]+' /etc/fstab)")
@@ -126,7 +126,7 @@ if [ -f /etc/fstab ]; then
   #  FSTAB_6=($(echo "$fstab_lines" | awk '{print $6}'))
 
   req_idx=0
-  fstab_found_idx_a=()
+  # fstab_found_idx_a=()
 
   # Iterate through all required mount points
   while [ $req_idx -lt ${#req_mount_dirpaths[@]} ]; do
@@ -169,7 +169,7 @@ if [ -f /etc/fstab ]; then
       # FSTAB_MP_IDX_UNFOUND[$fstab_found_idx_a]=$req_idx
       ((fstab_found_idx_a+=1))
     else
-      req_mount_present[$req_idx]="yes"
+      req_mount_present[req_idx]="yes"
     fi
     ((req_idx+=1))
   done
@@ -225,7 +225,7 @@ while [ $req_idx -lt ${#req_mount_dirpaths[@]} ]; do
       # check_option "$opt_list" "nodev" "dev"
 
       # Iterate each actual options used
-      req_mount_present[$req_idx]="yes"
+      req_mount_present[req_idx]="yes"
     fi
     ((idx+=1))
   done
@@ -256,24 +256,26 @@ while [ $mtab_idx -lt ${#mtab_mp_dirpath[@]} ]; do
   ext4|ext3|ext2) ;;
 
   autofs)
+    echo
     echo "ERROR: Need to remove 'autofs' from kernel module list"
-    echo "       as ${mtab_mp_dirpath[$mtab_idx]} directory is using autofs."
+    echo "       as ${mtab_mp_dirpath[mtab_idx]} directory is using autofs."
     ;;
   esac
   ((mtab_idx+=1))
 done
+echo
 
 # Check on mtab options for
 #  - proc(fs) hidepid option
 idx=0
-for this_mntfs in $mtab_mp_fstype; do
+for this_mntfs in "${mtab_mp_fstype[@]}"; do
   case $this_mntfs in
     proc)
       echo "Proc options: ${mtab_mp_options[idx]}"
       options="${mtab_mp_options[idx]}"
       options="${options:0:-1}"
       options="${options:1}"
-      options_list="$(echo "$options"|sed -e 's/,/ /g')"
+      options_list="${options//,/ /g}"
       for this_mopt in $options_list; do
         if [[ "hidepid" == "${this_mopt:0:7}" ]]; then
           # hidepid_value="$(echo "$this_mopt"|awk -F= '{print $2}')"
@@ -294,6 +296,7 @@ for this_mntfs in $mtab_mp_fstype; do
   esac
   ((idx++))
 done
+echo
 
 # Error checking
 if [[ "$err_missing_partitions" -ge 1 ]] || \
@@ -305,13 +308,14 @@ if [[ "$err_missing_partitions" -ge 1 ]] || \
   if [ "$err_missing_options" -ge 1 ]; then
     echo " Missing mount options: $err_missing_options"
   fi
+  echo
+
   echo "Not all partitions have been created in compliance to CIS benchmark."
-  echo "FAIL"
+  echo "Result: FAIL"
   exit 251
 else
-  echo "PASS"
+  echo "Result: PASS"
 fi
 echo
 
 echo "Done."
-exit 0
