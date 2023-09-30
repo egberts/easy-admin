@@ -1,7 +1,33 @@
 #!/bin/bash
 # File: 071-bashrc.d-editor.sh
 # Title: Add default editor
-# Design:
+# Description:
+#   TBD
+#
+# Privilege required: root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - $HOME/bashrc.d/
+#         - $HOME/bashrc.d/plugins/
+#  create - none
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   BUILDROOT - set to '/' to actually install directly into your filesystem
+#
+# Prerequisites (package name):
+#   awk (mawk)
+#   basename (coreutils)
+#   cat (coreutils)
+#   chmod (coreutils)
+#   date (coreutils)
+#   tee (coreutils)
+#   whereis (util-linux)
+#
+# Detailed Design
 #   if ~/.bashrc.d subdirectory exist
 #     if ~/.bashrc.d/plugins subdirectory exist
 #       drop 'EDITOR.bash'
@@ -71,14 +97,17 @@ EDITOR_BASHRC_DROPIN_PATHNAME="$HOME/.bashrc.d/plugins"
 EDITOR_BASHRC_DROPIN_FILENAME="EDITOR.bash"
 EDITOR_BASHRC_DROPIN_FILESPEC="$EDITOR_BASHRC_DROPIN_PATHNAME/$EDITOR_BASHRC_DROPIN_FILENAME"
 
+DATE_TXT="$(date)"
+CREATOR_BIN="$(basename "$0")"
+EDITOR_BASHRC_DROPIN_BASENAME="$(basename "$EDITOR_BASHRC_DROPIN_FILESPEC")"
 echo "Writing for $EDITOR_BASHRC_DROPIN_FILESPEC script file..."
 cat << BASHRC_DROPIN_EOF | tee "$EDITOR_BASHRC_DROPIN_FILESPEC" >/dev/null 2>&1
 #
-# File: $(basename "$EDITOR_BASHRC_DROPIN_FILESPEC")
-# Path: $(dirname "$EDITOR_BASHRC_DROPIN_FILESPEC")
+# File: $EDITOR_BASHRC_DROPIN_BASENAME
+# Path: $EDITOR_BASHRC_DROPIN_PATHNAME
 # Title: Default EDITOR for this user
-# Creator: $(basename "$0")
-# Date: $(date)
+# Creator: $CREATOR_BIN
+# Date: $DATE_TXT
 #
 
 export EDITOR=${DEFAULT_EDITOR}
