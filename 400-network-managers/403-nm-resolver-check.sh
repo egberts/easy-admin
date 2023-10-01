@@ -2,6 +2,29 @@
 # File: 403-nm-resolver-check.sh
 # Title: Check out the /etc/resolv.conf to ensure that it is working
 # Description:
+#   TBD
+#
+# Privilege required: sudo root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - /etc/resolv.conf
+#  create - none
+#  modify - none
+#  delete - none
+#
+# Prerequisites (package name):
+#   apt (apt)
+#   dig (bind9-dnsutils)
+#   grep (grep)
+#   sort (coreutils)
+#   systemctl (systemd)
+#   whereis (util-linux)
+#   xargs (findutils)
+#
+# References:
+#   None
 #
 
 RESOLV_CONF_FILESPEC="/etc/resolv.conf"
@@ -12,14 +35,12 @@ echo ""
 
 # What can we tell about /etc/resolv.conf file?
 RESOLV_FILE_MODE='regular file'
-RESOLV_SYMLINKED=
 RESOLV_FILELINK=
 
 if [ ! -e "$RESOLV_CONF_FILESPEC" ]; then
   echo "File $RESOLV_CONF_FILESPEC does not exist; aborted."
   exit 9
 elif [ -h "$RESOLV_CONF_FILESPEC" ]; then
-  RESOLV_SYMLINKED='yes'
   echo "Resolv.conf is a symlink file."
   REAL_RESOLV_CONF_FILESPEC="$(realpath -m "$RESOLV_CONF_FILESPEC")"
   echo "Resolv.conf is really located in $REAL_RESOLV_CONF_FILESPEC"
@@ -35,7 +56,6 @@ elif [ -h "$RESOLV_CONF_FILESPEC" ]; then
     RESOLV_FILELINK='other'
   fi
 elif [ -f "$RESOLV_CONF_FILESPEC" ]; then
-  RESOLV_SYMLINKED='no'
   echo "Resolv.conf is an ordinary file."
   if [ ! -r "$RESOLV_CONF_FILESPEC" ]; then
     echo "Resolv.conf is not a readable file; aborted"
@@ -43,7 +63,6 @@ elif [ -f "$RESOLV_CONF_FILESPEC" ]; then
   fi
   echo "Resolv.conf is a readable file."
   RESOLV_FILELINK='regular file'
-  RESOLV_SYMLINKED='no'
 else
   echo "File $RESOLV_CONF_FILESPEC is not a regular file "
   echo "   nor a symblink; aborted."
@@ -80,10 +99,12 @@ fi
 VERIFIED_NAMESERVERS_LIST=
 SYSTEMD_LOOPBACK_DNS_USED=
 SYSTEMD_LOOPBACK_DNS_ACTIVE=
+echo "Checking all nameservers ..."
 for this_ns in $NAMESERVERS_LIST; do
+  echo "Testing $this_ns nameserver ..."
   found_nameserver_active=0
   found_systemd_loopback_dns=0
-  NS_IP4_ADDR="$(getent ahostsv4 $this_ns | grep STREAM | awk '{print $1}')"
+  NS_IP4_ADDR="$(getent ahostsv4 "$this_ns" | grep STREAM | awk '{print $1}')"
   # recursively look up on 127.0.0.53 (at a risk of going
   # outside of specified nameservers)
   if [ "$NS_IP4_ADDR" == "127.0.0.53" ]; then
@@ -91,8 +112,9 @@ for this_ns in $NAMESERVERS_LIST; do
     SYSTEMD_LOOPBACK_DNS_USED="yes"
   fi
   # Check if DNS server is running at this IP
-  NS_ALIVE="$(dig +short +timeout=3 +tries=1 +norecurse @$this_ns localhost >/dev/null)"
+  NS_ALIVE="$(dig +short +timeout=3 +tries=1 +norecurse @"$this_ns" localhost)"
   retsts=$?
+  echo "  localhost found: $NS_ALIVE"
   if [ "$retsts" -eq 9 ]; then
     found_nameserver_active=0
     echo "*DEAD* DNS nameserver ($this_ns) found in $RESOLV_CONF_FILESPEC."
@@ -106,7 +128,7 @@ for this_ns in $NAMESERVERS_LIST; do
       SYSTEMD_LOOPBACK_DNS_ACTIVE="yes"
     fi
   fi
-  echo "Active DNS nameserver found at $this_ns"
+  echo "Active DNS nameserver found: $this_ns"
   VERIFIED_NAMESERVERS_LIST+="$this_ns "
 
   if [ "$found_systemd_loopback_dns" -eq 1 ]; then
@@ -194,18 +216,23 @@ fi
 function find_config_value
 {
   local val
+  local this_line
+  local COMMENT_LINE
+  local SECTION_LINE
+  local section_matched
+  local KEY_VALUE
   echo "Scanning for key '$2' in section $1..."
   for this_line in "${NM_CFG_A[@]}"; do
     if [ -z "$this_line" ]; then
       continue
     fi
     # Skip comments
-    COMMENT_LINE="$(echo $this_line | grep -E -- '^\s*#')"
+    COMMENT_LINE="$(echo "$this_line" | grep -E -- '^\s*#')"
     if [ -n "$COMMENT_LINE" ]; then
       continue
     fi
     # check section
-    SECTION_LINE="$(echo $this_line | grep -E -- '^\s*\[\S+\]')"
+    SECTION_LINE="$(echo "$this_line" | grep -E -- '^\s*\[\S+\]')"
     if [ -n "$SECTION_LINE" ]; then
       # our desired INI section?
       if [ "$SECTION_LINE" == "[${1}]" ]; then
@@ -217,7 +244,7 @@ function find_config_value
     fi
     if [ "$section_matched" -eq 1 ]; then
       # Is it our desired key?
-      KEY_VALUE="$(echo $this_line | grep -E -- "^\s*${2}\s*=\s*\S"|awk -F= '{print $2}')"
+      KEY_VALUE="$(echo "$this_line" | grep -E -- "^\s*${2}\s*=\s*\S"|awk -F= '{print $2}')"
       # did we find the value to the key?
       if [ -n "$KEY_VALUE" ]; then
         CONFIG_VALUE="$KEY_VALUE"
@@ -339,5 +366,5 @@ else
   echo -n "inactive "
 fi
 echo
+
 echo "Done."
-exit 0
