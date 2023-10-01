@@ -33,7 +33,7 @@ if [ -z "$which_nmcli_bin" ]; then
 fi
 
 # Make a list of available interfaces
-avail_interfaces="$(ip -4 -o addr show | awk '{print $2}' | grep -v 'lo' | xargs)"
+avail_interfaces="$(ip -4 -o addr show | awk '{print $2}' | grep -v -e '^lo' | xargs)"
 echo "Available interfaces: $avail_interfaces"
 PS3="Enter in digit: "
 select interface_name in $avail_interfaces; do
