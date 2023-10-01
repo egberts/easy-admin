@@ -21,7 +21,11 @@ source ./maintainer-NetworkManager.sh
 
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-wifi-privacy-off.sh"
 
-flex_mkdir "$NETWORKMANAGER_CONFD_DIRSPEC"
+flex_ckdir "/etc"
+flex_ckdir "/etc/systemd"
+flex_ckdir "$DEFAULT_EXTENDED_SYSCONFDIR"
+flex_ckdir "$NETWORKMANAGER_CONFD_DIRSPEC"
+
 
 echo "Disable randomization of MAC address in Wifi"
 FILENAME="wifi_rand_mac.conf"
