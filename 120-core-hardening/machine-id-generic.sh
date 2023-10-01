@@ -80,9 +80,14 @@ echo "Checking the Machine ID file for generic ID"
 echo
 
 verify_machine_id $ETC_MACHINE_ID_FILESPEC
-verify_machine_id $DBUS_MACHINE_ID_FILESPEC
+if [ $? -ne 0 ]; then
+  write_machine_id $ETC_MACHINE_ID_FILESPEC
+fi
 
-write_machine_id $ETC_MACHINE_ID_FILESPEC
-write_machine_id $DBUS_MACHINE_ID_FILESPEC
+verify_machine_id $DBUS_MACHINE_ID_FILESPEC
+if [ $? -ne 0 ]; then
+  write_machine_id $DBUS_MACHINE_ID_FILESPEC
+fi
+
 echo
 echo "Done."
