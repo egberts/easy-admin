@@ -26,7 +26,10 @@ source ./maintainer-NetworkManager.sh
 
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-sysd-resolvered-disable.sh"
 
-flex_mkdir "$NETWORKMANAGER_CONFD_DIRSPEC"
+flex_ckdir "/etc"
+flex_ckdir "/etc/systemd"
+flex_ckdir "$DEFAULT_EXTENDED_SYSCONFDIR"
+flex_ckdir "$NETWORKMANAGER_CONFD_DIRSPEC"
 
 FILENAME="no-systemd-resolved.conf"
 FILEPATH="$NETWORKMANAGER_CONFD_DIRSPEC"
