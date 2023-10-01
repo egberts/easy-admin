@@ -13,7 +13,10 @@ source ./maintainer-NetworkManager.sh
 
 readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-dhcp-client-resolver.sh"
 
-flex_mkdir "$NETWORKMANAGER_CONFD_DIRSPEC"
+flex_ckdir "/etc"
+flex_ckdir "/etc/systemd"
+flex_ckdir "$DEFAULT_EXTENDED_SYSCONFDIR"
+flex_ckdir "$NETWORKMANAGER_CONFD_DIRSPEC"
 
 echo "Disabled DHCP-driven DNS update"
 FILENAME="no-dhcp-dns-update-to-resolver.conf"
