@@ -22,7 +22,7 @@
 #    None
 #
 # Prerequisites (package name):
-#   none
+#   cat (coreutils)
 #
 # References:
 #   https://github.com/Kicksecure/dist-base-files
