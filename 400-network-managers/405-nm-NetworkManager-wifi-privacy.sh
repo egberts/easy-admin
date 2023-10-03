@@ -13,6 +13,38 @@
 #   This script will instruct NetworkManager to turn
 #   off this random selection of MAC address of all SSIDs
 #   for clients trying to join this SSID.
+#!/bin/bash
+# File: 020-repos-debian-11.sh
+# Title:  Install everything related to Debian 11
+# Description:
+#   TBD
+#
+# Privilege required: sudo root
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - none
+#  create - /etc/NetworkManager/conf.d/wifi_mac_random_no.conf
+#         - ./file-NetworkManager-conf.d-wifi-privacy-off.sh
+#  modify - none
+#  delete - none
+#
+# Environment Variables:
+#   BUILDROOT - set to '/' to actually install directly into your filesystem
+#
+# Prerequisites (package name):
+#   maintainer-NetworkManager.sh
+#   basename (coreutils)
+#   cat (coreutils)
+#   chown (coreutils)
+#   chmod (coreutils)
+#   date (coreutils)
+#   tee (coreutils)
+#
+# References:
+#   https://unix.stackexchange.com/questions/395059/how-to-stop-mac-address-from-changing-after-disconnecting
+#
 
 echo "Set up NetworkManager to turn off WiFi Privacy feature"
 echo
@@ -28,9 +60,11 @@ flex_ckdir "$NETWORKMANAGER_CONFD_DIRSPEC"
 
 
 echo "Disable randomization of MAC address in Wifi"
-FILENAME="wifi_rand_mac.conf"
+FILENAME="wifi_mac_random_no.conf"
 FILEPATH="$NETWORKMANAGER_CONFD_DIRSPEC"
 FILESPEC="$FILEPATH/$FILENAME"
+BIN_BASENAME="$(basename $0)"
+DATE_TXT="$(date)"
 echo "Creating ${BUILDROOT}${CHROOT_DIR}/$FILESPEC..."
 cat << NM_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
 #
@@ -50,8 +84,8 @@ cat << NM_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
 #   this random selection of MAC address of all SSIDs
 #   for clients trying to join this SSID.
 #
-# Creator: $(basename "$0")
-# Date: $(date)
+# Creator: ${BIN_BASENAME}
+# Date: ${DATE_TXT}
 #
 
 [device]
@@ -74,6 +108,7 @@ cat << NM_CONF | tee "${BUILDROOT}${CHROOT_DIR}/$FILESPEC" > /dev/null
 wifi.scan-rand-mac-address=no
 
 NM_CONF
+
 retsts=$?
 if [ $retsts -ne 0 ]; then
   echo "Unable to create $FILESPEC; error $retsts"
@@ -81,6 +116,6 @@ if [ $retsts -ne 0 ]; then
 fi
 flex_chown root:root "$FILESPEC"
 flex_chmod 0640 "$FILESPEC"
-
 echo
+
 echo "Done."
