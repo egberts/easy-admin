@@ -48,6 +48,8 @@
 #   grep
 #   util-linux (/usr/bin/whereis)
 #   coreutils (cat, date, tee, mkdir, chown, chmod)
+#
+
 
 echo "Set up Wireguard under NetworkManager"
 echo
@@ -97,6 +99,30 @@ REMOTE_IP4_ADDR=
 REMOTE_IP4_PREFIX=
 REMOTE_IP6_ADDR=
 REMOTE_IP6_PREFIX=
+REMOTE_IP6_ADDR_PREFIX=
+REMOTE_PORT=51820
+
+WG_BIN="$(whereis -b wg | awk '{ print $2}')"
+if [ -z "$WG_BIN" ]; then
+  echo "/etc/wireguard is missing; missing package installation?"
+  exit 11
+fi
+
+# Recover old settings
+PARAMS="/tmp/$0-old-settings.conf"
+if [ -r "$PARAMS" ]; then
+  read -rp "Re-use old settings as current defaults? (N/y): " -i "N" -e REUSE
+  REUSE="$(echo "${REUSE:0:1}" | awk '{print tolower($REUSE)}')"
+  if [ "${REUSE:0:1}" == 'Y' ]; then
+    echo "Reading in old settings ($PARAMS)..."
+    # shellcheck disable=SC1090
+    source "$PARAMS"
+  else
+    echo "Deleting off the old settings ($PARAMS)..."
+    rm "$PARAMS"
+  fi
+fi
+
 REMOTE_IP6_ADDR_PREFIX=
 REMOTE_PORT=51820
 
@@ -210,25 +236,25 @@ fi
 
 echo "OUTER TUNNEL"
 echo "============"
-echo ""
+echo
 echo "LOCAL HOST - OUTER TUNNEL"
 echo "-------------------------"
 
 # Make up an interface name (might be 'wg0')?
 PREEXISTING_WG_NETDEV_A="$(ip -o link show type wireguard | awk '{print $2}' | sed -e 's/://g')"
 
-echo ""
+echo
 echo "Choose a new or reuse one from a list of current Wireguard interfaces."
 echo "Existing wireguard interfaces currently are:"
 echo "    ${PREEXISTING_WG_NETDEV_A[*]}"
 read -rp "Enter in Wireguard interface name: " -e -i "${TUNNEL_INTF_NAME}" TUNNEL_INTF_NAME
 
-echo ""
+echo
 read -rp "What the UDP port number for this local host to listen here?: " \
     -i $LOCAL_PORT -e LOCAL_PORT
 
 # Onward with the remote host
-echo ""
+echo
 echo "REMOTE HOST - OUTER TUNNEL"
 echo "-----------------------------------------"
 while true; do
@@ -249,7 +275,7 @@ echo "And what is its port number on the remote host side?"
 read -rp "Remote UDP port number: " -e -i "$REMOTE_PORT" REMOTE_PORT
 
 if [ "$LOCAL_PORT" -ne "$REMOTE_PORT" ]; then
-  echo ""
+  echo
   echo "WARNING:"
   echo "  Local port $LOCAL_PORT and remote port $REMOTE_PORT are not the same."
   echo "  Some firewall only do UDP connection tracking if the ports are the same."
@@ -259,7 +285,7 @@ if [ "$LOCAL_PORT" -ne "$REMOTE_PORT" ]; then
 fi
 
 
-echo ""
+echo
 echo "INNER TUNNEL"
 echo "============"
 echo "Choose a private network subnet for use by the Wireguard inner tunnel."
@@ -287,7 +313,7 @@ while true; do
   ADDRSPACE="${ADDRSPACE//\"//}"
   IP_ADDR_COUNT="$(ipcalc-ng --addresses --no-decorate "$REPLY")"
   if [ "$ADDRSPACE" != "Private Use" ]; then
-    echo ""
+    echo
     echo "Ummm, your $REPLY is in the '${ADDRSPACE}' class."
     if [ "$count" -lt 1 ]; then
       echo "Need to pick a subnet/prefix from the 'Private Use' class."
@@ -310,7 +336,7 @@ TUNNEL_IP4_ADDR_LOCAL="$(ipcalc-ng --minaddr --no-decorate "$TUNNEL_IP4_ADDR_PRE
 TUNNEL_IP4_ADDR_REMOTE="$(ipcalc-ng --maxaddr --no-decorate "$TUNNEL_IP4_ADDR_PREFIX")"
 
 
-echo ""
+echo
 echo "This Host - INNER TUNNEL"
 echo "------------------------"
 echo "Inner Tunnel subnet/prefix:       $TUNNEL_IP4_ADDR_PREFIX"
@@ -338,31 +364,50 @@ echo "Inner Tunnel remote side IP addr: $TUNNEL_IP4_ADDR_REMOTE"
 #    device-specific 'forwarding' on.
 #    That logic gets ignored by global '/proc/sys/net/ipv4/forwarding=1'
 
-echo ""
+echo
 echo "ROUTING"
 echo "======="
 # Scan all network interfaces for 'forwarding'
-echo "Available IP addresses that this local host "
+echo "Available but forwardable IPv4 addresses that this local host "
 echo "can connect directly to ${TUNNEL_INTF_NAME} with:"
 
-# Print out available IP interfaces
+# Print out available Wireguard-able IPv4 interfaces
+# do not check /proc/sys/net/ipv4/ip_forwarding
+# we use /proc/sys/net/ipv4/conf/$NETDEV/forwarding instead
 idx=0
 LOCAL_IP4_ADDR_IDX_LIST=
+# cycle through each valid non-loopback netdev network devices
 while [ $idx -lt ${#NETDEV_NAME_A[*]} ]; do
+  echo -n "  Netdev ${NETDEV_NAME_A[idx]} interface: "
+
   # Save /proc/sys/net/ipv4/conf/<netdev-name>/forwarding state
-  NETDEV_FORWARDING_A[$idx]="$(cat "/proc/sys/net/ipv4/conf/${NETDEV_NAME_A[$idx]}/forwarding")"
+  NETDEV_FORWARDING_A[idx]="$(cat "/proc/sys/net/ipv4/conf/${NETDEV_NAME_A[idx]}/forwarding")"
+  if [ "${NETDEV_FORWARDING_A[idx]}" -eq 1 ]; then
+    echo "Forwarding ENABLED."
 
-  # Ignore Wireguard interface for now
-  if [ "${NETDEV_NAME_A[$idx]}" != "$TUNNEL_INTF_NAME" ] && \
-     [ "${NETDEV_FORWARDING_A[$idx]}" -eq 1 ]; then
+    # Ignore Wireguard "wg0" interface for now
+    if [ "${NETDEV_NAME_A[idx]}" != "$TUNNEL_INTF_NAME" ]; then
 
-    # Print out Index/netdev name/subnet
-    echo -n "  Netdev: ${IP4_ADDR_LIST[$idx]}   "
-    echo "${NETDEV_NAME_A[$idx]}"
-    LOCAL_IP4_ADDR_IDX_LIST+="$idx "
+      # Print out Index/netdev name/subnet
+      echo "    Netdev: ${IP4_ADDR_LIST[idx]} ${NETDEV_NAME_A[idx]} is available for Wireguard usage"
+      LOCAL_IP4_ADDR_IDX_LIST+="$idx "
+    fi
+  else
+    echo "  Forwarding DISABLED."
   fi
-  idx=$((idx+1))
+  idx=$((idx + 1))
 done
+
+echo "NETDEV_FORWARDING_A: ${NETDEV_FORWARDING_A[*]}"
+if [ -z "${NETDEV_FORWARDING_A[*]}" ]; then
+  echo "ERROR: $TUNNEL_INTF_NAME"
+  exit 16
+fi
+echo "LOCAL_IP4_ADDR_IDX_LIST: $LOCAL_IP4_ADDR_IDX_LIST"
+if [ -z "$LOCAL_IP4_ADDR_IDX_LIST" ]; then
+  echo "ERROR: No forwarding IPv4 subnet found; aborted"
+  exit 15
+fi
 
 # echo "If you don't see the device you want, then turn on 'forwarding'"
 # echo "for that device."
@@ -376,12 +421,13 @@ echo "Available routes (and their hosts) that can connect directly "
 echo "to $TUNNEL_INTF_NAME interface:"
 ROUTE_TABLE_A=()
 # shellcheck disable=SC2207
-ROUTE_TABLE_A=($(ip -o route list | awk '{print $1}' | sort -u | sed -e 's/default//g' | xargs))
+ROUTE_TABLE_A=($(ip -o route list | awk '{print $1}' | sort -u | sed -e '/default/d' | xargs))
+# shellcheck disable=SC2048
 for THIS_ROUTE in ${ROUTE_TABLE_A[*]}; do
   echo "  Subnet: $THIS_ROUTE"
 done
 
-echo ""
+echo
 echo "Network interface - ROUTING"
 echo "---------------------------"
 echo "Going through each network device on this box, we will prompt"
@@ -389,27 +435,32 @@ echo "you for each route and network interface that $TUNNEL_INTF_NAME"
 echo "can connect with."
 lir_idx=0
 for this_idx in $LOCAL_IP4_ADDR_IDX_LIST; do
-  echo "Netdev: ${NETDEV_NAME_A[$this_idx]} (subnet ${IP4_ADDR_PREFIX_LIST[$this_idx]})"
+  echo "Netdev: ${NETDEV_NAME_A[this_idx]} (subnet ${IP4_ADDR_PREFIX_LIST[this_idx]})"
 
-  read -rp "  ONLY the host ${IP4_ADDR_LIST[$this_idx]} can connect to $TUNNEL_INTF_NAME (N/y): " REPLY
+  read -rp "  ALL hosts (+ this host) on ${IP4_ADDR_PREFIX_LIST[this_idx]} can connect to $TUNNEL_INTF_NAME (N/y): " REPLY
   [[ -z "$REPLY" ]] && REPLY='n'
   REPLY="$(echo "${REPLY:0:1}" | awk '{ print tolower($1) }')"
   if [ "${REPLY}" == 'y' ]; then
-    LOCAL_IP4_ROUTES_A[$lir_idx]="${IP4_ADDR_LIST[$this_idx]}/32"
+    LOCAL_IP4_ROUTES_A[lir_idx]="${IP4_ADDR_PREFIX_LIST[this_idx]}"
     lir_idx=$((lir_idx+1))
   else
-    read -rp "  ALL hosts on ${IP4_ADDR_PREFIX_LIST[$this_idx]} can connect to $TUNNEL_INTF_NAME (N/y): " REPLY
+    read -rp "  ONLY this host ${IP4_ADDR_LIST[this_idx]} can connect to $TUNNEL_INTF_NAME (N/y): " REPLY
     [[ -z "$REPLY" ]] && REPLY='n'
     REPLY="$(echo "${REPLY:0:1}" | awk '{ print tolower($1) }')"
     if [ "${REPLY}" == 'y' ]; then
-      LOCAL_IP4_ROUTES_A[$lir_idx]="${IP4_ADDR_PREFIX_LIST[$this_idx]}"
+      LOCAL_IP4_ROUTES_A[lir_idx]="${IP4_ADDR_LIST[this_idx]}/32"
+      lir_idx=$((lir_idx+1))
+    else
+      read -rp "  What IP address can connect to this host's $TUNNEL_INTF_NAME?: " REPLY
+      LOCAL_IP4_ROUTES_A[lir_idx]="$REPLY"
       lir_idx=$((lir_idx+1))
     fi
   fi
 done
 # Create a CSV-list of 'ip route' for [Peer]AllowedIPs setting.
+X="${LOCAL_IP4_ROUTES_A[*]}"
 LOCAL_IP4_ROUTES_LIST="$(echo "${LOCAL_IP4_ROUTES_A[*]}" | xargs | sed -e 's/ /,/g')"
-echo ""
+echo
 echo "Allowed IPs are: $LOCAL_IP4_ROUTES_LIST"
 
 if [ -z "$LOCAL_IP4_ROUTES_LIST" ]; then

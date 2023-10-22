@@ -23,7 +23,7 @@ fi
 
 # get gateway netdev
 GW_NETDEV="$(ip -o route show  | grep default | awk '{print $5}')"
-BRIDGE_NETDEV="$(ip -o -d link show | grep bridge | awk '{print $2}')"
+BRIDGE_NETDEV="$(ip -o -d link show | grep " bridge " | awk '{print $2}')"
 # get list of all netdevs
 if [ -n "$BRIDGE_NETDEV" ]; then
   BRIDGE_NETDEV="${BRIDGE_NETDEV:0:-1}"
