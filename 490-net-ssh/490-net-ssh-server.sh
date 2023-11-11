@@ -327,9 +327,35 @@ else
   echo "  groupadd -r $SSHKEY_GROUP_NAME"
   echo "then do"
   echo "  usermod -a -G $SSHKEY_GROUP_NAME ${USER}"
-  echo "And add a one-shot 'sshd-keygen@.service' evoking "
-  echo "  /usr/libexec/openssh/sshd-keygen"
+  echo "Also execute:"
+  echo "  $SSHD_KEYGEN_COMMAND"
   echo "or ignore this '${SSHKEY_GROUP_NAME}' group all together"
+fi
+echo
+echo "Checking if keys are made for SSH daemon server..."
+SSHD_KEY_FOUND=0
+if [ -f ${extended_sysconfdir}/ssh_host_dsa_key -a \
+     -f ${extended_sysconfdir}/ssh_host_dsa_key.pub ]; then
+  SSHD_KEY_FOUND=1
+fi
+if [ -f ${extended_sysconfdir}/ssh_host_rsa_key -a \
+     -f ${extended_sysconfdir}/ssh_host_rsa_key.pub ]; then
+  SSHD_KEY_FOUND=1
+fi
+if [ -f ${extended_sysconfdir}/ssh_host_ecdsa_key -a \
+     -f ${extended_sysconfdir}/ssh_host_ecdsa_key.pub ]; then
+  SSHD_KEY_FOUND=1
+fi
+if [ -f ${extended_sysconfdir}/ssh_host_ed25519_key -a \
+     -f ${extended_sysconfdir}/ssh_host_ed25519_key.pub ]; then
+  SSHD_KEY_FOUND=1
+fi
+if [ $SSHD_KEY_FOUND -eq 0 ]; then
+  echo "WARNING: Key-pair missing for OpenBSD SSH daemon server"
+  echo "Execute: "
+  echo "    ${SSHD_KEYGEN_COMMAND}"
+else
+  echo "Key-pair(s) found for OpenBSD SSH daemon server"
 fi
 echo
 

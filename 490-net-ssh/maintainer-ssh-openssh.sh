@@ -102,6 +102,7 @@ case $ID in
       HAS_SSHD_CONFIG_D=1
       HAS_SSH_CONFIG_D=1
     fi
+    SSHD_KEYGEN_COMMAND="dpkg-reconfigure openssh-server"
     ;;
   fedora)
     USER_NAME="sshd"
@@ -127,6 +128,7 @@ case $ID in
       HAS_SSHD_CONFIG_D=1
     fi
     echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
+    SSHD_KEYGEN_COMMAND="sshd-keygen -A"
     ;;
   redhat)
     USER_NAME="sshd"
@@ -152,6 +154,7 @@ case $ID in
       HAS_SSHD_CONFIG_D=1
     fi
     echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
+    SSHD_KEYGEN_COMMAND="sshd-keygen -A"
     ;;
   centos)
     USER_NAME="sshd"
@@ -177,6 +180,7 @@ case $ID in
       HAS_SSHD_CONFIG_D=1
     fi
     echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
+    SSHD_KEYGEN_COMMAND="sshd-keygen -A"
     ;;
   arch)
     USER_NAME="sshd"
@@ -196,6 +200,7 @@ case $ID in
     HAS_SSH_CONFIG_D=1
     HAS_SSHD_CONFIG_D=1
     echo "May have to execute 'semanage port -a -t ssh_port_t -p tcp <port>'"
+    SSHD_KEYGEN_COMMAND="sshd-keygen -A"
     ;;
 esac
 
@@ -267,3 +272,5 @@ SSHD_HOME_DIRSPEC="$( grep -E "^${SSHD_USER_NAME}:" /etc/passwd | awk -F: '{prin
 
 
 VAR_RUN_SSHD_DIRSPEC="${rundir}/sshd"
+
+
