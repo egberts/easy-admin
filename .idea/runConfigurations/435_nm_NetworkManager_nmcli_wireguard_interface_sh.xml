@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="435-nm-NetworkManager-nmcli-wireguard-interface.sh" type="BashProRunConfiguration">
+    <option name="defaultInterpreter" value="bash" />
+    <option name="scriptPath" value="$PROJECT_DIR$/400-network-managers/435-nm-NetworkManager-nmcli-wireguard-interface.sh" />
+    <RunnerSettings bashdbVersion="Automatic" bashPathMapper="Automatic" RunnerId="pro.bashsupport.shDebugRunner" />
+    <method v="2" />
+  </configuration>
+</component>

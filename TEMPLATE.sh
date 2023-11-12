@@ -19,8 +19,11 @@
 #   This is a bizarre use of Microsoft DotNet for GUI-less hosts.
 #   Made NOT an executable due to lack of security review
 #
-# Environment Variables:
+# Environment Variables (read):
 #   BUILDROOT - set to '/' to actually install directly into your filesystem
+#
+# Environment Variables (created):
+#   none
 #
 # Prerequisites (package name):
 #   apt (apt)
@@ -53,6 +56,7 @@
 #   stat (coreutils)
 #   sudo (sudo)
 #   systemctl (systemd) - optional
+#   tail (coreutils)
 #   tee (coreutils)
 #   touch (coreutils)
 #   unzip (unzip)
