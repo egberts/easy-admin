@@ -49,7 +49,8 @@
 #   util-linux (/usr/bin/whereis)
 #   coreutils (cat, date, tee, mkdir, chown, chmod)
 #
-
+WG_DIRNAME="wireguard"
+WG_DIRPATH="/etc/$WG_DIRNAME"
 
 echo "Set up Wireguard under NetworkManager"
 echo
@@ -65,14 +66,15 @@ if [ "$REPLY" != 'continue' ]; then
   exit 3
 fi
 
+PRG_NAME="$(basename "$0")"
+
 VERSION=$(wg --version)
 echo "Wireguard ver; $VERSION"
 if [ "$USER" == "root" ] || [ "$GROUP" == "root" ]; then
-  echo "This $0 shall not be run in 'root' mode."
+  echo "This $PRG_NAME shall not be run in 'root' mode."
   exit 254
 fi
 
-OUT_DIR=/tmp/wireguard
 DEFAULT_PRIVATE_IP4=192.168.2.0/24
 
 #  LOCAL_IP4_ADDR_PREFIX can be undefined (to mean ANY interface)
@@ -108,51 +110,53 @@ if [ -z "$WG_BIN" ]; then
   exit 11
 fi
 
+source ./maintainer-NetworkManager.sh
+
+readonly FILE_SETTINGS_FILESPEC="${BUILDROOT}/file-NetworkManager-conf.d-wireguard-enable.sh"
+
+BR_WG_DIRSPEC="${BUILDROOT}${CHROOT_DIR}/$WG_DIRPATH"
+
 # Recover old settings
-PARAMS="/tmp/$0-old-settings.conf"
-if [ -r "$PARAMS" ]; then
+PARAMS_FILENAME="${PRG_NAME}-old-settings.conf"
+PARAMS_FILESPEC="${WG_DIRSPEC}/$PARAMS_FILENAME"
+BR_PARAMS_FILESPEC="${BUILDROOT}${CHROOT_DIR}/$PARAMS_FILESPEC"
+if [ -r "$BR_PARAMS_FILENAME" ]; then
   read -rp "Re-use old settings as current defaults? (N/y): " -i "N" -e REUSE
   REUSE="$(echo "${REUSE:0:1}" | awk '{print tolower($REUSE)}')"
   if [ "${REUSE:0:1}" == 'Y' ]; then
-    echo "Reading in old settings ($PARAMS)..."
+    echo "Reading in old settings ($PARAMS_FILENAME)..."
     # shellcheck disable=SC1090
-    source "$PARAMS"
+    source "${BR_PARAMS_FILESPEC}"
   else
-    echo "Deleting off the old settings ($PARAMS)..."
-    rm "$PARAMS"
+    echo "Deleting off the old settings ($PARAMS_FILENAME)..."
+    rm "${BR_PARAMS_FILENAME}"
   fi
 fi
-
-REMOTE_IP6_ADDR_PREFIX=
-REMOTE_PORT=51820
 
 WG_BIN="$(whereis -b wg | awk '{ print $2}')"
 if [ -z "$WG_BIN" ]; then
-  echo "/etc/wireguard is missing; missing package installation?"
+  echo "/usr/bin/wireguard is missing; missing package installation?"
   exit 11
 fi
 
-# Recover old settings
-PARAMS="/tmp/$0-old-settings.conf"
-if [ -r "$PARAMS" ]; then
-  read -rp "Re-use old settings as current defaults? (N/y): " -i "N" -e REUSE
-  REUSE="$(echo "${REUSE:0:1}" | awk '{print tolower($REUSE)}')"
-  if [ "${REUSE:0:1}" == 'Y' ]; then
-    echo "Reading in old settings ($PARAMS)..."
-    # shellcheck disable=SC1090
-    source "$PARAMS"
-  else
-    echo "Deleting off the old settings ($PARAMS)..."
-    rm "$PARAMS"
-  fi
+SHOREWALL_BIN="$(which -a shorewall)"
+RETSTS=$?
+if [ $RETSTS -ne 0 ]; then
+  SHOREWALL_BIN=""
+  echo "Shorewall not found; skipping shorewall support"
 fi
 
-function save_params()
-{
+DATETS_NOW="$(date)"
+
+function save_params() {
   echo "Saving old settings to $PARAMS..."
-  cat << PARAMS_EOF > "$PARAMS"
-# Creator: $0
-# Date: $(date)
+  cat << PARAMS_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$GLOBAL_CONFIG_FILESPEC" > /dev/null
+#
+# Filespec: $GLOBAL_CONFIG_FILESPEC
+# Title: Configuration file used by $PRG_NAME
+# Creator: $PRG_NAME
+# Created: $DATETS_NOW
+#
 LOCAL_PORT=$LOCAL_PORT
 LOCAL_ALL_FWRDING=$LOCAL_ALL_FWRDING
 LOCAL_IP4_ADDR=$LOCAL_IP4_ADDR
@@ -182,24 +186,25 @@ PARAMS_EOF
 }
 
 
+
 # Get all details of local network on this host.
 
 # First, get an array of non-localhost IPv4 network devices
 # Only 'scope link' and 'scope global' (no 'scope host')
 # shellcheck disable=SC2207
-NETDEV_NAME_A=($(ip -o addr|grep -v 'scope host'|grep -v inet6 | awk '{print $2}' | xargs))
+NETDEV_NAME_A=($(ip -o addr | grep -v 'scope host' | grep -v inet6 | awk '{print $2}' | xargs))
 # shellcheck disable=SC2207
 # NETDEV_NAME_MAPFILE="$(echo "$(ip -o addr|grep -v 'scope host'|grep -v inet6 | awk '{print $2}' | xargs)" | mapfile)"
 
 # get an array of non-localhost IPv4 addresses
 # shellcheck disable=SC2207
-IP4_ADDR_LIST=($(ip -o addr|grep -v 'scope host'|grep -v inet6|awk '{print $4}' | awk -F'/' '{print $1}'))
+IP4_ADDR_LIST=($(ip -o addr | grep -v 'scope host' | grep -v inet6 | awk '{print $4}' | awk -F'/' '{print $1}'))
 # shellcheck disable=SC2207
-IP4_ADDR_PREFIX_LIST=($(ip -o addr|grep -v 'scope host'|grep -v inet6|awk '{print $4}'))
+IP4_ADDR_PREFIX_LIST=($(ip -o addr | grep -v 'scope host' | grep -v inet6 | awk '{print $4}'))
 
 # get an array of non-localhost IPv4 mode
 # shellcheck disable=SC2207
-IP4_DYN_LIST=($(ip -o addr|grep -v 'scope host'|grep -v inet6|awk '{print $9}'))
+IP4_DYN_LIST=($(ip -o addr | grep -v 'scope host' | grep -v inet6 | awk '{print $9}'))
 
 # if there is a dynamic, we probably should lean toward that local IP address
 # go loop and extract that dynamic IP network interface
@@ -222,7 +227,7 @@ if [ -n "$LOCAL_NETDEV" ]; then
 
     if [ "${LOCAL_NETDEV}" == "${NETDEV_NAME_A[$idx]}" ]; then
       # echo "Matching device name ${LOCAL_NETDEV}"
-      LOCAL_IP4_ADDR=$( echo "${IP4_ADDR_LIST[$idx]}" |awk -F'/' '{print $1}')
+      LOCAL_IP4_ADDR=$(echo "${IP4_ADDR_LIST[$idx]}" | awk -F'/' '{print $1}')
       LOCAL_IP4_ADDR_PREFIX="${IP4_ADDR_LIST[$idx]}"
     fi
   done
@@ -251,7 +256,7 @@ read -rp "Enter in Wireguard interface name: " -e -i "${TUNNEL_INTF_NAME}" TUNNE
 
 echo
 read -rp "What the UDP port number for this local host to listen here?: " \
-    -i $LOCAL_PORT -e LOCAL_PORT
+  -i $LOCAL_PORT -e LOCAL_PORT
 
 # Onward with the remote host
 echo
@@ -270,7 +275,7 @@ while true; do
   fi
 done
 echo "Remote host $REMOTE_HOSTNAME is found resolvable as $REMOTE_IP4_ADDR"
-echo ""
+echo
 echo "And what is its port number on the remote host side?"
 read -rp "Remote UDP port number: " -e -i "$REMOTE_PORT" REMOTE_PORT
 
@@ -281,15 +286,14 @@ if [ "$LOCAL_PORT" -ne "$REMOTE_PORT" ]; then
   echo "  Some firewall only do UDP connection tracking if the ports are the same."
   echo "  NAT/firewall used by most carrier-grade (cellphone service "
   echo "  provider) NAT/firewall cannot track UDP connection across "
-  echo "  disparate ports and may block this."
+  echo "  disparate ports and may block this different port setup."
 fi
-
 
 echo
 echo "INNER TUNNEL"
 echo "============"
-echo "Choose a private network subnet for use by the Wireguard inner tunnel."
-echo "enter in 'random' for a truly random but a valid selection."
+echo "Choose a network subnet for use by the Wireguard inner tunnel."
+echo "enter in 'random' for a truly random but valid subnet selection."
 count=0
 PROMPT=
 # Updating TUNNEL_IP4_ADDR_PREFIX
@@ -297,8 +301,8 @@ PROMPT=
 # Updating TUNNEL_IP4_ADDR_LOCAL
 # Updating TUNNEL_IP4_ADDR_REMOTE
 while true; do
-  read -rp "Enter private IPv4 address/prefix: " -e -i "${PROMPT}" REPLY
-  count=$((count+1))
+  read -rp "Enter private/inside/internal IPv4 address/prefix: " -e -i "${PROMPT}" REPLY
+  count=$((count + 1))
   if [ "$count" -gt 0 ]; then
     # Give them a clue
     PROMPT="$DEFAULT_PRIVATE_IP4"
@@ -322,10 +326,14 @@ while true; do
     PROMPT="$DEFAULT_PRIVATE_IP4"
   elif [ "$IP_ADDR_COUNT" -lt 2 ]; then
     echo "The minimum starting IP address: $(ipcalc-ng --minaddr --no-decorate "$REPLY")"
-    echo "The maximum starting IP address: $(ipcalc-ng --maxaddr --no-decorate
-"$REPLY")"
-    echo "Total available IP addresses   : $(ipcalc-ng --addresses --no-decorate
-"$REPLY")"
+    echo "The maximum starting IP address: $(
+      ipcalc-ng --maxaddr --no-decorate
+      "$REPLY"
+    )"
+    echo "Total available IP addresses   : $(
+      ipcalc-ng --addresses --no-decorate
+      "$REPLY"
+    )"
     echo "Need a minimum of 2 available IP addresses, pick a bigger prefix."
   else
     TUNNEL_IP4_ADDR_PREFIX=$REPLY
@@ -334,7 +342,6 @@ while true; do
 done
 TUNNEL_IP4_ADDR_LOCAL="$(ipcalc-ng --minaddr --no-decorate "$TUNNEL_IP4_ADDR_PREFIX")"
 TUNNEL_IP4_ADDR_REMOTE="$(ipcalc-ng --maxaddr --no-decorate "$TUNNEL_IP4_ADDR_PREFIX")"
-
 
 echo
 echo "This Host - INNER TUNNEL"
@@ -378,7 +385,7 @@ idx=0
 LOCAL_IP4_ADDR_IDX_LIST=
 # cycle through each valid non-loopback netdev network devices
 while [ $idx -lt ${#NETDEV_NAME_A[*]} ]; do
-  echo -n "  Netdev ${NETDEV_NAME_A[idx]} interface: "
+  echo -n "  netdev ${NETDEV_NAME_A[idx]} interface: "
 
   # Save /proc/sys/net/ipv4/conf/<netdev-name>/forwarding state
   NETDEV_FORWARDING_A[idx]="$(cat "/proc/sys/net/ipv4/conf/${NETDEV_NAME_A[idx]}/forwarding")"
@@ -417,43 +424,43 @@ fi
 count=0
 
 # Construct an array of route table
-echo "Available routes (and their hosts) that can connect directly "
-echo "to $TUNNEL_INTF_NAME interface:"
+echo "Available outside routes (and their hosts) that can connect directly "
+echo "to inside $TUNNEL_INTF_NAME interface:"
 ROUTE_TABLE_A=()
 # shellcheck disable=SC2207
 ROUTE_TABLE_A=($(ip -o route list | awk '{print $1}' | sort -u | sed -e '/default/d' | xargs))
 # shellcheck disable=SC2048
 for THIS_ROUTE in ${ROUTE_TABLE_A[*]}; do
-  echo "  Subnet: $THIS_ROUTE"
+  echo "  Found subnet route: $THIS_ROUTE"
 done
 
 echo
 echo "Network interface - ROUTING"
 echo "---------------------------"
 echo "Going through each network device on this box, we will prompt"
-echo "you for each route and network interface that $TUNNEL_INTF_NAME"
-echo "can connect with."
+echo "you for each outside route and network interface that the"
+echo "inside $TUNNEL_INTF_NAME tunnel device can connect with."
 lir_idx=0
 for this_idx in $LOCAL_IP4_ADDR_IDX_LIST; do
-  echo "Netdev: ${NETDEV_NAME_A[this_idx]} (subnet ${IP4_ADDR_PREFIX_LIST[this_idx]})"
+  echo " Checking netdev: ${NETDEV_NAME_A[this_idx]} (subnet ${IP4_ADDR_PREFIX_LIST[this_idx]})"
 
   read -rp "  ALL hosts (+ this host) on ${IP4_ADDR_PREFIX_LIST[this_idx]} can connect to $TUNNEL_INTF_NAME (N/y): " REPLY
   [[ -z "$REPLY" ]] && REPLY='n'
   REPLY="$(echo "${REPLY:0:1}" | awk '{ print tolower($1) }')"
   if [ "${REPLY}" == 'y' ]; then
     LOCAL_IP4_ROUTES_A[lir_idx]="${IP4_ADDR_PREFIX_LIST[this_idx]}"
-    lir_idx=$((lir_idx+1))
+    lir_idx=$((lir_idx + 1))
   else
     read -rp "  ONLY this host ${IP4_ADDR_LIST[this_idx]} can connect to $TUNNEL_INTF_NAME (N/y): " REPLY
     [[ -z "$REPLY" ]] && REPLY='n'
     REPLY="$(echo "${REPLY:0:1}" | awk '{ print tolower($1) }')"
     if [ "${REPLY}" == 'y' ]; then
       LOCAL_IP4_ROUTES_A[lir_idx]="${IP4_ADDR_LIST[this_idx]}/32"
-      lir_idx=$((lir_idx+1))
+      lir_idx=$((lir_idx + 1))
     else
       read -rp "  What IP address can connect to this host's $TUNNEL_INTF_NAME?: " REPLY
       LOCAL_IP4_ROUTES_A[lir_idx]="$REPLY"
-      lir_idx=$((lir_idx+1))
+      lir_idx=$((lir_idx + 1))
     fi
   fi
 done
@@ -471,53 +478,83 @@ if [ -z "$LOCAL_IP4_ROUTES_LIST" ]; then
   exit 2
 fi
 
-
-function pre_touch()
-{
-    ( umask 0077; touch "$1" )
+function pre_touch() {
+  (
+    umask 0077
+    touch "$1"
+  )
 }
 
-if [ ! -d "$OUT_DIR" ]; then
-  echo "Creating output directory ($OUT_DIR)..."
-  mkdir $OUT_DIR
-  mkdir -p $OUT_DIR/etc/wireguard
-  mkdir -p $OUT_DIR/etc/sysctl
-  mkdir -p $OUT_DIR/etc/shorewall/rules.d
+#   mkdir $OUT_DIR
+#  mkdir -p $OUT_DIR/etc/wireguard
+#  mkdir -p $OUT_DIR/etc/sysctl
+#  mkdir -p $OUT_DIR/etc/shorewall/rules.d
+
+SYSCTL_D_DIRPATH="/etc/sysctl.d"
+flex_ckdir "/etc"
+flex_ckdir "$SYSCTL_D_DIRPATH"
+flex_ckdir "/etc/NetworkManager"
+
+flex_ckdir "$DEFAULT_EXTENDED_SYSCONFDIR"
+flex_ckdir "$NETWORKMANAGER_CONFD_DIRSPEC"
+
+flex_ckdir "$WG_DIRPATH"
+flex_mkdir "${WG_DIRPATH}/scripts"
+
+if [ -n "$SHOREWALL_BIN" ]; then
+  flex_ckdir "/etc/shorewall"
+  flex_mkdir "/etc/shorewall/rules.d"
 fi
 
 # Create key-pair
-WG_KEY_PUB=/etc/wireguard/${HOSTNAME}-vpn-server-public.key
-WG_KEY_PRIV=/etc/wireguard/${HOSTNAME}-vpn-server-private.key
-WG_KEY_PRESHARED=/etc/wireguard/${HOSTNAME}-vpn-server-preshared.key
+WG_KEY_PUB_FILESPEC=/etc/wireguard/${HOSTNAME}-vpn-server-public.key
+WG_KEY_PRIV_FILESPEC=/etc/wireguard/${HOSTNAME}-vpn-server-private.key
+WG_KEY_PRESHARED_FILESPEC=/etc/wireguard/${HOSTNAME}-vpn-server-preshared.key
+BR_WG_KEY_PUB_FILESPEC="${BUILDROOT}${CHROOT_DIR}/$WG_KEY_PUB_FILESPEC"
+BR_WG_KEY_PRIV_FILESPEC="${BUILDROOT}${CHROOT_DIR}/$WG_KEY_PRIV_FILESPEC"
+BR_WG_KEY_PRESHARED_FILESPEC="${BUILDROOT}${CHROOT_DIR}/$WG_KEY_PRESHARED_FILESPEC"
 
 # Protect the keys
-pre_touch "$OUT_DIR/$WG_KEY_PUB"
-pre_touch "$OUT_DIR/$WG_KEY_PRIV"
-pre_touch "$OUT_DIR/$WG_KEY_PRESHARED"
+# prepare file then lock down file-permission-wise before writing
+pre_touch "$BR_WG_KEY_PUB_FILESPEC"
+flex_chown root:root "$WG_KEY_PUB_FILESPEC"
+flex_chmod 0755 "$WG_KEY_PUB_FILESPEC"
+
+# prepare file then lock down file-permission-wise before writing
+pre_touch "$BR_WG_KEY_PRIV_FILESPEC"
+flex_chown root:root "$WG_KEY_PRIV_FILESPEC"
+flex_chmod 0700 "$WG_KEY_PRIV_FILESPEC"
 
 # Private key never leaves the local host that it gets generated on
-wg genkey | tee "$OUT_DIR/$WG_KEY_PRIV" | wg pubkey | tee "$OUT_DIR/$WG_KEY_PUB" >/dev/null
+wg genkey | tee "$BR_WG_KEY_PRIV_FILESPEC" | wg pubkey | tee "$BR_WG_KEY_PUB_FILESPEC" >/dev/null
+
+# prepare file then lock down file-permission-wise before writing
+pre_touch "$BR_WG_KEY_PRESHARED_FILESPEC"
+flex_chown root:root "$WG_KEY_PRESHARED_FILESPEC"
+flex_chmod 0700 "$WG_KEY_PRESHARED_FILESPEC"
 
 # Preshared key are meant to be copied to remote (peer) host(s)
-wg genpsk | tee "$OUT_DIR/$WG_KEY_PRESHARED" > /dev/null
+wg genpsk | tee "$BR_WG_KEY_PRESHARED_FILESPEC" >/dev/null
 
 # Create GLOBAL settings for Wireguard
 # We COULD put this hosts private key globally here, but we would not.
-
-DATE="$(date)"
 GLOBAL_CONFIG_FILENAME="wireguard.conf"
-GLOBAL_CONFIG_FILEPATH="/etc/wireguard"
-GLOBAL_CONFIG_FILESPEC="${OUT_DIR}/${GLOBAL_CONFIG_FILEPATH}/${GLOBAL_CONFIG_FILENAME}"
+GLOBAL_CONFIG_DIRPATH="$WG_DIRPATH"
+GLOBAL_CONFIG_FILESPEC="${GLOBAL_CONFIG_DIRPATH}/${GLOBAL_CONFIG_FILENAME}"
+
+pre_touch "${BUILDROOT}${CHROOT_DIR}/$GLOBAL_CONFIG_FILESPEC"
+flex_chown root:root "$GLOBAL_CONFIG_FILESPEC"
+flex_chmod 0700 "$GLOBAL_CONFIG_FILESPEC"
+
 echo "Creating ${GLOBAL_CONFIG_FILESPEC} ..."
-pre_touch $GLOBAL_CONFIG_FILESPEC
-cat << GLOBAL_WG_EOF > "${GLOBAL_CONFIG_FILESPEC}"
+cat << GLOBAL_WG_EOF | tee "${BUILDROOT}${CHROOT_DIR}/$GLOBAL_CONFIG_FILESPEC" > /dev/null
 #
 # File: ${GLOBAL_CONFIG_FILENAME}
-# Path: ${GLOBAL_CONFIG_FILEPATH}
+# Path: ${GLOBAL_CONFIG_DIRPATH}
 # OS type: ${OSTYPE}
 # Title: WireGuard GLOBAL configuration
-# Creator: $0
-# Date: ${DATE}
+# Creator: ${PRG_NAME}
+# Date: ${DATETS_NOW}
 
 [Interface]
 
@@ -528,10 +565,11 @@ Address = ${TUNNEL_IP4_ADDR_LOCAL}
 # In this $GLOBAL_CONFIG_FILENAME file, the following private key
 # is used for all WireGuard interfaces/subnets.
 # Use of this global option is not common.
+# Use of this global option is not recommended.
 #
 # CLI: 'wg set ${TUNNEL_INTF_NAME} private-key <filespec>'
-# CLI: 'wg set ${TUNNEL_INTF_NAME} private-key < ${WG_KEY_PRIV}'
-#PrivateKey=
+# CLI: 'wg set ${TUNNEL_INTF_NAME} private-key < ${WG_KEY_PRIV_FILESPEC}'
+###PrivateKey=
 
 # And this global ListenPort setting here is also used for
 # all connections unless overridden by 'ListenPort' in
@@ -545,10 +583,12 @@ ListenPort = ${LOCAL_PORT}
 #FwMark=0
 #FwMark=MAX_INT32
 #FwMark=0xffff
+
 GLOBAL_WG_EOF
 
-cat << GLOBAL_WG_EOF >> "${GLOBAL_CONFIG_FILESPEC}"
-
+# might put a loop in for more [Peer], but not this time
+# take the technical debt (TD) in for now
+cat << GLOBAL_WG_EOF | tee -a "${BUILDROOT}${CHROOT_DIR}/$GLOBAL_CONFIG_FILESPEC" > /dev/null
 [Peer]
 # Most global [Peer] setting are done by their respective interface-specific
 # ${TUNNEL_INTF_NAME}.conf configuration file.
@@ -578,27 +618,33 @@ cat << GLOBAL_WG_EOF >> "${GLOBAL_CONFIG_FILESPEC}"
 # the 'PreUp' to execute 'wg set preshared-key' to read its key
 # from a file then directly load into the network device.
 # CLI: 'wg set ${TUNNEL_INTF_NAME} preshared-key <filespec>'
-# CLI: 'wg set ${TUNNEL_INTF_NAME} preshared-key < ${WG_KEY_PRESHARED}'
+# CLI: 'wg set ${TUNNEL_INTF_NAME} preshared-key < ${WG_KEY_PRESHARED_FILESPEC}'
 #PresharedKey=<key>
 GLOBAL_WG_EOF
 
 # Create the interface-specific (non-Global) WireGuard configuration file
 CONFIG_FILENAME="${TUNNEL_INTF_NAME}.conf"
-CONFIG_FILEPATH="/etc/wireguard"
-CONFIG_FILESPEC="${OUT_DIR}/${CONFIG_FILEPATH}/${CONFIG_FILENAME}"
+CONFIG_FILEPATH="$WG_DIRPATH"
+CONFIG_FILESPEC="${CONFIG_FILEPATH}/${CONFIG_FILENAME}"
+BR_CONFIG_FILESPEC="${BUILDROOT}${CHROOT_DIR}${CONFIG_FILEPATH}/${CONFIG_FILENAME}"
+
+# prepare file then lock down file-permission-wise before writing
+pre_touch "${BR_CONFIG_FILESPEC}"
+flex_chown root:root "$CONFIG_FILESPEC"
+flex_chmod 0700 "$CONFIG_FILESPEC"
+
 echo "Creating ${CONFIG_FILESPEC} ..."
-pre_touch "$CONFIG_FILESPEC"
-cat << WG_EOF > "${CONFIG_FILESPEC}"
+cat << WG_EOF | tee "${BR_CONFIG_FILESPEC}" > /dev/null
 #
 # File: ${CONFIG_FILENAME}
 # Path: ${CONFIG_FILEPATH}
 # OS type: ${OSTYPE}
 # Title: Interface-specific aspect of WireGuard configuration
 # Interface: $TUNNEL_INTF_NAME
-# Creator: $0
-# Date: ${DATE}
+# Creator: ${PRG_NAME}
+# Date: ${DATETS_NOW}
 
-# [Interface] that supports 'wg', 'wg-quick', and NetworkManager 'nmcli'
+# [Interface] that supports 'wg', 'wg-quick', and NetworkManager 'nmcli' utilities
 [Interface]
 
 # 'Address' is the only setting that 'wg' CLI cannot set.
@@ -613,21 +659,21 @@ ListenPort = ${LOCAL_PORT}
 # In this $CONFIG_FILENAME, the following private key
 # is used for this specific WireGuard interface/subnet.
 # PrivateKey can be commented out as 'wg-quick' can updates that:
-# CLI: 'wg set ${TUNNEL_INTF_NAME} private-key < ${WG_KEY_PRIV}'
+# CLI: 'wg set ${TUNNEL_INTF_NAME} private-key < ${WG_KEY_PRIV_FILESPEC}'
 # CLI: 'wg set ${TUNNEL_INTF_NAME} private-key <filespec>'
-# PrivateKey = \$(cat "/${WG_KEY_PRIV}")
+# PrivateKey = \$(cat "/${WG_KEY_PRIV_FILESPEC}")
 
 WG_EOF
 
 # append the OS-specific configuration
-if [[ "$OSTYPE" == *"linux"* ]] || \
-   [[ "$OSTYPE" == *"darwin"* ]] ||
-   [[ "$OSTYPE" == *"freebsd"* ]] ||
-   [[ "$OSTYPE" == *"openbsd"* ]] ||
-   [[ "$OSTYPE" == *"darwin"* ]] ||
-   [[ "$OSTYPE" == *"cygwin"* ]]; then
+if [[ "$OSTYPE" == *"linux"* ]] ||
+  [[ "$OSTYPE" == *"darwin"* ]] ||
+  [[ "$OSTYPE" == *"freebsd"* ]] ||
+  [[ "$OSTYPE" == *"openbsd"* ]] ||
+  [[ "$OSTYPE" == *"darwin"* ]] ||
+  [[ "$OSTYPE" == *"cygwin"* ]]; then
   # Cannot do BSD-check due to lack of 'ip' (and other) utility
-  cat << WG0_EOF >> "${CONFIG_FILESPEC}"
+  cat << WG0_EOF | tee -a "${BR_CONFIG_FILESPEC}" > /dev/null
 #[Interface]  # wg-quick OS-specific subsection
 
 # Following OS-specific '$OSTYPE' settings are maintained
@@ -653,8 +699,8 @@ PreDown= wg set %i preshared-key 0
 
 # Execute scripts AFTER the wg interface goes up
 #PostUp=/etc/wireguard/scripts/xxxx.sh
-PostUp = wg set %i private-key ${WG_KEY_PRIV}
-PostUp = wg set %i preshared-key ${WG_KEY_PRIV}
+PostUp = wg set %i private-key ${WG_KEY_PRIV_FILESPEC}
+PostUp = wg set %i preshared-key ${WG_KEY_PRIV_FILESPEC}
 
 # Execute scripts AFTER the wg interface goes down
 #PostDown=/etc/wireguard/scripts/xxxx.sh
@@ -669,20 +715,20 @@ WG0_EOF
 fi
 
 # append the [Peer] section
-cat << WG_EOF >> "${CONFIG_FILESPEC}"
+cat << WG_EOF | tee -a "${BR_CONFIG_FILESPEC}" > /dev/null
 [Peer]
 
 # CLI: wg set wg0 endpoint <ip>:<port>
 Endpoint = ${REMOTE_HOSTNAME}:${REMOTE_PORT}
 
 # CLI: 'wg set wg0 peer <base64-key>'
-PublicKey = $(cat "${OUT_DIR}/${WG_KEY_PUB}")
+PublicKey = ${BR_WG_KEY_PUB_FILESPEC}
 
 # PresharedKey can be left blank here as 'wg-quick' can evoke
 # the 'PreUp' to execute 'wg set preshared-key' to read its key
 # from a file then directly load into the network device.
 # CLI: 'wg set wg0 preshared-key <filespec>'
-# CLI: 'wg set wg0 preshared-key < ${WG_KEY_PRESHARED}'
+# CLI: 'wg set wg0 preshared-key < ${WG_KEY_PRESHARED_FILESPEC}'
 PresharedKey =
 
 # CLI: 'wg set wg0 persistent-keepalive <seconds>'
@@ -693,8 +739,46 @@ AllowedIPs=${LOCAL_IP4_ROUTES_LIST}
 
 WG_EOF
 
+
+# create /etc/sysctl.d/10-ip_router_forwarding_state_{TUNNEL_INTF_NAME}.conf
+SYSCTL_IPFWD_NETDEV_FILENAME="11-ip_router_forwarding_state_${TUNNEL_INTF_NAME}.conf"
+SYSCTL_D_DIRPATH="/etc/sysctl.d"
+SYSCTL_IPFWD_NETDEV_FILESPEC="${SYSCTL_D_DIRPATH}/$SYSCTL_IPFWD_NETDEV_FILENAME"
+BR_SYSCTL_IPFWD_NETDEV_FILESPEC="${BUILDROOT}${CHROOT_DIR}${SYSCTL_IPFWD_NETDEV_FILESPEC}"
+cat << SYSCTL_D_EOF | tee -a "${BR_SYSCTL_IPFWD_NETDEV_FILESPEC}" > /dev/null
+#
+# File: ${SYSCTL_IPFWD_NETDEV_FILENAME}
+# Path: ${SYSCTL_D_DIRPATH}
+# Creation: $DATETS_NOW
+# Creator : $PRG_NAME
+# Title: controls IP router forwarding for netdev $TUNNEL_INTF_NAME interface
+# Description:
+# Reference:
+#  - KVM Network Performance - Best Practices and Tuning Recommendations
+#      https://www.ibm.com/downloads/cas/ZVJGQX8E
+#  - https://www.uperf.org
+#
+# conf/${TUNNEL_INTF_NAME}/forwarding - BOOLEAN
+#    Enable IP forwarding to netdev interfaces.
+#
+#    IPv4 and IPv6 work differently here; e.g. netfilter must be used
+#    to control which interfaces may forward packets and which not.
+#
+#    See below for details.
+#
+
+# conf/${TUNNEL_INTF_NAME}/*:
+#  Change the netdev ${TUNNEL_INTF_NAME} interface-specific default settings.
+
+net.ipv4.conf.${TUNNEL_INTF_NAME}.forwarding=1
+net.ipv6.conf.${TUNNEL_INTF_NAME}.forwarding=1
+
+SYSCTL_D_EOF
+flex_chown root:root "$SYSCTL_IPFWD_NETDEV_FILESPEC"
+flex_chmod 0750 "$SYSCTL_IPFWD_NETDEV_FILESPEC"
+
 save_params
 
 echo "All done."
 echo "Check out all the newly created configuration files"
-echo "in $OUT_DIR"
+echo "in $BR_WG_DIRSPEC"

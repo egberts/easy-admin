@@ -13,11 +13,6 @@
 #   This script will instruct NetworkManager to turn
 #   off this random selection of MAC address of all SSIDs
 #   for clients trying to join this SSID.
-#!/bin/bash
-# File: 020-repos-debian-11.sh
-# Title:  Install everything related to Debian 11
-# Description:
-#   TBD
 #
 # Privilege required: sudo root
 # OS: Debian

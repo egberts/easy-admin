@@ -31,7 +31,7 @@ RESOLV_CONF_FILESPEC="/etc/resolv.conf"
 
 echo "This script tests the current state and integrity of "
 echo "the DNS Resolver and its $RESOLV_CONF_FILESPEC file."
-echo ""
+echo
 
 # What can we tell about /etc/resolv.conf file?
 RESOLV_FILE_MODE='regular file'
@@ -142,7 +142,7 @@ for this_ns in $NAMESERVERS_LIST; do
   fi
 done
 
-echo ""
+echo
 echo  "Resolv.conf is $RESOLV_FILE_MODE controlled."
 if [ "$SYSTEMD_LOOPBACK_DNS_USED" == "yes" ]; then
   echo  "Resolv.conf is also using systemd 'nameserver 127.0.0.53'."
@@ -150,10 +150,10 @@ if [ "$SYSTEMD_LOOPBACK_DNS_USED" == "yes" ]; then
     echo  "   but systemd-resolved is not responding as a valid nameserver."
   fi
 fi
-echo ""
+echo
 echo "Verified nameservers: $VERIFIED_NAMESERVERS_LIST"
 
-echo ""
+echo
 if [ "$SYSTEMD_LOOPBACK_DNS_USED" == "yes" ] &&
    [ "$SYSTEMD_LOOPBACK_DNS_ACTIVE" == "no" ]; then
   echo "This is weird; your 127.0.0.53 DNS server is dead,"
@@ -178,7 +178,7 @@ if [ -n "$SYSTEMCTL_BIN" ]; then
        [ "$SYSD_RESOLVED_SVC_ACTIVE" != "active" ] && \
        [ "$SYSD_NETWORKMANAGER_SVC_ENABLED" != "enabled" ] && \
        [ "$SYSD_NETWORKMANAGER_SVC_ACTIVE" != "active" ]; then
-      echo ""
+      echo
       echo "This $RESOLV_CONF_FILESPEC is pretty static-y and stable."
       echo "Done."
       # NetworkManager may have already has its dropin config file
@@ -259,7 +259,7 @@ NETWORKMANAGER_INI_SYSTEMD_RESOLVED="$CONFIG_VALUE"
 find_config_value "main" "dns"
 NETWORKMANAGER_INI_DNS="$CONFIG_VALUE"
 
-echo ""
+echo
 echo "SUGGESTIONS"
 echo "-----------"
 # Concurrency of different resolver daemons
