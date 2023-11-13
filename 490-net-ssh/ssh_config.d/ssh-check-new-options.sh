@@ -28,7 +28,7 @@ while read -r line; do
     fi
   done
   if [ "$not_found" -eq 1 ]; then
-    echo "$keyword NOT found"
+    echo "$keyword NOT found in *.conf"
   else
     echo
   fi
