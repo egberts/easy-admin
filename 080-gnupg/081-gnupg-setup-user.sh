@@ -123,7 +123,9 @@ if [ "$(stat -c %a "$DOT_GNUPG_DIRPATH")" != "700" ]; then
 fi
 
 GPG_CONF_FILENAME="gpg.conf"
+echo "GPG_CONF_FILENAME: $GPG_CONF_FILENAME"
 GPG_CONF_FILESPEC="$DOT_GNUPG_DIRPATH/$GPG_CONF_FILENAME"
+echo "GPG_CONF_FILESPEC: $GPG_CONF_FILESPEC"
 if [ ! -f "$GPG_CONF_FILESPEC" ]; then
   echo "File $GPG_CONF_FILESPEC is missing.; creating ..."
   touch "$GPG_CONF_FILESPEC"
@@ -131,7 +133,6 @@ if [ ! -f "$GPG_CONF_FILESPEC" ]; then
 else
   echo "Appending to $GPG_CONF_FILESPEC config file..."
 fi
-
 # Check permission or bail
 if [ "$(stat -c %a "$GPG_CONF_FILESPEC")" != "600" ]; then
   echo "File permission of $GPG_CONF_FILESPEC file was not SAFE; adjusted."
@@ -140,13 +141,20 @@ if [ "$(stat -c %a "$GPG_CONF_FILESPEC")" != "600" ]; then
 fi
 
 # Drop some settings into ~/.gnupg/gpg-agent.conf
-cat << GPG_EOF | tee -p "$GPG_CONF_APPEND" "$GPG_CONF_FILESPEC" >/dev/null 2>&1
+echo "cat << GPG_EOF | tee -p "
+echo "$GPG_CONF_APPEND" 
+echo "$GPG_CONF_FILESPEC" 
+echo ">/dev/null 2>&1"
+
+CREATOR="$(basename $0)"
+THIS_DATE="$(date)"
+cat << GPG_EOF | tee -p $GPG_CONF_APPEND "$GPG_CONF_FILESPEC" >/dev/null 2>&1
 #
 # File: gpg.conf
 # Path: ~/.gnupg
 # Title: GPG configuration file
-# Creator: $(basename "$0")
-# Date: $(date)
+# Creator: ${CREATOR}
+# Date: ${THIS_DATE}
 #
 utf8-strings
 
