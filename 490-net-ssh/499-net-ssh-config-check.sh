@@ -389,7 +389,7 @@ echo
 # Typically, when sshd shell switches user, current directory switches to new $HOME
 
 # Now for the many default settings
-DEFAULT_PIDFILE_DIRNAME="$rundir/sshd"  # sshd/config.c/defaultconf
+DEFAULT_PIDFILE_DIRNAME="$VAR_RUN_SSHD_DIRSPEC" # sshd/config.c/defaultconf
 DEFAULT_PIDFILE_FILENAME="sshd.pid"  # sshd/config.c/defaultconf
 
 # Some settings which might be wiped-out by sshd.conf, selectively.
@@ -644,7 +644,11 @@ case $REPLY in
 
     # sshd public-part of key file shall be world-read for general 
     # inspection of file permissions
-    file_perm_check VAR_RUN_SSHD_DIRSPEC "755" "root" "$SSHD_GROUP_NAME"
+    # in Debian 12, /run directory is not checked anymore because
+    #     it was changed from /run/sshd directory.
+    if [ "$VAR_RUN_SSHD_DIRSPEC" != "/run" ]; then
+      file_perm_check VAR_RUN_SSHD_DIRSPEC "755" "root" "$SSHD_GROUP_NAME"
+    fi
     file_perm_check pidfile_filespec "644" "$SSHD_USER_NAME" "$SSHD_GROUP_NAME"
     if [ ! -f "$pidfile_filespec" ]; then
       echo "WARN: PID file not found; make sure it is in the correct 'sshd' subdir."
