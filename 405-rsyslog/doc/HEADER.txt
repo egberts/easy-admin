@@ -1,0 +1,16 @@
+#
+#########################################################################
+# Title:  
+# File:  
+# Directory:  
+# Description:  
+#
+# Module(s) Used: 
+# Input: 
+# Output: 
+# Template(s) Used:  
+#
+# Reference:
+#  * https://github.com/emkor/minilog/blob/master/rsyslog/rsyslog.conf
+#########################################################################
+#
