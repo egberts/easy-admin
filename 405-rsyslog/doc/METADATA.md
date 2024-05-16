@@ -11,4 +11,16 @@ parsesuccess, metadata, mmjsonparse,
 mmcount, metadata, mmcount, number of messages counted
 app-name, metadata, mmcount, name of the app that this message is counted by.
 msg, metadata, ommail,  RFC822 body payload, extract message via template's msg.
-
+$!docker!id
+$!kubernetes!annotations
+$!kubernetes!container\_name
+$!kubernetes!creation\_timestamp
+$!kubernetes!host
+$!kubernetes!labels
+$!kubernetes!master\_url
+$!kubernetes!namespace\_id
+$!kubernetes!namespace\_labels
+$!kubernetes!namespace\_annotations
+$!kubernetes!namespace\_name
+$!kubernetes!pod\_id
+$!kubernetes!pod\_name
