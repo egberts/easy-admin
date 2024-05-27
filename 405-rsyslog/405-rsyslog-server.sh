@@ -1,10 +1,24 @@
 #!/bin/bash
 # File: 405-rsyslog-server.sh
 # Title: Configure Rsyslog Server
+# Description:
+#   TBD
 #
 # DESIGN:
 #
-# Envvars
+# Privilege required: none
+# OS: Debian
+# Kernel: Linux
+#
+# Files impacted:
+#  read   - /boot/grub2
+#           /etc/default/grub
+#  create - none
+#  modify - none
+#  delete - none
+#
+# Environment Variables (read):
+#   BUILDROOT - set to '/' to actually install directly into your filesystem
 #   BUILDROOT - where to output the files into (default $PWD/build)
 #   CHROOT_DIR - where to output files get installed into (default /)
 #   RSYSLOG_CONF_FILENAME=rsyslog.conf
@@ -19,9 +33,21 @@
 #   GROUP_NAME=adm
 #   package_tarname=rsyslog
 #
+# Environment Variables (created):
+#   none
+#
 # System Files impacted:
 #   Modified: none
 #   Created: none
+#
+# Prerequisites (package name):
+#
+# References:
+#   CIS Security Debian 10 Benchmark, 1.0, 2020-02-13
+#
+# Note:
+#
+#
 
 echo "Rsyslog Server configuration"
 echo ""
