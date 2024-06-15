@@ -284,6 +284,11 @@ echo "Checking syntax of ${BUILDROOT}$CONF_FILESPEC config file..."
 $CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC" >/dev/null 2>&1
 retsts=$?
 if [ "$retsts" -ne 0 ]; then
+  if [ "$retsts" -eq 1 ]; then
+    echo "AppArmor/SELinux is blocking reading of ${BUILDROOT}$CONF_FILESPEC"
+    echo "Install the config file into /etc/chrony/ and rerun $0"
+    exit 1
+  fi
   # Re-run but verbosely
   $CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC"
   echo "ERROR: ${BUILDROOT}$CONF_FILESPEC failed syntax check."
