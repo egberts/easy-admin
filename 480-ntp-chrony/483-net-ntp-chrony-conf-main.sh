@@ -86,6 +86,8 @@ done
 
 if [ -z "$USERNAME" ]; then
   echo "List of usernames not found: $USERNAMES_LIST"
+  echo
+  echo "Done."
   exit 9
 fi
 echo "Username '$USERNAME' found."
@@ -99,18 +101,24 @@ function create_file
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error touching '$1' file; Aborted."
+    echo
+    echo "Done."
     exit $retsts
   fi
   flex_chmod "$2" "$1"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error changing '$1' file permission to $2; Aborted."
+    echo
+    echo "Done."
     exit $retsts
   fi
   flex_chown "$3" "$1"
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error changing '$1' file ownership to $3; Aborted."
+    echo
+    echo "Done."
     exit $retsts
   fi
   cat << CREATE_FILE_EOF | tee "${BUILDROOT}$1" >/dev/null
@@ -121,6 +129,8 @@ CREATE_FILE_EOF
   retsts=$?
   if [ "$retsts" -ne 0 ]; then
     echo "Error writing to '$1'; Aborted."
+    echo
+    echo "Done."
     exit $retsts
   fi
 }
@@ -279,25 +289,43 @@ flex_chown "$USERNAME":"$GROUPNAME" "$CHRONY_DRIFT_FILESPEC"
 #
 
 # Verify the configuration files to be correct, syntax-wise.
-echo
-echo "Checking syntax of ${BUILDROOT}$CONF_FILESPEC config file..."
-$CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC" >/dev/null 2>&1
+/usr/sbin/apparmor_status 
 retsts=$?
-if [ "$retsts" -ne 0 ]; then
-  if [ "$retsts" -eq 1 ]; then
-    echo "AppArmor/SELinux is blocking reading of ${BUILDROOT}$CONF_FILESPEC"
-    echo "Install the config file into /etc/chrony/ and rerun $0"
-    exit 1
+if [ $retsts -eq 0 ]; then
+  CHRONYD_APPARMOR_CNT="$(sudo /usr/sbin/apparmor_status  | grep chronyd | grep -v '(' | wc -l)"
+  if [ $CHRONYD_APPARMOR_CNT -gt 0 ]; then
+    echo "No syntax checking until after you install "
+    echo "due to AppArmor restriction."
+    SKIP_SYNTAX_CHECK=1
+  else
+    SKIP_SYNTAX_CHECK=0
   fi
-  # Re-run but verbosely
-  $CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC"
-  echo "ERROR: ${BUILDROOT}$CONF_FILESPEC failed syntax check."
-  exit 13
+else
+  SKIP_SYNTAX_CHECK=1
 fi
-echo "${BUILDROOT}$CONF_FILESPEC passes syntax-check"
+if [ $SKIP_SYNTAX_CHECK -ne 0 ]; then
+  echo
+  echo "Checking syntax of ${BUILDROOT}$CONF_FILESPEC config file..."
+  $CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC" >/dev/null 2>&1
+  retsts=$?
+  if [ "$retsts" -ne 0 ]; then
+    if [ "$retsts" -eq 1 ]; then
+      echo "AppArmor/SELinux is blocking reading of ${BUILDROOT}$CONF_FILESPEC"
+      echo "Install the config file into /etc/chrony/ and rerun $0"
+      echo
+      echo "Done."
+      exit 1
+    fi
+    # Re-run but verbosely
+    $CHRONYD_BIN -p -f "${BUILDROOT}$CONF_FILESPEC"
+    echo "ERROR: ${BUILDROOT}$CONF_FILESPEC failed syntax check."
+    echo
+    echo "Done."
+    exit 13
+  fi
+  echo "${BUILDROOT}$CONF_FILESPEC passes syntax-check"
+fi
 echo
-echo "Done."
-exit
 
 # Objective is to 'enable' chrony service
 # and only restart or try-restart the service
@@ -328,4 +356,7 @@ else
   systemctl restart "$chrony_systemd_unit_name"
 fi
 echo "Chrony daemon status: $(systemctl is-active "$chrony_systemd_unit_name"): Done."
-exit $?  # pass-along 'is-active' errcode
+retsts=$?
+echo
+echo "Done."
+exit $retsts  # pass-along 'is-active' errcode

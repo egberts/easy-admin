@@ -73,11 +73,15 @@ SOURCEDIR_A=("$(grep -e '^[^#]*\s*sourcedir' "${BUILDROOT}$CONF_FILESPEC" | awk 
 if [ -z "${#SOURCEDIR_RESULT[@]}" ]; then
   echo "$FILESPEC is missing 'sourcedir' statement; cannot drop-in config file"
   echo "Aborted."
+  echo
+  echo "Done."
   exit 9
 else
   for this_srcdir in ${SOURCEDIR_A[*]}; do
     if [ ! -d "$this_srcdir" ]; then
       echo "$this_srcdir is not a directory; Aborted."
+      echo
+      echo "Done."
       exit 10
     fi
   done
@@ -460,6 +464,8 @@ echo ""
 if [ -z "$DEFAULT_ROUTE" ]; then
   echo "...no default IP route found"
   echo "...this machine has no Internet access (but maybe locally).  Aborted."
+  echo
+  echo "Done."
   exit 1
 else
   echo "Default route is '$DEFAULT_ROUTE'; something to try for an NTP server..."
@@ -477,6 +483,8 @@ if [ ! -e "$NTPDATE" ]; then
   RETSTS=$?
   if [ $RETSTS -ne 0 ]; then
     echo "Error running 'apt install ntpdate': Error $RETSTS"
+    echo
+    echo "Done."
     exit $RETSTS
   fi
 fi
@@ -594,6 +602,8 @@ if [ "$HAVE_NTP_WORLD" -eq 0 ] && \
   if [ "$REPLY" = 'y' ]; then
     echo "You will not be needing an accurate time keeper, that is"
     echo " until this firewall is fixed.  Aborted."
+    echo
+    echo "Done."
     exit 1
   fi
 
@@ -609,6 +619,8 @@ if [ "$HAVE_NTP_WORLD" -eq 0 ] && \
     # Query the router for NTP port 123
     echo "You will not be needing an accurate time keeper, that is"
     echo " until this firewall is fixed).  Aborted."
+    echo
+    echo "Done."
     exit 1
   fi
 fi
@@ -775,15 +787,26 @@ echo ""
 
 
 # Verify the configuration files to be correct, syntax-wise.
-$CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC" >/dev/null 2>&1
-retsts=$?
-if [ "$retsts" -ne 0 ]; then
-  # rerun it but with verbosity
-  $CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC"
-  echo "ERROR: ${BUILDROOT}$FILESPEC failed syntax check."
-  exit 13
+CHRONY_APPARMOR_COUNT="$(sudo /usr/sbin/apparmor_status  | grep chronyd | grep -v '(' | wc -l)"
+if [ $CHRONY_APPARMOR_COUNT -gt 0 ]; then
+  # AppArmor-protected
+  SKIP_SYNTAX_CHECK=1
+else
+  SKIP_SYNTAX_CHECK=0
 fi
-echo "${BUILDROOT}$FILESPEC passes syntax-check"
+if [ $SKIP_SYNTAX_CHECK -ne 1 ]; then
+  $CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC" >/dev/null 2>&1
+  retsts=$?
+  if [ "$retsts" -ne 0 ]; then
+    # rerun it but with verbosity
+    $CHRONYD_BIN -p -f "${BUILDROOT}$FILESPEC"
+    echo "ERROR: ${BUILDROOT}$FILESPEC failed syntax check."
+    echo
+    echo "Done."
+    exit 13
+  fi
+  echo "${BUILDROOT}$FILESPEC passes syntax-check"
+fi
 
 # Objective is to 'enable' chrony service
 # and only restart or try-restart the service
@@ -808,12 +831,18 @@ if [ "$retsts" -ne 0 ]; then
   systemctl try-reload-or-restart chrony.service
   echo "WARNING: You may have to start it yourself."
   echo "Chrony daemon status: $(systemctl is-active chrony.service)"
-  exit $?  # pass-along 'is-active' errcode
+  retsts=$?
+  echo
+  echo "Done."
+  exit $retsts  # pass-along 'is-active' errcode
 else
   echo "Restarting Chrony service..."
   systemctl restart chrony.service
 fi
 echo "Chrony daemon status: $(systemctl is-active chrony.service): Done."
-exit $?  # pass-along 'is-active' errcode
+retsts=$?
+echo
+echo "Done."
+exit $retsts  # pass-along 'is-active' errcode
 
 
