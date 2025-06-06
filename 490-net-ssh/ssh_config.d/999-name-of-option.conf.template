@@ -1,0 +1,82 @@
+#
+# File: 999-template.conf
+# Title: Accepted list of public key algorithms
+#
+# Description:
+#
+# CLI option: -4
+# CLI option: -6
+# CLI option: -a   # no
+# CLI option: -A   # yes
+# CLI option: -B
+# CLI option: -b <ip_address>
+# CLI option: -C
+# CLI option: -c <string>
+# CLI option: -D <string>
+# CLI option: -e <escape-option>
+# CLI option: -f
+# CLI option: -f (forces 'StdinNull' to 'yes')
+# CLI option: -g  # 'yes'
+
+G 
+
+# CLI option: -i <filepath>
+# CLI option: -I <filepath>
+# CLI option: -J
+
+K
+k
+M
+m
+
+# CLI option: -n
+# CLI option: -N
+# CLI option: n/a (parser token)
+# CLI option: none (config-file only)
+#
+o 
+# CLI option: -p <port_number>
+
+q
+Q
+R
+
+# CLI option: -s
+# CLI option: -T     # no
+# CLI option: -t     # yes
+
+v
+V
+
+# CLI option: -w [ yes | point-to-point | ethernet | no ]
+
+W
+
+# CLI option: -x
+# CLI option: -X  # yes
+
+y
+
+# CLI option: -Y  # also enables -X
+# CLI option: -Y  # turns on -X
+#
+# Network Stage: markus (KeX negotiation)
+# Parameter: multistate_compression/parse_multistate
+# Process Context: client main
+# Process context: main()/client-executable
+# Process context: main()/daemon
+# Process context: main()/ssh.c/client
+# Process context: main()/sshd.c/daemon
+# Process context: ssh(client)
+# State: SSH2_MSG_CHANNEL_REQ
+# State: SSH2_MSG_SESSION_SETUP?
+# Variable: num_remote_forwards
+# Variable: options.add_key_to_agent
+# Variable: options.fwd_opts.gateway_ports
+# Variable: options->fwd_opts.streamlocal_bind_mask
+# Variable: options.identity_files[]
+# Variable: options.identity_file_userprovided[]
+# Variable: options.identity_keys[]
+# Variable: options.listen_addrs[].rdomain
+# Source (read): userauth_pubkey()/auth2-pubkey.c
+# Source (write):
