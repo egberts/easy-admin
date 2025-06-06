@@ -2,7 +2,7 @@
 # File: 022-fonts-ibm-plex.sh
 # Title:  Install IBM Plex font
 # Description:
-#   TBD
+#   QDO0o., 1l!| 7T 6b 5S 8B 9qg 3E HK 2Z nm wvv <{[()]}> ~^`"
 #
 # Privilege required: sudo root
 # OS: Debian
