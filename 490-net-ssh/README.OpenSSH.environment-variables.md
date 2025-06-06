@@ -77,3 +77,9 @@ Env varname, description, type, source
 `UMASK`, UNIX file permission mask, 4-digit octal, session.c
 `USER`, Set to the name of the user logging in., string, session.c
 </jtable>
+
+
+Test environment variables:
+<jtable>
+`TEST_SSH_ELAPSED_TIMES`, enable printing of the elapsed time in seconds of each test.
+</jtable>

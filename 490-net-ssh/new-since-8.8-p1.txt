@@ -1,0 +1,37 @@
+new since v8.8-p1
+
+v9.1+ sRequiredRSASize       options->required_rsa_size = SSH_RSA_MINIMUM_MODULUS_SIZE;
+
+v9.2+ sChannelTimeout=none|<integer>        options->channel_timeouts = NULL;
+v9.2+       options->num_channel_timeouts = 0;
+v9.2+ sUnusedConnectionTimeout=none|<integer>       options->unused_connection_timeout = 0;
+
+v9.8+ sPAMServiceName    options->pam_service_name = 'sshd';
+v9.8+ sPerSourcePenalties       options->per_source_penalty_exempt = NULL;
+v9.8+       options->per_source_penalty.enabled = 1;
+v9.8+       options->per_source_penalty.max_sources4 = 65536;
+v9.8+       options->per_source_penalty.max_sources6 = 65536;
+v9.8+       options->per_source_penalty.overflow_mode = PER_SOURCE_PENALTY_OVERFLOW_PERMISSIVE;
+v9.8+       options->per_source_penalty.overflow_mode6 = PER_SOURCE_PENALTY_OVERFLOW_PERMISSIVE;
+v9.8+       options->per_source_penalty.penalty_crash = 90;
+v9.8+       options->per_source_penalty.penalty_authfail = 5;
+v9.8+       options->per_source_penalty.penalty_noauth = 1;
+v9.8+       options->per_source_penalty.penalty_grace = 10;
+v9.9+       options->per_source_penalty.penalty_refuseconnection = 10;
+v9.8+       options->per_source_penalty.penalty_max = 15;
+v9.8+       options->per_source_penalty.penalty_min = 600;
+v9.8+ sSshdSessionPath       options->sshd_session_path = _PATH_SSHD_SESSION;
+-v9.8  use_privsep
+v9.8+ sPerSourcePenaltyExemptList
+  crash:
+  authfail:
+  noauth:
+  grace-exceeded:
+  refuseconnection:
+  max:
+  max-sources4
+  max-sources6
+  overflow:[deny-all|permissive]
+  overflow6:[deny-all|permissive]
+
+v9.9+ sRefuseConnection       options->refuse_connection = 0;
