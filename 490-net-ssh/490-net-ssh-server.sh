@@ -112,6 +112,7 @@ if [ -z "$sudo_users_by_group" ]; then
     echo "And add a line to '/etc/sudoers':"
     echo
     echo "  %$WHEEL_GROUP   ALL=(ALL:ALL) ALL"
+    echo "  env_keep COLORTERM"
     echo
     exit 1
   fi
