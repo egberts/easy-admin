@@ -1,7 +1,9 @@
 #
 # File: 999-template.conf
+# Path: /etc/ssh
+# Path: /etc/ssh/ssh_config.d
+# Path: /etc/ssh/sshd_config.d
 # Title: Accepted list of public key algorithms
-#
 # Description:
 #
 # CLI option: -4
@@ -23,12 +25,10 @@ G
 # CLI option: -i <filepath>
 # CLI option: -I <filepath>
 # CLI option: -J
-
-K
-k
-M
-m
-
+# CLI option: -K
+# CLI option: -k
+# CLI option: -M
+# CLI option: -m
 # CLI option: -n
 # CLI option: -N
 # CLI option: n/a (parser token)
@@ -60,16 +60,21 @@ y
 # CLI option: -Y  # also enables -X
 # CLI option: -Y  # turns on -X
 #
+# Process Context: client 
+# Process Context: subthread/client 
+# Process context: daemon
+# Network Stage: Connection establishment
+# Network Stage: Protocol version exchange
+# Network Stage: Key exchange (KEX) negotiation
 # Network Stage: markus (KeX negotiation)
-# Parameter: multistate_compression/parse_multistate
-# Process Context: client main
-# Process context: main()/client-executable
-# Process context: main()/daemon
-# Process context: main()/ssh.c/client
-# Process context: main()/sshd.c/daemon
-# Process context: ssh(client)
-# State: SSH2_MSG_CHANNEL_REQ
-# State: SSH2_MSG_SESSION_SETUP?
+# Network Stage: Server authentication
+# Network Stage: User authentication
+# Network Stage: User authentication (GSS-API)
+# Network Stage: Session setup
+# Network Stage: Data exchange
+# Network Stage: Session termination
+# Message state: SSH2_MSG_CHANNEL_REQ
+# Message state: SSH2_MSG_SESSION_SETUP?
 # Variable: num_remote_forwards
 # Variable: options.add_key_to_agent
 # Variable: options.fwd_opts.gateway_ports
@@ -80,3 +85,4 @@ y
 # Variable: options.listen_addrs[].rdomain
 # Source (read): userauth_pubkey()/auth2-pubkey.c
 # Source (write):
+
