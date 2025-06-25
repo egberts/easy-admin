@@ -2,5 +2,7 @@
 
 Notice that this file has no '.conf' suffix filetype?
 
+Just an inert directory demarcation file.
+
 It's just a token holder demarking the time that an 
 IP socket was made.
