@@ -99,6 +99,6 @@ y
 # Variable: options.identity_file_userprovided[]
 # Variable: options.identity_keys[]
 # Variable: options.listen_addrs[].rdomain
-# Source (read): userauth_pubkey()/auth2-pubkey.c
+# Source (read): userauth_pubkey()/a uth2-pubkey.c
 # Source (write):
 

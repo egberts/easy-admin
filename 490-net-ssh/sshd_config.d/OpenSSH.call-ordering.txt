@@ -174,7 +174,8 @@ userauth_kbdint
 input_userauth_info_req
   options.host_key_alias
 
-Authmethod->method()
+
+ssh->authctxt->method[].userauth() (struct Authmethod)
   userauth_hostbased
     options.hostbased_accepted_algos
     options.fingerprint_hash
@@ -396,13 +397,14 @@ ssh_local_cmd
 authmethod_get
   options.preferred_authentications
 
-input_userauth_pk_ok
-  options.fingerprint_hash
-  userauth()
-    ssh_dispatch_range()
-    method->userauth()
-  format_identity
+ssh->authctxt->method[].userauth() (struct Authmethod)
+  input_userauth_pk_ok
     options.fingerprint_hash
+    userauth()
+      ssh_dispatch_range()
+      method->userauth()
+    format_identity
+      options.fingerprint_hash
 
 key_sig_algorithms
   pubkey_accepted_algos
