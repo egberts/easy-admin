@@ -1,99 +1,469 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="ANALYZE_INJECTED_CODE" value="false" />
+    <option name="SCOPE_TYPE" value="3" />
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="Rename filename to reflect its own functionalities better">
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" afterDir="false" />
+    <list default="true" id="6561eb39-6741-4513-83ba-58b92f46d637" name="Changes" comment="Reorder the 'Channel name', 'Channel type', and 'Control type'.">
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/700-lighttpd-install.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/701-lighttpd-basic.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/00-global.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/10-accesslog.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/11-log.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/20-modules.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/25-global-upload-disabled.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/30-mime-encoding.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/35-url-handling-security.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/40-fastcgi.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/60-ssl.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/61-ssl-protocols.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/62-ssl-ciphers.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/63-ssl-curves.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/64-http-hsts.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/65-ocsp-stapling.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/66-sni.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/67-dtls-client-verify.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/70-security-cipher-order.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/80-vhosts.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/98-performance.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/conf.d/99-local.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/lighttpd.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/700-lighttpd/maintainer-lighttpd.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/nm_resolve_disable.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/500-dns/593-dns-bind9-autoconfig.sh" beforeDir="false" afterPath="$PROJECT_DIR$/500-dns/593-dns-bind9-autoconfig.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/490-net-ssh/ssh_config.d/.name-of-option.conf.template.swp" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="ChangesViewManager">
+    <option name="groupingKeys">
+      <option value="directory" />
+    </option>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="BashSupport Pro Bash" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitSEFilterConfiguration">
-    <file-type-list>
-      <filtered-out-file-type name="LOCAL_BRANCH" />
-      <filtered-out-file-type name="REMOTE_BRANCH" />
-      <filtered-out-file-type name="TAG" />
-      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
-    </file-type-list>
-  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;egberts&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/egberts/easy-admin.git&quot;,
+    &quot;accountId&quot;: &quot;fced42c6-4467-4c2f-9f40-ee604cff5694&quot;
+  }
+}</component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="249TBZ5118M3S4ZgG6x9l31nSSt" />
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2VtWaEfd96UrlXQHlHeien0CUfR" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/400-network-managers/405-nm-NetworkManager-own-dhcp-client-resolver-disable.sh" />
-    <property name="settings.editor.selected.configurable" value="preferences.editor.code.editing" />
-  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Input arguments": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/wolfe/work/github/easy-admin/490-net-ssh/sshd_config.d",
+    "run.code.analysis.last.selected.profile": "aDefault",
+    "settings.editor.selected.configurable": "project.propVCSSupport.CommitDialog"
+  }
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/400-network-managers" />
+      <recent name="$PROJECT_DIR$/490-net-ssh/sshd_config.d" />
     </key>
   </component>
-  <component name="RunManager" selected="Shell Script.nm-resolve-disable">
-    <configuration name="404-network-manager-nm-misc.sh" type="ShConfigurationType" temporary="true">
-      <option name="SCRIPT_TEXT" value="" />
-      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
-      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/400-network-managers/404-network-manager-nm-misc.sh" />
-      <option name="SCRIPT_OPTIONS" value="" />
-      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/400-network-managers" />
-      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
-      <option name="INTERPRETER_PATH" value="/bin/bash" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="EXECUTE_IN_TERMINAL" value="true" />
-      <option name="EXECUTE_SCRIPT_FILE" value="true" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <list>
-      <item itemvalue="Shell Script.nm-resolve-disable" />
-      <item itemvalue="Shell Script.404-network-manager-nm-misc.sh" />
-    </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Shell Script.404-network-manager-nm-misc.sh" />
-      </list>
-    </recent_temporary>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-d9fa9deec7cb-d902c0275401-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-252.23892.515" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="b62959a7-d729-4598-8c92-c23074bef1ca" name="Changes" comment="" />
-      <created>1643041667860</created>
+      <changelist id="6561eb39-6741-4513-83ba-58b92f46d637" name="Changes" comment="" />
+      <created>1695655920758</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1643041667860</updated>
+      <updated>1695655920758</updated>
     </task>
-    <task id="LOCAL-00001" summary="Split apart the 'nm-misc' file into three separate options.">
-      <created>1643380323312</created>
+    <task id="LOCAL-00001" summary="fix premature debug exit in 040-git-github-cli-install.sh&#10;&#10;fix spelling errors in 300-kernel-download-debian.sh">
+      <option name="closed" value="true" />
+      <created>1695678483755</created>
       <option name="number" value="00001" />
       <option name="presentableId" value="LOCAL-00001" />
       <option name="project" value="LOCAL" />
-      <updated>1643380323312</updated>
+      <updated>1695678483755</updated>
     </task>
-    <task id="LOCAL-00002" summary="Rename filename to reflect its own functionalities better">
-      <created>1643380770389</created>
+    <task id="LOCAL-00002" summary="add error checking for change directory 'cd' command">
+      <option name="closed" value="true" />
+      <created>1695678668126</created>
       <option name="number" value="00002" />
       <option name="presentableId" value="LOCAL-00002" />
       <option name="project" value="LOCAL" />
-      <updated>1643380770389</updated>
+      <updated>1695678668126</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Quiet the echo of writing the /etc/profile.d/gpg-agent file.">
+      <option name="closed" value="true" />
+      <created>1695678721993</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1695678721993</updated>
+    </task>
+    <task id="LOCAL-00004" summary="formatting for code readability.">
+      <option name="closed" value="true" />
+      <created>1695678966887</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1695678966887</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Perform date/creator commands before writing to an output file.">
+      <option name="closed" value="true" />
+      <created>1695679254388</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1695679254388</updated>
+    </task>
+    <task id="LOCAL-00006" summary="add file header&#10;add ENTER to continue step">
+      <option name="closed" value="true" />
+      <created>1695679483588</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1695679483588</updated>
+    </task>
+    <task id="LOCAL-00007" summary="reformatted for readability">
+      <option name="closed" value="true" />
+      <created>1695679563711</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1695679563711</updated>
+    </task>
+    <task id="LOCAL-00008" summary="reformatted for readability">
+      <option name="closed" value="true" />
+      <created>1695680255761</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1695680255761</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Output what it is trying to do 'remove USB storage access support'&#10;Add a 'continue' step">
+      <option name="closed" value="true" />
+      <created>1695680409918</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1695680409918</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Add initial output line stating what it is trying to do">
+      <option name="closed" value="true" />
+      <created>1695680509827</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1695680509827</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Add initial output line stating what it is trying to do">
+      <option name="closed" value="true" />
+      <created>1695680567276</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1695680567276</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Add initial output line stating what it is trying to do">
+      <option name="closed" value="true" />
+      <created>1695680686607</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1695680686607</updated>
+    </task>
+    <task id="LOCAL-00013" summary="add file header&#10;add easy-admin-install.sh&#10;change from 'chmod' to 'flex_chmod'&#10;change from 'chown' to 'flex_chown'&#10;&#10;Less destructive, friendlier for non-root users.">
+      <option name="closed" value="true" />
+      <created>1695681557966</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1695681557967</updated>
+    </task>
+    <task id="LOCAL-00014" summary="add file header">
+      <option name="closed" value="true" />
+      <created>1695701418862</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1695701418862</updated>
+    </task>
+    <task id="LOCAL-00015" summary="add file header&#10;add line spacer for readability">
+      <option name="closed" value="true" />
+      <created>1695703559682</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1695703559682</updated>
+    </task>
+    <task id="LOCAL-00016" summary="add file header&#10;add line spacer for readability">
+      <option name="closed" value="true" />
+      <created>1695751402354</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1695751402354</updated>
+    </task>
+    <task id="LOCAL-00017" summary="add many errno error checkers for coreutils commands&#10;add file header&#10;add line spacer for readability">
+      <option name="closed" value="true" />
+      <created>1695853515196</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1695853515196</updated>
+    </task>
+    <task id="LOCAL-00018" summary="shellchecked&#10;slight line-spacing for grouping readability">
+      <option name="closed" value="true" />
+      <created>1696107037765</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1696107037765</updated>
+    </task>
+    <task id="LOCAL-00019" summary="SULOG_FILE= setting checked for pre-existing filespec with correct file permission and file ownership&#10;Add check for MD5_CRYPT_ENAB &#10;&#10;slight line-spacing for grouping readability">
+      <option name="closed" value="true" />
+      <created>1696113737710</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1696113737710</updated>
+    </task>
+    <task id="LOCAL-00020" summary=" Cloned 010-login-passwd-sha512.sh&#10; &#10; Just learned this month that Linux distros seem to be pushing for yescrypt over 'scrypt' (or older md5crypt)">
+      <option name="closed" value="true" />
+      <created>1696113828929</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1696113828929</updated>
+    </task>
+    <task id="LOCAL-00021" summary=" Cloned 010-login-passwd-sha512.sh&#10; &#10; Just learned this month that Linux distros seem to be pushing for yescrypt over 'scrypt' (or older md5c#   stat (coreutils)rypt)">
+      <option name="closed" value="true" />
+      <created>1696113846468</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1696113846468</updated>
+    </task>
+    <task id="LOCAL-00022" summary="add header&#10;relocate commands outside of data file to ensure&#10;cleaner error-free output.">
+      <option name="closed" value="true" />
+      <created>1696115106715</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1696115106715</updated>
+    </task>
+    <task id="LOCAL-00023" summary="more prerequisites">
+      <option name="closed" value="true" />
+      <created>1696115124447</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1696115124448</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Organize by verify/write function&#10;Repeat for two copies of machine-id files: /etc/machine-id and /var/lib/dbus/machine-id&#10;&#10;Do not know why systemd is thorny about maintaining two separate machine-id files.">
+      <option name="closed" value="true" />
+      <created>1696132571456</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1696132571456</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Rearrange so that verify-write is done in sequential for each file before doing other file.">
+      <option name="closed" value="true" />
+      <created>1696132718343</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1696132718343</updated>
+    </task>
+    <task id="LOCAL-00026" summary="add header.&#10;pass shellcheck">
+      <option name="closed" value="true" />
+      <created>1696134590828</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1696134590828</updated>
+    </task>
+    <task id="LOCAL-00027" summary="use flex_ckdir, instead of flex_mkdir">
+      <option name="closed" value="true" />
+      <created>1696135233432</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1696135233432</updated>
+    </task>
+    <task id="LOCAL-00028" summary="use flex_ckdir, instead of flex_mkdir">
+      <option name="closed" value="true" />
+      <created>1696135272636</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1696135272636</updated>
+    </task>
+    <task id="LOCAL-00029" summary="use flex_ckdir, instead of flex_mkdir">
+      <option name="closed" value="true" />
+      <created>1696135283594</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1696135283594</updated>
+    </task>
+    <task id="LOCAL-00030" summary="add headers&#10;&#10;clarify output a bit further">
+      <option name="closed" value="true" />
+      <created>1696195148238</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1696195148239</updated>
+    </task>
+    <task id="LOCAL-00031" summary="clarify file name to reflect to what it actually does.&#10;&#10;New filename is /etc/NetworkManager/conf.d/wifi_mac_random_no.conf&#10;&#10;add headers">
+      <option name="closed" value="true" />
+      <created>1696345870237</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1696345870237</updated>
+    </task>
+    <task id="LOCAL-00032" summary="update prerequisites in header">
+      <option name="closed" value="true" />
+      <created>1696345981028</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1696345981028</updated>
+    </task>
+    <task id="LOCAL-00033" summary="Clean up minor formattings.">
+      <option name="closed" value="true" />
+      <created>1750711612737</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1750711612737</updated>
+    </task>
+    <task id="LOCAL-00034" summary="- Added some Source:&#10;- Removed trailing spaces.">
+      <option name="closed" value="true" />
+      <created>1750878835610</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1750878835610</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Added 'Introduced:' and 'Obsoleted:' into the comments.&#10;&#10;Will be used by bash scripts to selectively introduced each configuration file based on installed OpenSSH versioning.">
+      <option name="closed" value="true" />
+      <created>1750950256685</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1750950256685</updated>
+    </task>
+    <task id="LOCAL-00036" summary="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):">
+      <option name="closed" value="true" />
+      <created>1751318788164</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1751318788164</updated>
+    </task>
+    <task id="LOCAL-00037" summary="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):">
+      <option name="closed" value="true" />
+      <created>1751350958202</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1751350958202</updated>
+    </task>
+    <task id="LOCAL-00038" summary="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):">
+      <option name="closed" value="true" />
+      <created>1751352443084</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1751352443084</updated>
+    </task>
+    <task id="LOCAL-00039" summary="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):">
+      <option name="closed" value="true" />
+      <created>1751354931280</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1751354931280</updated>
+    </task>
+    <task id="LOCAL-00040" summary="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):">
+      <option name="closed" value="true" />
+      <created>1751404783640</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1751404783640</updated>
+    </task>
+    <task id="LOCAL-00041" summary="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):">
+      <option name="closed" value="true" />
+      <created>1751404966937</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1751404966937</updated>
+    </task>
+    <task id="LOCAL-00042" summary="Reorder the 'Channel name', 'Channel type', and 'Control type'.">
+      <option name="closed" value="true" />
+      <created>1751407753433</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1751407753433</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.sh" />
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.conf" />
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.template" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
@@ -107,8 +477,31 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Split apart the 'nm-misc' file into three separate options." />
-    <MESSAGE value="Rename filename to reflect its own functionalities better" />
-    <option name="LAST_COMMIT_MESSAGE" value="Rename filename to reflect its own functionalities better" />
+    <MESSAGE value="reformatted for readability" />
+    <MESSAGE value="Output what it is trying to do 'remove USB storage access support'&#10;Add a 'continue' step" />
+    <MESSAGE value="Add initial output line stating what it is trying to do" />
+    <MESSAGE value="add file header&#10;add easy-admin-install.sh&#10;change from 'chmod' to 'flex_chmod'&#10;change from 'chown' to 'flex_chown'&#10;&#10;Less destructive, friendlier for non-root users." />
+    <MESSAGE value="add file header" />
+    <MESSAGE value="add file header&#10;add line spacer for readability" />
+    <MESSAGE value="add many errno error checkers for coreutils commands&#10;add file header&#10;add line spacer for readability" />
+    <MESSAGE value="shellchecked&#10;slight line-spacing for grouping readability" />
+    <MESSAGE value="SULOG_FILE= setting checked for pre-existing filespec with correct file permission and file ownership&#10;Add check for MD5_CRYPT_ENAB &#10;&#10;slight line-spacing for grouping readability" />
+    <MESSAGE value=" Cloned 010-login-passwd-sha512.sh&#10; &#10; Just learned this month that Linux distros seem to be pushing for yescrypt over 'scrypt' (or older md5crypt)" />
+    <MESSAGE value=" Cloned 010-login-passwd-sha512.sh&#10; &#10; Just learned this month that Linux distros seem to be pushing for yescrypt over 'scrypt' (or older md5c#   stat (coreutils)rypt)" />
+    <MESSAGE value="add header&#10;relocate commands outside of data file to ensure&#10;cleaner error-free output." />
+    <MESSAGE value="more prerequisites" />
+    <MESSAGE value="Organize by verify/write function&#10;Repeat for two copies of machine-id files: /etc/machine-id and /var/lib/dbus/machine-id&#10;&#10;Do not know why systemd is thorny about maintaining two separate machine-id files." />
+    <MESSAGE value="Rearrange so that verify-write is done in sequential for each file before doing other file." />
+    <MESSAGE value="add header.&#10;pass shellcheck" />
+    <MESSAGE value="use flex_ckdir, instead of flex_mkdir" />
+    <MESSAGE value="add headers&#10;&#10;clarify output a bit further" />
+    <MESSAGE value="clarify file name to reflect to what it actually does.&#10;&#10;New filename is /etc/NetworkManager/conf.d/wifi_mac_random_no.conf&#10;&#10;add headers" />
+    <MESSAGE value="update prerequisites in header" />
+    <MESSAGE value="Clean up minor formattings." />
+    <MESSAGE value="- Added some Source:&#10;- Removed trailing spaces." />
+    <MESSAGE value="Added 'Introduced:' and 'Obsoleted:' into the comments.&#10;&#10;Will be used by bash scripts to selectively introduced each configuration file based on installed OpenSSH versioning." />
+    <MESSAGE value="Make consistent with SSH client config files.&#10;Use the following:&#10;&#10;Process context:&#10;Dispatch:&#10;Network stage:&#10;Control type:&#10;Channel type:&#10;Mode:&#10;Variable:&#10;SOurce (read):&#10;Source (write):" />
+    <MESSAGE value="Reorder the 'Channel name', 'Channel type', and 'Control type'." />
+    <option name="LAST_COMMIT_MESSAGE" value="Reorder the 'Channel name', 'Channel type', and 'Control type'." />
   </component>
 </project>
