@@ -1,0 +1,280 @@
+A reverse chronological list of configuration keyword directives that
+were introduced into the codebase of OpenSSH client(ssh):
+
+10.1
+  - RefuseConnection
+  - WarnWeakCrypto
+
+10.0
+  - VersionAddendum
+
+9.6
+  - ChannelTimeout
+
+9.5
+  - ObscureSourcePenalties
+
+9.4
+  - Match tagged
+  - Tag
+
+9.2
+  - EnableEscapeCommandLine
+
+9.1
+  - RequiredRSASize
+
+8.7
+  -    (aliased ChallengeResponseAuthentication to KbdInteractiveAuthentication)
+  - ForkAfterAuthentication
+  -    (aliased HostbasedAlgorithms to HostbasedAcceptedAlgorithms)
+  - SessionType
+  - StdinNull
+
+8.5
+  - KnownHostsCommand
+  - LogVerbose
+  - PermitRemoteOpen
+  - HostbasedAcceptedAlgorithms (renamed from HostbasedKeyTypes)
+  - PubkeyAcceptedAlgorithms (renamed from PubkeyceptedeyTypes)
+  - KnownHostsCommand
+
+8.2
+  -     (unsupported CompressionLevel)
+  -     (deleted Cipher, use Ciphers instead)
+  -     (unsupported RhostsRSAAuthentication)
+  -     (unsupported RSAAuthentication)
+  - SecurityKeyProvider
+  -     (deleted UsePrivilegedPort)
+
+7.9
+  - CASignatureAlgorithms
+
+7.8
+  - SetEnv
+  -     (deprecated UsePrivilegePort)
+  -     (unsupported SkeyAuthentication, use ChallengeResponseAuthentication instead)
+
+7.7
+  - BindInterface
+
+7.6
+  -    (deleted Cipher, use Ciphers instead)
+  - SyslogFacility
+  -    (deleted Protocol, it's always SSH2)
+  - RemoteCommand
+
+7.5
+  -     (deleted AfsTokenPassing)
+  - CompressionLevel (WITH_SSH1 compiler option only)
+  -     (deprecated FallbackToRsh)
+  -     (deleted GlobalKnownHostsFile2)
+  - GssApiAuthetication (GSSAPI compiler option only)
+  - GssApiDelegateCredentials (GSSAPI compiler option only)
+  -     (deleted KerberosAuthentication)
+  -     (deleted KerberosTgtPassing)
+  - PKCS11Provider (compiler option only)
+  -     (deleted RhostsAuthentication)
+  - RhostRsaAuthentication (WITH_SSH1 compiler option only)
+  - RsaAuthentication (WITH_SSH1 compiler option only)
+  - SmartCard (alias to PKCS11Provider, compiler option only)
+  -     (deleted UserKnownHostsFile2)
+  -     (deleted UseRoaming)
+  -     (deleted UserSh)
+
+7.3
+  - Include
+  - IdentityAgent
+  - ProxyJump
+
+7.2
+  - AddKeysToAgent
+  - CertificateFile
+  -     (deprecated UseRoaming)
+
+6.8
+  - FingerprintHash
+  -     (deprecated GlobalKnownHostsFiles2)
+  - RevokedHostKeys
+  - UpdateHostKeys
+  - HostbaseKeyTypes
+  -     (deprecated UserKnownHostsFiles2)
+
+6.7
+  - StreamLocalBindMask
+  - StreamLocalBindUnlink
+
+6.6
+  -    (deprecated ZeroKnowledgePasswordAuthentication)
+
+6.5
+  - CanonicalizeHostname
+  - CanonicalizeMaxDots
+  - CanonicalDomains
+  - CanonicalizeFallbackLocal
+  - CanonicalizePermittedCNAMEsA
+  - Host
+
+6.3
+  - ProxyUseFdpass
+  - IgnoreUnknown
+
+5.9
+  -     (deprecated GlobalKnownHostsFile2)
+  - RequestTTY
+  -     (deprecated UserKnownHostsFile2)
+
+5.7
+  - KexAlgorithms
+  - IPQoS
+
+5.6
+  - ControlPersist
+  - ForwardX11Timeout
+
+5.4
+  - PKCS11Provider (renamed SmartcardDevice)
+
+5.3
+  - UseRoaming
+
+
+5.2
+  -     (deprecated GlobalKnownHostsFile2)
+  -     (deprecated UserKnownHostsFile2)
+  -     (deprecated IdentityFile2)
+  - ZeroKnowledgePasswordAuthentication (compiler option)
+
+5.1
+  - VisualHostKey
+
+4.4
+  - ExitOnForwardFailure
+
+4.3
+  - LocalCommand
+  - PermitLocalCommand
+  - Tunnel
+  - TunnelDevice
+
+4.0
+  - HashKnownHosts
+
+3.9
+  - ControlMaster
+  - ControlPath
+  - IdentifiesOnly
+  - SendEnv
+
+3.8
+  - ConnectionAttempts
+  - ForwardX11Trusted
+  - ServerAliveCountMax
+  - ServerAliveInterval
+  - TCPKeepAlive (renamed from KeepAlives)
+  - VerifyHostKeyDNS (compiler option)
+
+3.7
+  - ConnectTimeout
+  - AddressFamily
+  - GssApiAuthentication
+  - GssApiDelegateCreds
+  -     (compile option'd KerberosAuthentication)
+  -     (compile option'd KerberosTgtPassing)
+  - RekeyLimit
+  -     (deprecated RhostAuthentication)
+  - VerifyHostKeyDNS
+
+3.6
+  - EnableSshKeySign
+
+3.3
+  -     (deprecated UseRsh)
+  -     (deprecated FallBackToRsh)
+
+3.0
+  - NoHostAuthenticationForLocalhost
+
+2.9
+  -     (delete AFSTokenPassing)
+  - BindAddress
+  - ClearAllForwardings
+  - DynamicForward
+  - HostbasedAuthentication
+  - HostKeysAlgorithms
+  - PreferredAuthentications
+  - RhostsRSAAuthentication
+  - SmartcardDevice
+
+2.5
+  - ChallengeResponseAuthentication (renamed SkeyAuthentication)
+  -     (deprecated IdentityFile2)
+  - HostKeyALias
+  - PubkeyAuthentication (renamed DSAAuthentication)
+  - MACs
+  -     (deprecated TISAuthentication)
+
+2.3
+  - KbdInteractiveAuthentication
+  - KbdInteractiveDevices
+
+2.2
+  - XAuthLocation
+
+2.1
+  - DSAAuthentication
+
+2.0
+  - Ciphers
+  - ForwardDynamic
+  - GlobalKnownHostsFile2
+  - IdentityFile2
+  - Protocol
+  - SessionLocalForward
+  - SkeyAuthentication
+  - UserKnownHostsFile2
+  - X11Forward
+
+1.2
+  - AfsTokenPassing?
+  - AuthPubkey
+  - AuthPreferred
+  - Compression
+  - ConnectionAttempts?
+  - EscapeChar
+  - FallbackToRsh
+  - ForwardAgent?
+  - ForwardX11?
+  - GatewayPort
+  - GlobalKnownHostsFile?
+  - Host?
+  - IdentityFile?
+  - LocalForward?
+  - KerberosAuthentication?
+  - KerberosTgtPassing?
+  - KexCiphers
+  - KnownhostsHashed
+  - NumberOfPasswordPrompts
+  - ProxyCommand?
+  - RemoteForward?
+  - RHostAuthentication?
+  - RSAAuthentication?
+  - RhostRSAAuthentication?
+  - TisAuthentication
+  - UserKnownHostsFile?
+  - UsePrivilegedPort?
+  - UserSh?
+  - User?
+1.0
+  - Hostname
+  - Port
+  - PasswordAuthentication
+  - StrictHostkeyChecking
+  - HostkeyUser
+  - CheckHostIp
+  - BatchMode
+0.9
+  - Keepalive
+  - LogLevel
+  - LogFacility
+  - UserIdentityAgent

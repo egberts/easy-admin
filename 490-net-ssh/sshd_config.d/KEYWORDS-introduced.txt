@@ -1,0 +1,258 @@
+A reverse chronological list of configuration keyword directives that
+were introduced into the codebase of OpenSSH server daemon (sshd):
+
+10.0
+  - SshdAuthPath
+
+9.9
+  - RefuseConnection
+
+9.8
+  - PAMServiceName
+  - PerSourcePenalties
+  - PerSourcePenaltyExemptList
+  - SshdSessionPath
+
+9.2
+  - ChannelTimeout
+  - UnusedConnectionTimeout
+
+9.1
+  -  RequiredRSASize
+
+8.8
+  -     (deleted ChallengeResponseAuthentication)
+
+8.7
+  -
+  - ChallengeResponseAuthentication (alias SkeyAuthentication)
+  -     (deleted RhostsRsaAuthentication)
+  -     (deleted RsaAuthentication)
+
+8.6
+  - ModuliFile
+
+8.5
+  - LogVerbose
+  - PerSourceMaxStartups
+  - PerSourceNetBlockSize
+  - HostbasedAcceptedAlgorithms (obsolete HostbasedAcceptedKeyTypes)
+  - PubkeyAcceptedAlgorithms (obsolete PubkeyAcceptedKeyTypes)
+
+8.2
+  - Include
+  - PubkeyAuthOptions
+  - SecurityKeyProvider
+
+7.9
+  - CASignatureAlgorithms
+
+7.8
+  - PermitListen
+  - SetEnv
+  -    (deprecated SkeyAuthentication)
+
+7.7
+  -     (deleted KerberosTgtPassing)
+  - RDomain
+
+7.6
+  - ExposeAuthInfo
+
+7.5
+  -     (deprecated UsePrivilegeSeparation)
+
+7.4
+  - DisableForwarding
+  -     (deprecated KeyRegenerationInterval)
+  -     (ignoring Protocol)
+  -     (deprecated RhostRsaAuthentication)
+  -     (deprecated ServerKeyBits)
+  -     (deprecated UseLogin)
+
+7.2
+  - PrintLastLog (now a compiler option)
+
+7.0
+  - HostkeyAlgorithms
+
+6.9
+  - AuthorizedPrincipalsCommand
+  - AuthorizedPrincipalsCommandUser
+  - GssStrictAcceptor
+
+6.8
+  - FingerprintHash
+  - HostbasedAcceptedKeyTypes
+  - PubkeyAcceptedKeyTypes
+
+6.7
+  - AllowStreamLocalForwarding
+  - PermitUserRC
+  - StreamLocalBindMask
+  - StreamLocalBindUnlink
+
+6.6
+  - (unsupported ZeroKnowledgePasswordAuthentication)
+
+6.5
+  - PermitTTY
+
+6.3
+  - HostKeyAgent
+  - RekeyLimit
+
+6.2
+  - AuthenticationMethods
+  - AuthorizedKeysCommand
+  - AuthorizedKeysCommandUser
+
+6.1
+  - VersionAddendum
+
+5.9
+  - (unsupported AuthorizedKeysFile2)
+
+5.7
+  - IPQos
+  - KexAlgorithms
+
+5.6
+  - AuthorizedPrincipalsFile
+
+5.4
+  - HostCertificate
+  - RevokedKeys
+  - TrustedUserCAKeys
+
+5.2
+  - ZeroKnowledgePasswordAuthentication
+
+5.1
+  - AllowAgentForwarding
+  - MaxSessions
+
+4.9
+  - ChrootDirectory
+
+4.4
+  - Match
+  - PermitOpen
+  - ForceCommand
+
+4.2
+  -- PermitTunnel
+
+
+4.0
+  - AddressFamily
+
+3.9
+  - MaxAuthTries
+  - AcceptEnv
+
+3.8
+  - KerberosGetAFSToken
+  - TCPKeepAlive (unsupported KeepAlive)
+  - GssApiCleanupCredentials (renamed from GssApiCleanupCreds)
+
+3.7
+  - (deleted AfsTokenPassing)
+  - (deleted RhostsAuthentication)
+  - GssApiAuthentication
+  - GssApiCleanupCreds
+  - (unsupported KerberosAuthentication)
+  - (unsupported KerberosLocalPassword)
+  - (unsupported KerberosTicketCleanup)
+  - (unsupported KerberosTgtPassing)
+  - UseDNS (unsupported VerifyReverseMapping (unsupported ReverseMappingCheck))
+  - UsePAM (replaced PAMAuthenticationViaKbdInt)
+
+3.5
+  - PermitUserEnvironment
+
+3.3
+  - Compression
+
+3.2
+  - UsePrivilegeSeparation
+
+3.1
+  - VerifyReverseMapping (unsupported ReverseMappingCheck)
+  - X11UseLocalhost
+
+2.9
+  - AuthorizedKeysFile
+  - AuthorizedKeysFile2
+  - (deleted CheckMail)
+  - ClientAliveInterval
+  - ClientAliveCountMax
+  - HostbasedAuthentication
+  - HostbasedUsesNameFromPacketOnly
+  - PAMAuthenticationViaKbdInt
+  - PrintLastLog
+  - (deleted RandomSeed)
+
+2.5
+  - Banner
+  - ChallengeResponseAuthentication (replaced SkeyAuthentication)
+  - MACs
+  - PubkeyAuthentication (replaced DSAAuthentication)
+  - ReverseMappingCheck
+
+2.3
+  - KbdInteractiveAuthentication
+  - AllowTcpForwarding
+  - (replaced PasswordAuthentication)
+
+2.2
+  - XAuthLocation
+  - Subsystem
+  - MaxStartups
+
+2.1
+  - DSAAuthentication
+  - GatewayPorts
+  - HostDsaKey (replaced DsaKey)
+
+2.0
+  - Ciphers
+  - DsaKey
+  - PidFile
+  - Protocol
+
+0.9 to 1.2
+  - AllowGroups
+  - AllowUsers
+  - AfsTokenPassing
+  - CheckMail
+  - DenyGroups
+  - DenyUsers
+  - HostKey
+  - IgnoreRhosts
+  - IgnoreuserKnownhosts
+  - Keepalive
+  - KeyRegenerationInterval
+  - ListenAddress
+  - LoginGraceTime
+  - LogLevel
+  - KerberosAuthentication
+  - KerberosorLocalPasswd
+  - KerberosTicketCleanup
+  - KerberosTGTPassing
+  - PasswordAuthentication
+  - PermitEmptyPasswords
+  - PermitRootLogin
+  - Port
+  - PrintMOTD
+  - RandomSeed
+  - RhostsAuthentication
+  - RhostsRsaAuthentication
+  - RsaAuthentication
+  - ServerKeyBits
+  - StrictModes
+  - SkeyAuthentication
+  - SyslogFacility
+  - UseLogin
+  - X11Forwarding
+  - X11DisplayOffset
