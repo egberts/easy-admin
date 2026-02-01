@@ -36,6 +36,7 @@ G
 #
 o 
 # CLI option: -p <port_number>
+# CLI option: -P <policy_label>
 
 q
 Q

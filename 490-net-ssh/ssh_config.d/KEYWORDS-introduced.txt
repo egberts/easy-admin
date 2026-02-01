@@ -7,15 +7,19 @@ were introduced into the codebase of OpenSSH client(ssh):
 
 10.0
   - VersionAddendum
+  - Match version
+  - Match command
+  - Match sessiontype
 
 9.6
   - ChannelTimeout
 
 9.5
-  - ObscureSourcePenalties
+  - ObscureKeystrokeTiming
 
 9.4
   - Match tagged
+  - Match localnetwork
   - Tag
 
 9.2
@@ -25,7 +29,7 @@ were introduced into the codebase of OpenSSH client(ssh):
   - RequiredRSASize
 
 8.7
-  -    (aliased ChallengeResponseAuthentication to KbdInteractiveAuthentication)
+  -    (deleted ChallengeResponseAuthentication)
   - ForkAfterAuthentication
   -    (aliased HostbasedAlgorithms to HostbasedAcceptedAlgorithms)
   - SessionType
@@ -36,7 +40,9 @@ were introduced into the codebase of OpenSSH client(ssh):
   - LogVerbose
   - PermitRemoteOpen
   - HostbasedAcceptedAlgorithms (renamed from HostbasedKeyTypes)
-  - PubkeyAcceptedAlgorithms (renamed from PubkeyceptedeyTypes)
+  -    (deleted HostbasedKeyTypes)
+  - PubkeyAcceptedAlgorithms (renamed from PubkeyAcceptedKeyTypes)
+  -    (deleted PubkeyAcceptedKeyTypes)
   - KnownHostsCommand
 
 8.2
@@ -45,7 +51,7 @@ were introduced into the codebase of OpenSSH client(ssh):
   -     (unsupported RhostsRSAAuthentication)
   -     (unsupported RSAAuthentication)
   - SecurityKeyProvider
-  -     (deleted UsePrivilegedPort)
+  -     (deleted UsePrivilegedPort, later deprecated at ???)
 
 7.9
   - CASignatureAlgorithms
@@ -59,27 +65,27 @@ were introduced into the codebase of OpenSSH client(ssh):
   - BindInterface
 
 7.6
-  -    (deleted Cipher, use Ciphers instead)
+  -    (deprecated Cipher, use Ciphers instead)
   - SyslogFacility
-  -    (deleted Protocol, it's always SSH2)
+  -    (ignoring Protocol, it's always SSH2)
   - RemoteCommand
 
 7.5
-  -     (deleted AfsTokenPassing)
+  -     (deleted AfsTokenPassing, later unsupported)
   - CompressionLevel (WITH_SSH1 compiler option only)
   -     (deprecated FallbackToRsh)
-  -     (deleted GlobalKnownHostsFile2)
+  -     (deleted GlobalKnownHostsFile2, later deprecated at ???)
   - GssApiAuthetication (GSSAPI compiler option only)
   - GssApiDelegateCredentials (GSSAPI compiler option only)
-  -     (deleted KerberosAuthentication)
-  -     (deleted KerberosTgtPassing)
+  -     (deleted KerberosAuthentication, later unsupported)
+  -     (deleted KerberosTgtPassing, later unsupported)
   - PKCS11Provider (compiler option only)
-  -     (deleted RhostsAuthentication)
-  - RhostRsaAuthentication (WITH_SSH1 compiler option only)
+  -     (deleted RhostsAuthentication, later deprecated at ???)
+  - RhostsRsaAuthentication (WITH_SSH1 compiler option only)
   - RsaAuthentication (WITH_SSH1 compiler option only)
   - SmartCard (alias to PKCS11Provider, compiler option only)
-  -     (deleted UserKnownHostsFile2)
-  -     (deleted UseRoaming)
+  -     (deleted UserKnownHostsFile2, later deprecated at ???)
+  -     (deleted UseRoaming, later deprecated at ???)
   -     (deleted UserSh)
 
 7.3
@@ -112,8 +118,14 @@ were introduced into the codebase of OpenSSH client(ssh):
   - CanonicalizeMaxDots
   - CanonicalDomains
   - CanonicalizeFallbackLocal
-  - CanonicalizePermittedCNAMEsA
+  - CanonicalizePermittedCNAMEs
   - Host
+  - Match
+  - Match host
+  - Match originalhost
+  - Match user
+  - Match localuser
+  - Match exec
 
 6.3
   - ProxyUseFdpass
@@ -134,6 +146,7 @@ were introduced into the codebase of OpenSSH client(ssh):
 
 5.4
   - PKCS11Provider (renamed SmartcardDevice)
+  -     (deleted SmartcardDevice)
 
 5.3
   - UseRoaming
@@ -142,7 +155,7 @@ were introduced into the codebase of OpenSSH client(ssh):
 5.2
   -     (deprecated GlobalKnownHostsFile2)
   -     (deprecated UserKnownHostsFile2)
-  -     (deprecated IdentityFile2)
+  -     (deleted IdentityFile2)
   - ZeroKnowledgePasswordAuthentication (compiler option)
 
 5.1
@@ -163,16 +176,16 @@ were introduced into the codebase of OpenSSH client(ssh):
 3.9
   - ControlMaster
   - ControlPath
-  - IdentifiesOnly
+  - IdentitiesOnly
   - SendEnv
 
 3.8
-  - ConnectionAttempts
   - ForwardX11Trusted
+  -     (deleted KeepAlives)
   - ServerAliveCountMax
   - ServerAliveInterval
   - TCPKeepAlive (renamed from KeepAlives)
-  - VerifyHostKeyDNS (compiler option)
+  - VerifyHostKeyDNS (now a compiler option only)
 
 3.7
   - ConnectTimeout
@@ -182,11 +195,18 @@ were introduced into the codebase of OpenSSH client(ssh):
   -     (compile option'd KerberosAuthentication)
   -     (compile option'd KerberosTgtPassing)
   - RekeyLimit
-  -     (deprecated RhostAuthentication)
+  -     (deprecated Rhost
+
+    convert all uses of gmp to SSL bignum
+    convert all used of rsa to SSL rsa functions
+    remove all use of randomstate to OpenBSD arc4random() and arc4_stir()
+    all this done at a long long night in Canada.
+
+commit 84959968510b547c35dddcbd0Authentication)
   - VerifyHostKeyDNS
 
 3.6
-  - EnableSshKeySign
+  - EnableSSHKeySign
 
 3.3
   -     (deprecated UseRsh)
@@ -201,28 +221,38 @@ were introduced into the codebase of OpenSSH client(ssh):
   - ClearAllForwardings
   - DynamicForward
   - HostbasedAuthentication
-  - HostKeysAlgorithms
+  - HostKeyAlgorithms
   - PreferredAuthentications
   - RhostsRSAAuthentication
   - SmartcardDevice
 
 2.5
-  - ChallengeResponseAuthentication (renamed SkeyAuthentication)
-  -     (deprecated IdentityFile2)
-  - HostKeyALias
-  - PubkeyAuthentication (renamed DSAAuthentication)
-  - MACs
-  -     (deprecated TISAuthentication)
+  - ChallengeResponseAuthentication
+  - ConnectionAttempts
+  -     (DSAAuthentication, aliased to PubkeyAuthentication)
+  -     (IdentityFile2, aliased to IdentityFile)
+  - HostKeyAlias
+  - PubkeyAuthentication (renamed from DSAAuthentication)
+  - Macs
+  -     (SkeyAuthentication, aliased to ChallengeResponseAuthentication)
+  -     (TISAuthentication, aliased to ChallengeResponseAuthentication)
 
 2.3
   - KbdInteractiveAuthentication
   - KbdInteractiveDevices
 
 2.2
+
+    convert all uses of gmp to SSL bignum
+    convert all used of rsa to SSL rsa functions
+    remove all use of randomstate to OpenBSD arc4random() and arc4_stir()
+    all this done at a long long night in Canada.
+
+commit 84959968510b547c35dddcbd0
   - XAuthLocation
 
 2.1
-  - DSAAuthentication
+  - DSAAuthentication (until 2.5, renamed)
 
 2.0
   - Ciphers
@@ -236,45 +266,51 @@ were introduced into the codebase of OpenSSH client(ssh):
   - X11Forward
 
 1.2
-  - AfsTokenPassing?
+  - AfsTokenPassing  (first assumed here)
   - AuthPubkey
   - AuthPreferred
+  - Cipher (first assumed here, singular-form)
   - Compression
-  - ConnectionAttempts?
+  - CompressionLevel
+  - ConnectionAttempts (first assumed here)
   - EscapeChar
-  - FallbackToRsh
-  - ForwardAgent?
-  - ForwardX11?
-  - GatewayPort
-  - GlobalKnownHostsFile?
-  - Host?
-  - IdentityFile?
-  - LocalForward?
-  - KerberosAuthentication?
-  - KerberosTgtPassing?
+  - FallbackToRsh (first assumed here)
+  - ForwardAgent ?
+  - ForwardX11 ?
+  - GatewayPorts
+  - GlobalKnownHostsFile (first assumed here)
+  - Host(first assumed here)
+  - IdentityFile (first assumed here)
+  - LocalForward (first assumed here)
+  - KerberosAuthentication (first assumed here)
+  - KerberosTgtPassing (first assumed here)
   - KexCiphers
   - KnownhostsHashed
   - NumberOfPasswordPrompts
-  - ProxyCommand?
-  - RemoteForward?
-  - RHostAuthentication?
-  - RSAAuthentication?
-  - RhostRSAAuthentication?
+  - ProxyCommand  (first assumed here)
+  - RemoteForward (first assumed here)
+  - RHostAuthentication (first assumed here)
+  - RSAAuthentication (first assumed here)
+  - RhostRSAAuthentication ? (singular form?)
   - TisAuthentication
-  - UserKnownHostsFile?
-  - UsePrivilegedPort?
-  - UserSh?
-  - User?
+  - UserKnownHostsFile (first assumed here)
+  - UsePrivilegedPort (first assumed here)
+  - UserSh (first assumed here)
+  - User (first assumed here)
+
 1.0
   - Hostname
   - Port
   - PasswordAuthentication
-  - StrictHostkeyChecking
-  - HostkeyUser
+  - StrictHostKeyChecking
+  - HostKeyUser
   - CheckHostIp
   - BatchMode
+
 0.9
   - Keepalive
   - LogLevel
   - LogFacility
   - UserIdentityAgent
+
+

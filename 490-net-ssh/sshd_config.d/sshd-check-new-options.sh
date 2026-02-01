@@ -10,6 +10,9 @@
 #
 echo "Find any unused new SSHD options"
 echo
+echo "$(/usr/sbin/sshd --version)"
+echo
+echo "First pass: 'sshd -T' -> *.conf"
 TMPFILE="$(mktemp /tmp/sshd_G_XXXX)"
 conf_list="$(ls -1 *.conf)"
 cat << SSH_G_EOF | tee "${TMPFILE}" > /dev/null
@@ -28,12 +31,19 @@ while read -r line; do
     fi
   done
   if [ "$not_found" -eq 1 ]; then
-    echo "$keyword NOT found in *.conf"
+    echo "$keyword printed out by \`sshd -T\` but NOT found in this *.conf"
   else
-    echo
+    echo "found."
   fi
 done < "${TMPFILE}"
 echo
-
 rm -- "${TMPFILE}"
+
+echo "Second pass: *.conf -> 'sshd -T'"
+cat << CONF_G_EOF | tee "${TMPFILE}" > /dev/null
+$(sudo sshd -T)
+$(egrep -E "^[a-zA-Z]{1,32}" *.conf | awk -F'[: ]'  '{ print $2 }' | sort -u)
+CONF_G_EOF
+# rm -- "${TMPFILE}"
+
 echo "Done."
