@@ -1,0 +1,155 @@
+SshdAuthPath
+RefuseConnection
+PAMServiceName
+PerSourcePenalties
+PerSourcePenaltyExemptList
+SshdSessionPath
+ChannelTimeout
+UnusedConnectionTimeout
+RequiredRSASize
+(deleted ChallengeResponseAuthentication)
+ChallengeResponseAuthentication (alias SkeyAuthentication)
+(deleted RhostsRsaAuthentication)
+(deleted RsaAuthentication)
+ModuliFile
+LogVerbose
+PerSourceMaxStartups
+PerSourceNetBlockSize
+HostbasedAcceptedAlgorithms (obsolete HostbasedAcceptedKeyTypes)
+PubkeyAcceptedAlgorithms (obsolete PubkeyAcceptedKeyTypes)
+Include
+PubkeyAuthOptions
+SecurityKeyProvider
+CASignatureAlgorithms
+PermitListen
+SetEnv
+(deprecated SkeyAuthentication)
+(deleted KerberosTgtPassing)
+RDomain
+ExposeAuthInfo
+(deprecated UsePrivilegeSeparation)
+DisableForwarding
+(deprecated KeyRegenerationInterval)
+(ignoring Protocol)
+(deprecated RhostRsaAuthentication)
+(deprecated ServerKeyBits)
+(deprecated UseLogin)
+PrintLastLog (now a compiler option)
+HostkeyAlgorithms
+AuthorizedPrincipalsCommand
+AuthorizedPrincipalsCommandUser
+GssStrictAcceptorCheck
+FingerprintHash
+HostbasedAcceptedKeyTypes
+PubkeyAcceptedKeyTypes
+AllowStreamLocalForwarding
+PermitUserRC
+StreamLocalBindMask
+StreamLocalBindUnlink
+(unsupported ZeroKnowledgePasswordAuthentication)
+PermitTTY
+HostKeyAgent
+RekeyLimit
+AuthenticationMethods
+AuthorizedKeysCommand
+AuthorizedKeysCommandUser
+VersionAddendum
+(unsupported AuthorizedKeysFile2)
+IPQos
+KexAlgorithms
+AuthorizedPrincipalsFile
+HostCertificate
+RevokedKeys
+TrustedUserCAKeys
+ZeroKnowledgePasswordAuthentication
+AllowAgentForwarding
+MaxSessions
+ChrootDirectory
+Match
+PermitOpen
+ForceCommand
+PermitTunnel
+AddressFamily
+MaxAuthTries
+AcceptEnv
+KerberosGetAFSToken
+TCPKeepAlive (unsupported KeepAlive)
+GssApiCleanupCredentials (renamed from GssApiCleanupCreds)
+(deleted AfsTokenPassing)
+(deleted RhostsAuthentication)
+GssApiAuthentication
+GssApiCleanupCreds
+(unsupported KerberosAuthentication)
+(unsupported KerberosLocalPassword)
+(unsupported KerberosTicketCleanup)
+(unsupported KerberosTgtPassing)
+UseDNS (unsupported VerifyReverseMapping (unsupported ReverseMappingCheck))
+UsePAM (replaced PAMAuthenticationViaKbdInt)
+PermitUserEnvironment
+Compression
+UsePrivilegeSeparation
+VerifyReverseMapping (unsupported ReverseMappingCheck)
+X11UseLocalhost
+AuthorizedKeysFile
+AuthorizedKeysFile2
+(deleted CheckMail)
+ClientAliveInterval
+ClientAliveCountMax
+HostbasedAuthentication
+HostbasedUsesNameFromPacketOnly
+PAMAuthenticationViaKbdInt
+PrintLastLog
+(deleted RandomSeed)
+Banner
+ChallengeResponseAuthentication (replaced SkeyAuthentication)
+MACs
+PubkeyAuthentication (replaced DSAAuthentication)
+ReverseMappingCheck
+KbdInteractiveAuthentication
+AllowTcpForwarding
+(replaced PasswordAuthentication)
+XAuthLocation
+Subsystem
+MaxStartups
+DSAAuthentication
+GatewayPorts
+HostDsaKey (replaced DsaKey)
+Ciphers
+DsaKey
+PidFile
+Protocol
+AllowGroups
+AllowUsers
+AfsTokenPassing
+CheckMail
+DenyGroups
+DenyUsers
+HostKey
+IgnoreRhosts
+IgnoreuserKnownhosts
+Keepalive
+KeyRegenerationInterval
+ListenAddress
+LoginGraceTime
+LogLevel
+KerberosAuthentication
+KerberosorLocalPasswd
+KerberosTicketCleanup
+KerberosTGTPassing
+PasswordAuthentication
+PermitEmptyPasswords
+PermitRootLogin
+Port
+PrintMOTD
+RandomSeed
+RhostsAuthentication
+RhostsRsaAuthentication
+RsaAuthentication
+ServerKeyBits
+StrictModes
+SkeyAuthentication
+SyslogFacility
+UseLogin
+X11Forwarding
+X11DisplayOffset
+

@@ -79,7 +79,7 @@ were introduced into the codebase of OpenSSH server daemon (sshd):
 6.9
   - AuthorizedPrincipalsCommand
   - AuthorizedPrincipalsCommandUser
-  - GssStrictAcceptor
+  - GssStrictAcceptorCheck
 
 6.8
   - FingerprintHash
