@@ -1,4 +1,4 @@
-#
+#!/usr/bin/env bash
 # File: maintainer-ssh-openssh.sh
 # Title: Common settings for OpenSSH configuration
 #
@@ -16,10 +16,10 @@
 CHROOT_DIR="${CHROOT_DIR:-}"
 BUILD_DIRNAME="build"
 BUILDROOT="${BUILDROOT:-${BUILD_DIRNAME}}"
-BUILD_SSH="${BUILDROOT}/partial-ssh"
+BUILD_SSH="${BUILDROOT}/partial-ssh" ; export BUILD_SSH
 MINI_REPO="."
 
-source ../easy-admin-installer.sh
+source "../easy-admin-installer.sh"
 
 DEFAULT_ETC_CONF_DIRNAME="ssh"
 
@@ -235,7 +235,7 @@ if [ ! -f "$SSH_BIN_FILESPEC" ]; then
   echo "Binary $SSH_BIN_FILESPEC does not exist."
   echo "'sudo' may be required to do optional syntax-checking"
 else
-  SYNTAX_CHECKABLE_SSH=1
+  SYNTAX_CHECKABLE_SSH=1 ; export SYNTAX_CHECKABLE_SSH
 fi
 SSH_BIN_GROUP="$(stat -c %G "$SSH_BIN_FILESPEC")"
 if [ -x "$SSH_BIN_FILESPEC" ]; then
